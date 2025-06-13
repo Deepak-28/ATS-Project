@@ -1,0 +1,83 @@
+.admin-job-details-container {
+  padding: 20px;
+  background: #f9fbfc;
+  min-height: 100vh;
+}
+
+.admin-job-card {
+  background: white;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 0 auto;
+}
+.job-detail{
+  border-radius: 4px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+
+}
+
+.admin-job-card h2 {
+  margin-bottom: 4px;
+}
+
+.job-meta {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.admin-job-section {
+  margin-bottom: 20px;
+  margin-left: 10px;
+  margin-top: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.admin-job-section strong {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.admin-job-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.admin-job-section li {
+  padding: 4px 0;
+}
+
+.back-button {
+  padding: 10px 18px;
+  background-color: #4a90e2;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+/* .form-value-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-value-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-label {
+  min-width: 150px;
+  font-weight: bold;
+}
+
+.form-value {
+  color: #333;
+} */

@@ -1,0 +1,67 @@
+body {
+  margin: 0;
+  padding: 0;
+ font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  /* font-family:  "Poppins", sans-serif; */
+  background-color: #f4f6f8;
+}
+
+.arrow-icon {
+  font-size: 2rem;
+  margin: 20px;
+  color: #3f51b5;
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.form-container {
+  width: 34vw;
+  /* max-width: 500px; */
+  margin: 20px auto;
+  /* padding: 30px 25px; */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  /* background-color: aqua; */
+}
+.input {
+  width: 20vw;
+  display: flex;
+  flex-direction: column;
+}
+.input input{
+  height: 5vh;
+  outline: none;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+select{
+  width: 20vw;
+  height: 5vh;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  outline: none;
+  font-size: 13px;
+  /* background-color: #3f51b5; */
+}
+
+label {
+  /* margin-bottom: 6px; */
+  font-weight: 600;
+  color: #555;
+}
+
+.add-btn{
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

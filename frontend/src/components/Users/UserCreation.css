@@ -1,0 +1,104 @@
+.user-creation-container {
+    padding: 20px;
+    /* border: 1px solid #ccc; */
+    border-radius: 5px;
+    margin-bottom: 20px;
+    /* background-color: #f9f9f9; */
+    width: 100vw;
+    height: 100%;
+
+  }
+  
+  .user-creation-container h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  .form-group{
+    width: 30vw;
+  }
+  
+  .success-message {
+    color: green;
+    margin-bottom: 10px;
+  }
+  
+  .error-message {
+    color: red;
+    margin-bottom: 10px;
+  }
+  
+  .user-creation-form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+    font-weight: bold;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 12px;
+    box-sizing: border-box;
+  }
+  
+  .form-control:focus {
+    /* border-color: #007bff; */
+    outline: none;
+    /* box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); */
+  }
+  
+  .form-control select {
+    appearance: none;
+    /* background-image: url('data:image/svg+xml;charset=UTF-8,<svg fill="%23343a40" viewBox="0 0 16 16"><path d="M1.5 5.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM8 8.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 0-1H8.5a.5.5 0 0 0-.5.5z"/></svg>'); */
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 14px 12px;
+    padding-right: 2.25rem;
+  }
+  
+  .submit-button {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 8px;
+    border: none;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 10vw;
+  }
+  .cancel-but{
+    background-color:lightslategray;
+    color: white;
+    padding: 8px 8px;
+    border: none;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 10vw;
+  }
+  
+  .submit-button:hover {
+    background-color: #0056b3;
+  }
+  .form-button{
+    /* background-color: aqua; */
+    width: 30vw;
+    height: 8vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }

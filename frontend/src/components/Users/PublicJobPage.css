@@ -1,0 +1,67 @@
+.public-page-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.public-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.public-header h1 {
+  font-size: 2rem;
+  color: #2c3e50;
+}
+
+.public-header p {
+  color: #7f8c8d;
+}
+
+.job-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.job-card {
+  border: 1px solid #e0e0e0;
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.job-card h2 {
+  margin-bottom: 0.5rem;
+  color: #34495e;
+}
+
+.job-card p {
+  margin: 0.25rem 0;
+  color: #555;
+}
+
+.view-btn {
+  display: inline-block;
+  /* margin-top: 1rem; */
+  padding: 0.5rem 1rem;
+  background-color: #2c3e50;
+  color: #ffffff;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 300;
+  transition: background-color 0.3s ease;
+}
+
+.view-btn:hover {
+  background-color: #1a242f;
+}
+
+.loading-text,
+.no-jobs-text {
+  text-align: center;
+  color: #888;
+  margin-top: 2rem;
+}

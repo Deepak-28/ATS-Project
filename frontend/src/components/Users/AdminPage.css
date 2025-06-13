@@ -1,0 +1,146 @@
+.ud-container {
+  width: 100%;
+  height: 100%;
+}
+
+.user-dashboard-container {
+  font-family: "Poppins", sans-serif;
+  background: #dde6f7;
+  height: 100%;
+  padding: 0.5rem;
+  font-size: 13px;
+}
+
+.ud-navbar {
+  height: 8vh;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ud-logo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.ud-logout-button {
+  padding: 7px 10px;
+  background: red;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.ud-logout-button:hover {
+  background: darkred;
+}
+
+.ud-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: 0.2rem 0.2rem 0.5rem gray;
+  background-color: #f5f5f5;
+  height: auto;
+}
+
+.ud-section-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ud-job-header {
+  width: 100%;
+  display: flex;
+  padding: 0.5rem 0.75rem;
+  justify-content: space-between;
+  background-color: #e9e9e9;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+.ud-job-header p {
+  margin: 0;
+  width: 25%;
+}
+
+.ud-job-header p:last-child {
+  width: 10%;
+}
+
+.ud-job-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ud-job-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  background-color: white;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.ud-job-title,
+.ud-job-company {
+  width: 25%;
+  text-align: left;
+}
+.ud-job-experience{
+  width: 20%;
+  text-align: left;
+}
+
+.ud-job-actions {
+  width: 16%;
+  display: flex;
+  justify-content: center;
+}
+
+.ud-applied-link {
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ud-applied-link:hover {
+  background-color: #0056b3;
+}
+
+.ud-pagination {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  align-items: center;
+}
+
+.ud-pagination button {
+  padding: 6px 12px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ud-pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

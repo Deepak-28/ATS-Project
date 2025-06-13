@@ -1,0 +1,103 @@
+.field-container{
+    font-family: "Poppins", sans-serif;
+  background: #dde6f7;
+  font-size: 12px;
+  width: 100vw;
+  height: 100vh;
+}
+.dfb-wrapper {
+  /* max-width: 700px; */
+  width: 100vw;
+  height: 90vh;
+  /* margin: auto; */
+  padding: 20px;
+  
+}
+.dfb-heading {
+  font-size: 24px;
+  /* margin-bottom: 1rem; */
+  font-weight: bold;
+}
+
+.dfb-form-group {
+  /* margin-bottom: 1rem; */
+  display: flex;
+  flex-direction: column;
+}
+
+.dfb-form-group label {
+  /* margin-bottom: 0.3rem; */
+  font-weight: 600;
+}
+
+.dfb-form-group input,
+.dfb-form-group select,
+.dfb-form-group textarea {
+  padding: 8px;
+  width: 30vw;
+  font-size: 12px;
+}
+.dfb-form{
+  font-size: 12px;
+}
+
+.dfb-button {
+  /* padding: 10px 16px; */
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 7vw;
+  height: 4vh;
+  
+}
+.dfb-cancel{
+  background-color: gray;
+  color: #fff;
+  border: none;
+   border-radius: 3px;
+  cursor: pointer;
+  width: 7vw;
+  height: 4vh;
+}
+
+
+
+.dfb-field-item {
+  background: #fff;
+  /* padding: 12px; */
+  /* margin-bottom: 1rem; */
+  border-left: 5px solid #0066cc;
+  border-radius: 4px;
+}
+
+.dfb-delete-button {
+  /* margin-top: 8px; */
+  background: #dc3545;
+  color: #fff;
+  /* padding: 6px 12px; */
+  border: none;
+  cursor: pointer;
+}
+.toggle-btn {
+  display: inline-block;
+  border: 1px solid #4a90e2;
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-right: 10px;
+  font-weight: 500;
+  background-color: white;
+  color: #4a90e2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn input[type="radio"] {
+  display: none;
+}
+
+.toggle-btn.active {
+  background-color: #4a90e2;
+  color: white;
+}

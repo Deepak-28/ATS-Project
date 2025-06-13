@@ -1,0 +1,136 @@
+/* WorkflowBuilder.css */
+
+.wb-container {
+    max-width: 600px;
+    margin: auto;
+    padding: 14px;
+    background: #fdfdfd;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    height: auto;
+    /* background-color: #007bff; */
+  }
+  
+  .wb-heading {
+    margin-bottom: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  .wb-scroll{
+    height: 100%;
+    overflow-y: auto;
+    /* background-color: #007bff; */
+  }
+  .wb-form-group {
+    margin-bottom: 20px;
+  }
+  
+  .wb-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  
+  .wb-input {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  
+  .wb-button {
+    padding: 6px 12px;
+    background-color: #2196f3;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .wb-button:hover {
+    background-color: #1976d2;
+  }
+  
+  .wb-stage-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    /* height: 100%; */
+  }
+  
+  .wb-stage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eee;
+    margin-bottom: 10px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    height: 100%;
+  }
+  
+  .wb-stage-item button {
+    margin-left: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  
+  .wb-save-button {
+    background-color: #4caf50;
+    color: white;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+  
+  .wb-save-button:hover {
+    background-color: #388e3c;
+  }
+  .wb-toggle-group {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.wb-toggle-button {
+  padding: 8px;
+  margin-right: 10px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+}
+
+.wb-toggle-button.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.wb-suggestions {
+  margin-top: 20px;
+}
+
+.wb-suggestions ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.wb-suggestions li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.wb-suggestions li:hover {
+  background-color: #f0f0f0;
+}
+
+  
