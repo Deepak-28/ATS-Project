@@ -7,6 +7,8 @@ import Navbar from "../admin/Navbar";
 function ApplicantsByJob() {
   const { jobId } = useParams();
   const [applicants, setApplicants] = useState([]);
+  const [job, setJob] = useState([]);
+  const [formValues, setFormValues]= useState({});
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,6 +22,19 @@ function ApplicantsByJob() {
       console.error("Failed to fetch applicants:", err);
     }
   };
+   const fetchJob = async () => {
+      try {
+        const res = await axios.get(`/job/${jobId}`);
+        const jobData = res.data
+        setJob(jobData)
+        setFormValues(jobData.formValues);
+        console.log(jobData.formValues);
+        
+      } catch (error) {
+        console.error("failed to fetch job", error);
+      }
+    };
+
   const handleBack = () => {
     if (from === "superadmin") {
       navigate("/superadmin");
@@ -36,16 +51,16 @@ function ApplicantsByJob() {
 };
   useEffect(() => {
     fetchApplicants();
-  });
-
-  if (applicants.length === 0) return <p>No applicants found for this job.</p>;
+    fetchJob();
+  },[]);
 
   return (
     <div className="container">
       <Navbar/>
       <div className="admin-container">
         <nav className="df h10 al">
-          <h2 className="ml10 w100">Job Applicants</h2>
+          <h2 className="ml10 w100">Job Applicants</h2> 
+          {/* {formValues[3]['Job Title ']} */}
         </nav>
         <table className="job-table">
           <thead>
@@ -60,7 +75,7 @@ function ApplicantsByJob() {
             </tr>
           </thead>
           <tbody>
-            {applicants.map((app, index) => (
+            {applicants.length > 0 ? (applicants.map((app, index) => (
               <tr key={app.id} onClick={(e) => handleRowClick(e, app.candidateId)}
                className="cursor-pointer hover">
                 <td>{index + 1}</td>
@@ -84,7 +99,10 @@ function ApplicantsByJob() {
                   </Link>
                 </td>
               </tr>
-            ))}
+            ))):(<tr>
+                  <td colSpan="7">No applicants found.</td>
+                </tr>)
+            }
           </tbody>
         </table>
       </div>

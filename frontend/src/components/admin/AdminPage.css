@@ -161,21 +161,16 @@ color: darkblue;
   width: 10%;
  /* background-color: #0056b3; */
 }
-.job-list {
-  display: flex;
-  flex-direction: column;
-  width: 95%;
-  height:auto;
-}
 
-.job-card {
+
+/* .job-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 8vh;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
   width: 100%;
-}
+} */
 
 .job-actions{
   /* width: 90%; */
@@ -230,7 +225,7 @@ cursor: pointer;
 
 
 /* Sidebar */
-.sidebar {
+/* .sidebar {
   width: 150px;
   background: #1e272e;
   color: white;
@@ -239,7 +234,7 @@ cursor: pointer;
   left: -150px;
   top: 10vh;
   transition: left 0.3s ease;
-  /* padding-top: 60px; */
+  
   z-index: 1000;
   font-size: 12px;
 }
@@ -258,34 +253,12 @@ cursor: pointer;
   padding: 15px ;
   color: white;
   text-decoration: none;
-  /* transition: background 0.2s; */
+  
 }
-
-/* .sidebar ul li a:hover {
-  background-color: #485460;
-} */
 
 .sidebar ul li a svg {
   margin-right: 10px;
 }
-/* .job-container {
-  transition: margin-left 0.3s ease;
-  padding: 2rem;
-  margin-left: 0;
-}
-
-.job-container.with-sidebar {
-  margin-left: 220px; 
-}
-.sidebar {
-  overflow-y: auto;
-} */
-
-
-
-
-
-
 .menu-btn {
   background: none;
   width: 3%;
@@ -296,5 +269,84 @@ cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  /* border-radius: 5px; */
+} */
+/* .submenu {
+  list-style: none;
+  padding-left: 20px;
+  background-color: #2f3640;
+}
+
+.submenu li a {
+  padding: 10px 15px;
+  display: block;
+  font-size: 11px;
+  color: #dcdde1;
+  text-decoration: none;
+}
+
+.submenu li a:hover {
+  background-color: #353b48;
+} */
+.sidebar {
+  width: 150px;
+  background: #1e272e;
+  color: white;
+  height: 100vh;
+  position: fixed;
+  left: -150px;
+  top: 10vh;
+  transition: left 0.3s ease;
+  z-index: 1000;
+  font-size: 12px;
+}
+
+.sidebar.active {
+  left: 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* .sidebar ul li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+} */
+
+.sidebar ul li a,
+.dropdown-toggle {
+  display: block;
+  padding: 15px;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar ul li a svg,
+.dropdown-toggle svg {
+  margin-right: 10px;
+}
+
+.sidebar ul li a:hover,
+.dropdown-toggle:hover {
+  background-color: #333;
+}
+
+.submenu {
+  list-style: none;
+  padding-left: 20px;
+  background-color: #2f3640;
+}
+
+.submenu li a {
+  padding: 10px 15px;
+  display: block;
+  font-size: 11px;
+  color: #dcdde1;
+  text-decoration: none;
+}
+
+.submenu li a:hover {
+  background-color: #353b48;
 }

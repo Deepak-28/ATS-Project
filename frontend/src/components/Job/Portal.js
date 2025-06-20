@@ -37,6 +37,7 @@ function Portal() {
       .post("/portal", PortalValue)
       .then((res) => {
         toast.success("Portal Created successfully!");
+        getPortal();
       })
       .catch((err) => {
         console.error(err);

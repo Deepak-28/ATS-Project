@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../admin/Navbar";
-import { MdOutlineLibraryAdd, MdDeleteForever } from "react-icons/md";
+import { MdOutlineLibraryAdd, MdDeleteForever, MdCreate } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axios from "axios";
@@ -19,6 +19,7 @@ function JobTemplate() {
   const [templatefields, setTemplateFields] = useState([]);
   const [templatePositions, setTemplatePositions] = useState("");
   const [editTemplateId, setEditTemplateId] = useState(null);
+  const [searchText, setSearchText] = useState("");
   const navigate = useNavigate();
 
   const fetchFields = async () => {
@@ -72,7 +73,7 @@ function JobTemplate() {
       console.error("Failed to Create Template");
       toast.error("Template Creation Failed");
     }
-    // clearFunction();
+    clearFunction();
   };
   const handleEditTemplate = (template) => {
     setEdited(true);
@@ -194,7 +195,7 @@ function JobTemplate() {
           <h3>Template</h3>
         </nav>
         <div className="template-container">
-          <div className="template-card">
+          <div className="template-card df jcsb fdc">
             <div className="df jcsb">
               <h3>Create Template</h3>
               <MdOutlineLibraryAdd
@@ -203,10 +204,10 @@ function JobTemplate() {
                 onClick={() => setIsVisible(true)}
               />
             </div>
-            <div className="mt10">
+            <div className="">
               <div>
                 <div className="df jcsb fdc">
-                  <div className="job-form mt15">
+                  <div className="job-form">
                     {/* Left Column */}
                     <div className="left-column">
                       {leftFields.map((field) => (
@@ -385,54 +386,47 @@ function JobTemplate() {
                       ))}
                     </div>
                   </div>
-                  <div className="h5 df al  jce mr10 ">
-                    <div className="w15 df g10">
-                      <button
-                        type="button"
-                        className="gray btn"
-                        onClick={clearFunction}
-                      >
-                        Cancel
-                      </button>
-                      {edited ? (
-                        <button
-                          type="submit"
-                          onClick={handleUpdate}
-                          className="b btn"
-                        >
-                          Update
-                        </button>
-                      ) : (
-                        <button
-                          type="submit"
-                          onClick={handleSubmit}
-                          className="b btn"
-                        >
-                          Submit
-                        </button>
-                      )}
-                    </div>
-                  </div>
                 </div>
                 {isVisible && (
                   <div className="test df al jc">
-                    <div className="box df al jcsa fdc">
-                     <div className="w100 df h10 ml20">
-                       <label className="input mt10">
-                        Template Name
+                    <div className="field-box df al jcsb fdc">
+                      <div className="w100 df h10 al jcsb">
+                       <div>
+                         <label className="df ml10">
+                          Template Name
+                          <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => SetName(e.target.value)}
+                            className="input-line ml0"
+                          /><MdCreate size={24}/>
+                        </label>
+                       </div>
+                        <div>
+                          <h3>Available Fields</h3>
+                        </div>
+                        <div className="">
                         <input
                           type="text"
-                          value={name}
-                          onChange={(e) => SetName(e.target.value)}
+                          placeholder="Search fields..."
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                         className="mr10"
+                          style={{
+                            width: "20vw",
+                            padding: "8px",
+                            fontSize: "13px",
+                          }}
                         />
-                      </label>
-                     </div>
-                      <h3 className="mb10">Available Fields</h3>
+                      </div>
+                      </div>
+                      
                       <table className="job-table w90">
                         <thead>
                           <tr>
                             <th>S.No</th>
-                            <th className="df al jcsa">
+                            <th className="df jc">
+                              Select All
                               <input
                                 type="checkbox"
                                 checked={
@@ -442,8 +436,8 @@ function JobTemplate() {
                                 onChange={(e) =>
                                   handleSelectAll(e.target.checked)
                                 }
+                                className="ml10"
                               />
-                              Select All
                             </th>
                             <th>Field Label</th>
                             <th>Field Type</th>
@@ -451,65 +445,73 @@ function JobTemplate() {
                           </tr>
                         </thead>
                         <tbody>
-                          {fields.map((field, index) => (
-                            <tr key={field.id}>
-                              <td>{index + 1}</td>
-                              <td>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedFieldIds.includes(field.id)}
-                                  onChange={() =>
-                                    toggleFieldSelection(field.id)
-                                  }
-                                />
-                              </td>
-                              <td>{field.fieldLabel}</td>
-                              <td>{field.fieldType}</td>
-                              <td>
-                                {selectedFieldIds.includes(field.id) && (
-                                  <div className="df al">
-                                    <label>
-                                      <input
-                                        type="radio"
-                                        name={`position-${field.id}`}
-                                        value="left"
-                                        checked={
-                                          fieldPositions[field.id] === "left"
-                                        }
-                                        onChange={(e) =>
-                                          setFieldPositions({
-                                            ...fieldPositions,
-                                            [field.id]: e.target.value,
-                                          })
-                                        }
-                                      />
-                                      Left
-                                    </label>
-                                    <label style={{ marginLeft: "10px" }}>
-                                      <input
-                                        type="radio"
-                                        name={`position-${field.id}`}
-                                        value="right"
-                                        checked={
-                                          fieldPositions[field.id] === "right"
-                                        }
-                                        onChange={(e) =>
-                                          setFieldPositions({
-                                            ...fieldPositions,
-                                            [field.id]: e.target.value,
-                                          })
-                                        }
-                                      />
-                                      Right
-                                    </label>
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {fields
+                            .filter((field) =>
+                              field.fieldLabel
+                                .toLowerCase()
+                                .includes(searchText.toLowerCase())
+                            )
+                            .map((field, index) => (
+                              <tr key={field.id}>
+                                <td>{index + 1}</td>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedFieldIds.includes(
+                                      field.id
+                                    )}
+                                    onChange={() =>
+                                      toggleFieldSelection(field.id)
+                                    }
+                                  />
+                                </td>
+                                <td>{field.fieldLabel}</td>
+                                <td>{field.fieldType}</td>
+                                <td>
+                                  {selectedFieldIds.includes(field.id) && (
+                                    <div className="df al">
+                                      <label>
+                                        <input
+                                          type="radio"
+                                          name={`position-${field.id}`}
+                                          value="left"
+                                          checked={
+                                            fieldPositions[field.id] === "left"
+                                          }
+                                          onChange={(e) =>
+                                            setFieldPositions({
+                                              ...fieldPositions,
+                                              [field.id]: e.target.value,
+                                            })
+                                          }
+                                        />
+                                        Left
+                                      </label>
+                                      <label style={{ marginLeft: "10px" }}>
+                                        <input
+                                          type="radio"
+                                          name={`position-${field.id}`}
+                                          value="right"
+                                          checked={
+                                            fieldPositions[field.id] === "right"
+                                          }
+                                          onChange={(e) =>
+                                            setFieldPositions({
+                                              ...fieldPositions,
+                                              [field.id]: e.target.value,
+                                            })
+                                          }
+                                        />
+                                        Right
+                                      </label>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
                         </tbody>
                       </table>
-                      <div className="df g10">
+                      <div className="df h10 al g10">
                         <button
                           className="gray btn mt20"
                           onClick={() => setIsVisible(false)}
@@ -527,7 +529,34 @@ function JobTemplate() {
                   </div>
                 )}
               </div>
-              {/* <button className='mt10'>Create Template</button> */}
+            </div>
+            <div className="h5 df al  jc mr10 mb10 ">
+              <div className="w15 df g10">
+                <button
+                  type="button"
+                  className="gray btn"
+                  onClick={clearFunction}
+                >
+                  Cancel
+                </button>
+                {edited ? (
+                  <button
+                    type="submit"
+                    onClick={handleUpdate}
+                    className="b btn"
+                  >
+                    Update
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    onClick={handleSubmit}
+                    className="b btn"
+                  >
+                    Submit
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="template-card2 df al jc fdc">

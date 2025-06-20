@@ -59,7 +59,7 @@ function Register() {
   return (
    <div className="reg-container">
      <div className="register-container">
-      <div className="register-header">
+      <div className="h100 df fdc jcsb">
         <h3>Register Here</h3>
         <div className="">
           <div className="input-box">
@@ -175,7 +175,7 @@ function Register() {
           />
         </div>
         <div className="input-box">
-          <label>Re-enter Password</label>
+          <label>Confirm Password</label>
           <input
             type="password"
             id="confirmPassword"
@@ -185,12 +185,14 @@ function Register() {
           />
         </div>
         </div>
-        <button className="b btn mt20" type="button" onClick={handleRegister}>
+       <div>
+         <button className="b btn mt20" type="button" onClick={handleRegister}>
           Submit
         </button>
         <p className="toggle-form mt10">
           Already Registered? <Link to="/">Login</Link> here
         </p>
+       </div>
       </div>
     </div>
    </div>

@@ -2,15 +2,11 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUser, FaEdit, FaSearch } from "react-icons/fa";
+import { FaUser, FaEdit } from "react-icons/fa";
 import { RiListSettingsLine, RiCloseFill } from "react-icons/ri";
 import { TbWorldUpload } from "react-icons/tb";
 import { useParams } from "react-router-dom";
-import {
-  MdDeleteForever,
-  MdOutlineLibraryAdd,
-  MdAddCircleOutline,
-} from "react-icons/md";
+import { MdDeleteForever, MdOutlineLibraryAdd } from "react-icons/md";
 import Navbar from "../admin/Navbar";
 
 const AllJobs = () => {
@@ -26,9 +22,13 @@ const AllJobs = () => {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPosted, setIsPosted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedHeaders, setSelectedHeaders] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [dynamicData, setDynamicData] = useState([]);
+  const [isVisibility, setIsVisibilty] = useState(false);
+  const [selectedHeaders, setSelectedHeaders] = useState(() => {
+    const stored = localStorage.getItem("selectedHeaders");
+    return stored ? JSON.parse(stored) : [];
+  });
   const navigate = useNavigate();
 
   const getCompanies = async () => {
@@ -43,25 +43,21 @@ const AllJobs = () => {
     try {
       if (companyId) {
         const res = await axios.get(`/job/company/${companyId}`);
-        // console.log(res.data);
-        setJobs(res.data || []); // use .jobs only if your API wraps it like { jobs: [...] }
+        setJobs(res.data);
       } else {
         const res = await axios.get("/job");
         const { getjobs, dynamicFields } = res.data;
         setJobs(getjobs);
         setDynamicData(dynamicFields);
-        // console.log(dynamicFields);
       }
     } catch (err) {
       console.error("Failed to fetch jobs:", err);
     }
   };
-  const fetchJob = async (id) => {
-    // console.log(id);
+  const fetchJob = async (jobId) => {
     try {
-      const res = await axios.get(`/job/${id}`);
+      const res = await axios.get(`/job/${jobId}`);
       const job = res.data;
-      // Set form values from response
       const formatDate = (dateString) => {
         return new Date(dateString).toISOString().slice(0, 10);
       };
@@ -75,9 +71,9 @@ const AllJobs = () => {
   };
   const fetchFields = async () => {
     try {
-      const res = await axios.get("/fields/all");
+      const res = await axios.get("/fields/job");
       setFields(res.data);
-      console.log(res.data);
+      // console.log(res.data);
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
     }
@@ -103,11 +99,41 @@ const AllJobs = () => {
       }
     }
   };
+  const handleSubmit = () => {
+    if (!postOption) {
+      alert("Please select a post option before submitting.");
+      return;
+    }
+    const jobVisibilityData = {
+      jobId: selectedJobId,
+      postDate,
+      expiryDate,
+      visibility: postOption,
+    };
+    axios
+      .post(`/job/visibility/${jobs.id}`, jobVisibilityData)
+      .then((res) => {
+        toast.success("Job posted successfully!");
+        setIsPosted(true);
+        clearFunction();
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to post job.");
+      });
+  };
+  const handleUnpost = async () => {
+    try {
+      await axios.put(`/job/unpost/${jobs.id}`);
+      toast.success("Job unposted");
+      clearFunction();
+    } catch (err) {
+      console.error("Error unposting job", err);
+    }
+  };
   const handlePopup = (jobId) => {
-    setSelectedJobId(jobId);
-    setPopup(true);
     fetchJob(jobId);
-    // console.log(jobId, 123);
+    setIsVisibilty(true);
   };
   const filteredJobs = jobs.filter((job) =>
     [job.jobTitle, job.companyName, job.jobLocation]
@@ -119,12 +145,11 @@ const AllJobs = () => {
     // If the clicked element (or its parent) has data-no-nav, don't navigate
     const isActionClick = e.target.closest("[data-no-nav]");
     if (isActionClick) return;
-    // console.log(id);
     navigate(`/job/jobdetail/${id}`);
   };
   const filteredFields = fields.filter((f) =>
-  f.fieldLabel?.toLowerCase().includes(searchText?.toLowerCase() || "")
-);
+    f.fieldLabel?.toLowerCase().includes(searchText?.toLowerCase() || "")
+  );
   const isAllSelected = filteredFields.every((f) =>
     selectedHeaders.includes(f.id)
   );
@@ -152,17 +177,27 @@ const AllJobs = () => {
     const key = `${entry.jobId}-${entry.fieldId}`;
     dynamicLookup[key] = entry.value;
   });
+  const clearFunction = () => {
+    setIsVisibilty(false);
+    setExpiryDate("");
+    setPostDate("");
+    setPostOption("");
+    setIsPosted(false);
+  };
   useEffect(() => {
     fetchAllJobs();
     getCompanies();
     fetchFields();
     fetchFieldsOption();
   }, []);
+  useEffect(() => {
+  localStorage.setItem('selectedHeaders', JSON.stringify(selectedHeaders));
+}, [selectedHeaders]);
+
 
   return (
     <div className="container">
       <Navbar />
-
       <div className="admin-container">
         <nav className="df h10 al jcsb">
           <h3 className="logo ml10">All Jobs</h3>
@@ -178,12 +213,11 @@ const AllJobs = () => {
             <RiListSettingsLine
               size={20}
               className="mr10 cursor-pointer"
-              onClick={handlePopup}
+              onClick={() => setPopup(true)}
             />
-            <Link to="/Job">
+            {/* <Link to="/Job">
               <MdOutlineLibraryAdd size={24} className="g mr10" />
-            </Link>
-            {/* onClick={handlePopup} */}
+            </Link> */}
           </div>
         </nav>
         <div className="data-table">
@@ -197,6 +231,7 @@ const AllJobs = () => {
                   const label = fields.find((h) => h.id === id)?.fieldLabel;
                   return <th key={id}>{label}</th>;
                 })}
+                <th>Status</th>
                 <th className="action-header">Actions</th>
               </tr>
             </thead>
@@ -216,6 +251,7 @@ const AllJobs = () => {
                       const value = dynamicLookup[key] ?? "N/A";
                       return <td key={fieldId}>{value}</td>;
                     })}
+                    <td>{job.status || "N/A"}</td>
                     <td className="f14" data-no-nav>
                       <div className="df jcsa dk">
                         <Link to={`/applicants/job/${job.id}`}>
@@ -251,8 +287,7 @@ const AllJobs = () => {
             <div className="w100">
               <div className="df fdr jcsb w100  al h10 b-border">
                 <div className="df fdr g10 w30 h10 al jcsa">
-                  <h3 className="">Select the Headers</h3>
-
+                  <h3 className="ml10">Select the Headers</h3>
                   <div>
                     <input
                       type="text"
@@ -260,10 +295,10 @@ const AllJobs = () => {
                       placeholder="Search headers..."
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
+                      style={{ padding: "6px", width: "250px" }}
                     />
                   </div>
                 </div>
-
                 <div className="w15 h10 al df jcsa ">
                   <div className="">
                     <label
@@ -289,7 +324,6 @@ const AllJobs = () => {
                   />
                 </div>
               </div>
-
               <div className=" w100 mt10 ml20 g20 select-field">
                 {filteredFields.map((header) => (
                   <label
@@ -315,6 +349,75 @@ const AllJobs = () => {
               <button className="s-btn b mr20" onClick={() => setPopup(false)}>
                 Save
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isVisibility && (
+        <div className="test df al jc">
+          <div className="post-box df jcsb al fdc">
+            <div className="w90 df fdc mt20 g10">
+              {postOption ? <h3>Job Unpost</h3> : <h3>Job Post</h3>}
+              <div className="df fdr w100 g10">
+                <label className="input">
+                  Post Date:
+                  <input
+                    type="date"
+                    value={postDate}
+                    onChange={(e) => setPostDate(e.target.value)}
+                  />
+                </label>
+                <label className="input">
+                  Expiry Date:
+                  <input
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                  />
+                </label>
+                <label className="input">
+                  Post Option:
+                  <select
+                    value={postOption}
+                    onChange={(e) => setPostOption(e.target.value)}
+                  >
+                    <option value="">Select Option</option>
+                    <option value="internal">Internal</option>
+                    <option value="external">External</option>
+                    <option value="internal-external">Internal-External</option>
+                    <option value="agency">Agency</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div className="box-border w100 df jce ae g10 mt10 mb20">
+              <button
+                type="button"
+                className="gray s-btn mr10"
+                onClick={clearFunction}
+              >
+                Cancel
+              </button>
+              {isPosted ? (
+                <>
+                  {/* <span className="status-posted">Posted</span> */}
+                  <button
+                    type="button"
+                    onClick={handleUnpost}
+                    className="b s-btn mr30"
+                  >
+                    Unpost
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="submit"
+                  onClick={handleSubmit}
+                  className="b s-btn mr30"
+                >
+                  Post
+                </button>
+              )}
             </div>
           </div>
         </div>

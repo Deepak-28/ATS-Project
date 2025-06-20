@@ -85,11 +85,11 @@ function Login() {
           <button className="b btn mt20" type="submit">
             Login
           </button>
-          <div className="register-link mt10">
+          {/* <div className="register-link mt10">
             <p>
               Don't have an account? <Link to={"/register"}>Register</Link>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </form>

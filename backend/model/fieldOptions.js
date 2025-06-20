@@ -8,6 +8,9 @@ module.exports = (sequelize, Sequelize) =>{
         fieldId:{
             type:Sequelize.INTEGER
         },
+        optionCode:{
+            type:Sequelize.STRING
+        },
         value:{
             type:Sequelize.STRING,
         },

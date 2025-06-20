@@ -15,64 +15,36 @@
    /* background-color: #f5f5f5; */
 }
 .input_box input{
-    width: 70%;
-    height: 80%;
-    background: transparent;
-    outline: none;
-    border: 2px solid rgba(0, 0, 0, .2);
-    font-size: 13px;
-    padding:0 0 0 10px;
-    background-color: #f5f5f5;
+ width: 65%;
+ height: 5vh;
+  background: transparent;
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 0 0 0 10px;
 }
 .job-type{
     background-color: #f5f5f5;
 }
 .resume input{
-
     border: none;
     height: 4vh;
     display: none;
-    /* background-color: antiquewhite; */
 }
 .resume_box{
-    /* background-color: aqua; */
-    width: 70%;
+    width: 65%;
     height: 80%;
     display: flex;
     align-items: center;
-
 }
+
 .resume_upload{
     font-size: 35px;
     display: flex;
     align-items: center;
     width: 15%;
     cursor: pointer;
-}
-
-.submit_btn{
-    width: 13%;
-    display: flex;
-    justify-content:space-between ;
-    align-items: flex-start;
-    padding-top: 2%;
-    margin-left: 300px;
-}
-
-.cancel-btn{
-    position: relative;
-    left: 20%;
-    width: 15%;
-    height: 30px;
-    background-color:gray;
-    border-radius: 3px ;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;  
-}
-button{
-    left: 10px;
 }
 .a-job-header{
    width: 30vw;

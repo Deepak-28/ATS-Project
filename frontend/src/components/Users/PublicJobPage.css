@@ -1,22 +1,26 @@
 .public-page-container {
-  max-width: 900px;
-  margin: auto;
-  padding: 2rem;
+ width: 100%;
+ height: 100vh;
+  /* margin: auto; */
+  /* padding: 2rem; */
+  background-color: #f2fafe;
   font-family: "Segoe UI", sans-serif;
 }
 
 .public-header {
+  margin-top: 1rem;
   text-align: center;
-  margin-bottom: 2rem;
+  /* margin-bottom: 2rem; */
 }
 
-.public-header h1 {
+.public-header h2 {
   font-size: 2rem;
   color: #2c3e50;
 }
 
 .public-header p {
   color: #7f8c8d;
+  font-size: 1rem;
 }
 
 .job-list-container {
@@ -65,3 +69,91 @@
   color: #888;
   margin-top: 2rem;
 }
+.top-nav{
+  height: 12vh;
+  width: 100%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.search-bar {
+  width: 95%;
+  display: flex;
+  gap: 16px;
+  /* background: #f5faff; */
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 16px;
+   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  margin-top: 2rem;
+}
+
+.search-input {
+  position: relative;
+  flex: 1;
+}
+
+.search-input .icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8a8a8a;
+  font-size: 16px;
+  pointer-events: none; /* allow clicks to go to the input */
+}
+
+.search-input input {
+  width: 100%;
+  padding: 12px 12px 12px 40px; /* space for the icon */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+.job-list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 95%;
+  height:15vh;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding-left: 15px;
+
+}
+.job-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 95%;
+  margin: 20px auto;
+}
+.job-card {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  background-color: white;
+  transition: all 0.3s ease;
+}
+.job-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.job-info h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.job-info p {
+  margin: 4px 0 0;
+  color: #555;
+  font-size: 14px;
+}
+

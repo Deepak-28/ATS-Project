@@ -11,23 +11,8 @@ module.exports = (sequelize, Sequelize) => {
         companyId:{
             type:Sequelize.INTEGER
         },
-        jobTitle: {
-            type: Sequelize.STRING,
-        },
-        jobDescription: {
-            type: Sequelize.STRING,
-        },
-        jobExperience: {
-            type: Sequelize.STRING,
-        },
-        jobLocation: {                        
-            type: Sequelize.STRING,
-        },
-        jobType: {
-            type: Sequelize.STRING,
-        },
-        skills: {
-            type: Sequelize.STRING,
+        templateId:{
+            type: Sequelize.INTEGER
         },
         status: {
             type: Sequelize.TEXT,

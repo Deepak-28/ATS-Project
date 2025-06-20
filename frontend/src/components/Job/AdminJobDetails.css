@@ -61,23 +61,13 @@
   border-radius: 5px;
   cursor: pointer;
 }
-/* .form-value-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.form-value-item {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
 .form-label {
-  min-width: 150px;
   font-weight: bold;
 }
-
 .form-value {
+  font-size: 13px;
   color: #333;
-} */
+} 
+
+
+

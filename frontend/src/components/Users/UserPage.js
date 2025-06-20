@@ -5,37 +5,38 @@ import { useState, useEffect } from "react";
 
 const UserPage = () => {
   const { candidateId } = useParams();
-  const [candidate, setCandidate] = useState ({});
+  const [candidate, setCandidate] = useState({});
   const [jobs, setJobs] = useState([]);
+  const [fieldValues, setFieldValues] = useState([]);
+  const [fields, setFields] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
   const jobsPerPage = 7;
 
   const getJobs = async () => {
     try {
-      const res = await axios.get("/job");
-      setJobs(res.data);
+      const res = await axios.get("/job/data");
+      setJobs(res.data.getjobs);
+      // setFieldValues(res.data.getjobs.formValues);
+      // setFields(res.data.fields);
+
     } catch (err) {
       console.error("Error fetching jobs:", err);
     }
   };
- const getUser = async ()=>{
-  try {
-    const res = await axios.get(`/user/${candidateId}`);
-    console.log(res.data);
-    
-    setCandidate(res.data);
-  }catch(err){
-    console.log("Error in Fetching the user",err);
-  }
- }
- 
- 
+  const getUser = async () => {
+    try {
+      const res = await axios.get(`/user/${candidateId}`);
+      setCandidate(res.data);
+    } catch (err) {
+      console.log("Error in Fetching the user", err);
+    }
+  };
   useEffect(() => {
     getJobs();
     getUser();
   }, []);
 
-  const navigate = useNavigate();
   const handleLogout = () => {
     navigate("/");
   };
@@ -50,7 +51,10 @@ const UserPage = () => {
     <div className="ud-container">
       <div className="user-dashboard-container">
         <nav className="ud-navbar">
-          <h3 className="ud-logo"> Welcome !  {candidate.firstname} </h3> 
+          <h3 className="ud-logo">
+            {" "}
+            Welcome ! {candidate.firstname} {candidate.lastname}
+          </h3>
           <button className="ud-logout-button" onClick={handleLogout}>
             Logout
           </button>
@@ -72,12 +76,17 @@ const UserPage = () => {
             {currentJobs.map((job, i) => (
               <div className="ud-job-card" key={i}>
                 <span className="ud-job-title">{job.jobTitle}</span>
-                <span className="ud-job-experience">{job.jobExperience} years</span>
+                <span className="ud-job-experience">
+                  {fields.Experience}
+                </span>
                 <span className="ud-job-company">
-                  {job.companyName}, {job.jobLocation}
+                  {job.companyName} {job.jobLocation}
                 </span>
                 <div className="ud-job-actions">
-                  <Link to={`/job/${job.id}/${candidateId}`} className="ud-applied-link">
+                  <Link
+                    to={`/job/${job.id}/${candidateId}`}
+                    className="ud-applied-link"
+                  >
                     View
                   </Link>
                 </div>
@@ -97,7 +106,9 @@ const UserPage = () => {
               Page {currentPage} of {totalPages}
             </span>
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
             >
               Next

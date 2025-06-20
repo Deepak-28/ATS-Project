@@ -206,7 +206,8 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
                 <FaBuilding />
               </div>
             </div>
-            <div className="card df jcsa al">
+            <div className="card df jcsa al"
+            onClick={()=>navigate("/allUsers")}>
               <div>
                 Total Users: <strong>{stats.users}</strong>
               </div>
@@ -225,7 +226,8 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
                 <FaBriefcase />
               </div>
             </div>
-            <div className="card df jcsa al">
+            <div className="card df jcsa al"
+            onClick={()=> navigate("/applicants")}>
               <div>
                 Total Candidates: <strong>{stats.candidates}</strong>
               </div>

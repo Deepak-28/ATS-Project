@@ -25,7 +25,7 @@ const DynamicFieldBuilderPage = () => {
   const [optionList, setOptionList] = useState([]);
   const [optionOrder, setOptionOrder] = useState("");
   const [optionStatus, setOptionStatus] = useState(null);
-  // Edit mode state
+  const [optionCode, setOptionCode] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState(null);
 
@@ -107,11 +107,13 @@ const DynamicFieldBuilderPage = () => {
               value: opt.value,
               order: opt.order || 0,
               status: opt.status || "Active",
+              code: opt.optionCode
             }))
           : options.split(",").map((opt) => ({
               value: opt.trim(),
               order: 0,
               status: "Active",
+              code: opt.optionCode,
             }));
     }
 
@@ -161,7 +163,7 @@ const DynamicFieldBuilderPage = () => {
       await axios
         .delete(`/fields/${id}`)
         .then((res) => {
-          toast.success("Field Deleted")
+          toast.success("Field Deleted");
         })
         .catch((err) => {
           toast.error("err From Delete Field");
@@ -186,7 +188,9 @@ const DynamicFieldBuilderPage = () => {
         <nav className="df h10 al jcsb">
           <div className="df g10 al">
             <h3 className="ml10 ">Field List</h3>
-            <label className={`toggle-btn ${formType === "job" ? "active" : ""}`} >
+            <label
+              className={`toggle-btn ${formType === "job" ? "active" : ""}`}
+            >
               <input
                 type="radio"
                 value="job"
@@ -195,8 +199,11 @@ const DynamicFieldBuilderPage = () => {
               />
               Job
             </label>
-            <label className={`toggle-btn ${
-                formType === "candidate" ? "active" : ""}`} >
+            <label
+              className={`toggle-btn ${
+                formType === "candidate" ? "active" : ""
+              }`}
+            >
               <input
                 type="radio"
                 value="candidate"
@@ -207,10 +214,14 @@ const DynamicFieldBuilderPage = () => {
             </label>
           </div>
 
-          <div className="c-btn w10 mr10 df jcsb al">
-           <Link to='/template'>
-            <LuFileSpreadsheet size={20} className="cursor-pointer" title="Job Template" />
-           </Link>
+          <div className="c-btn ">
+            {/* <Link to="/template">
+              <LuFileSpreadsheet
+                size={20}
+                className="cursor-pointer"
+                title="Job Template"
+              />
+            </Link> */}
             <Link onClick={handleData}>
               <MdOutlineLibraryAdd size={24} className="g mr10" />
             </Link>
@@ -218,50 +229,46 @@ const DynamicFieldBuilderPage = () => {
         </nav>
         {/* Field List */}
         <div className="mt5">
-          {fields.length === 0 ? (
-            <p>No fields yet.</p>
-          ) : (
-            <div className="data-table">
-              <table className="job-table mt8">
-                <thead>
-                  <tr>
-                    <th>S.No</th>
-                    <th>Field Code</th>
-                    <th>Label</th>
-                    <th>Type</th>
-                    <th>Required</th>
-                    <th>Form</th>
-                    <th>Actions</th>
+          <div className="data-table">
+            <table className="job-table mt8">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Field Code</th>
+                  <th>Label</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Form</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fields.map((field, index) => (
+                  <tr key={field.id}>
+                    <td>{index + 1}</td>
+                    <td>{field.fieldCode || "-"}</td>
+                    <td>{field.fieldLabel}</td>
+                    <td>{field.fieldType}</td>
+                    <td>{field.isRequired ? "Yes" : "No"}</td>
+                    <td>{field.formType}</td>
+                    <td>
+                      <div className="job-actions w100">
+                        <FaEdit
+                          className="applied-link blue"
+                          onClick={() => handleEdit(field)}
+                        />
+                        <MdDeleteForever
+                          color="red"
+                          className="applied-link"
+                          onClick={() => handleDelete(field.id)}
+                        />
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {fields.map((field, index) => (
-                    <tr key={field.id}>
-                      <td>{index + 1}</td>
-                      <td>{field.fieldCode || "-"}</td>
-                      <td>{field.fieldLabel}</td>
-                      <td>{field.fieldType}</td>
-                      <td>{field.isRequired ? "Yes" : "No"}</td>
-                      <td>{field.formType}</td>
-                      <td>
-                        <div className="job-actions w100">
-                          <FaEdit
-                            className="applied-link blue"
-                            onClick={() => handleEdit(field)}
-                          />
-                          <MdDeleteForever
-                            color="red"
-                            className="applied-link"
-                            onClick={() => handleDelete(field.id)}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -269,10 +276,14 @@ const DynamicFieldBuilderPage = () => {
       {isVisible && (
         <div className="test df jc al">
           <div className="pop-box">
-            <div className="dfb-box">
-              {isEditing ?(<h3 className="mt10 ml10 ">Field Update</h3>):(<h3 className="mt10 ml10 ">Field Create</h3>)}
+            <div className="df fdc al jcsb h100">
+              {isEditing ? (
+                <h3 className="mt10 ">Field Update</h3>
+              ) : (
+                <h3 className="mt10 ">Field Create</h3>
+              )}
               <form onSubmit={handleSubmit} className="w100 df jc al fdc g7">
-                <div className="input mt20">
+                <div className="input">
                   <label>Type</label>
                   <select
                     value={formType}
@@ -363,97 +374,112 @@ const DynamicFieldBuilderPage = () => {
                   </div>
                 )}
 
-                <div className=" df w25  al jcsa  ">
-                  <label className="w20 df jcsb al h4">
-                    Required:
-                    <label className="w3 df jcsb ml20">
-                      <input
-                        type="radio"
-                        name="required"
-                        value="yes"
-                        checked={isRequired === true}
-                        onChange={() => setIsRequired(true)}
-                      />
-                      Yes
-                    </label>
-                    <label className=" w3 df jcse mr10">
-                      <input
-                        type="radio"
-                        name="required"
-                        value="no"
-                        checked={isRequired === false}
-                        onChange={() => setIsRequired(false)}
-                      />
-                      No
-                    </label>
-                  </label>
+                <div>
+                  <label>Required:</label>
+                  <div className="input-checkbox g35 mt5 ">
+                    <div className="w3">
+                      <label className="df jcsa">
+                        <input
+                          type="radio"
+                          name="required"
+                          value="yes"
+                          checked={isRequired === true}
+                          onChange={() => setIsRequired(true)}
+                        />
+                        Yes
+                      </label>
+                    </div>
+                    <div className="w3">
+                      <label className="df jcsa">
+                        <input
+                          type="radio"
+                          name="required"
+                          value="no"
+                          checked={isRequired === false}
+                          onChange={() => setIsRequired(false)}
+                        />
+                        No
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div className=" df w25  al jc ">
-                  <label className="w20 df jcsb al">
-                    Allow Duplicates:
-                    <label className="w3 df jcse mr30">
-                      <input
-                        type="radio"
-                        name="allowDuplicates "
-                        value="Yes"
-                        checked={isDuplicate === true}
-                        onChange={() => setIsDuplicate(true)}
-                      />
-                      Yes
-                    </label>
-                    <label className=" w3 df jcse mr10">
-                      <input
-                        type="radio"
-                        name="allowDuplicates"
-                        value="No"
-                        checked={isDuplicate === false}
-                        onChange={() => setIsDuplicate(false)}
-                      />
-                      No
-                    </label>
-                  </label>
+                <div>
+                  <label>Allow Duplicates:</label>
+                  <div className="input-checkbox g35 mt5">
+                    <div className="w3">
+                      <label className="df jcsa">
+                        <input
+                          type="radio"
+                          name="allowDuplicates "
+                          value="Yes"
+                          checked={isDuplicate === true}
+                          onChange={() => setIsDuplicate(true)}
+                        />
+                        Yes
+                      </label>
+                    </div>
+                    <div className="w3">
+                      <label className="df jcsa">
+                        <input
+                          type="radio"
+                          name="allowDuplicates"
+                          value="No"
+                          checked={isDuplicate === false}
+                          onChange={() => setIsDuplicate(false)}
+                        />
+                        No
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div className=" df w25  al jc ">
-                  <label className="w20  df jcsb  al ">
-                    Status:
-                    <label className="w5 df jcse ml55">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="Active"
-                        checked={isActive === true}
-                        onChange={() => setIsActive(true)}
-                      />
-                      Active
-                    </label>
-                    <label className="w6 df jcse ">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="inactive"
-                        checked={isActive === false}
-                        onChange={() => setIsActive(false)}
-                      />
-                      Inactive
-                    </label>
-                  </label>
-                </div>
-
-                <div className="df jc  al mt30">
-                  <div className="df al g10 w100 ">
-                    <button
-                      type="button"
-                      className="gray btn"
-                      onClick={() => setIsVisible(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="b btn">
-                      {isEditing ? "Update" : "Add"}
-                    </button>
+                <div>
+                  <label>Status:</label>
+                  <div className="input-checkbox g18 mt5">
+                    <div className="w45">
+                      <label className="df jcsa">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="Active"
+                          checked={isActive === true}
+                          onChange={() => setIsActive(true)}
+                        />
+                        Active
+                      </label>
+                    </div>
+                    <div className="w5">
+                      <label className="df jcsb">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="inactive"
+                          checked={isActive === false}
+                          onChange={() => setIsActive(false)}
+                        />
+                        Inactive
+                      </label>
+                    </div>
                   </div>
                 </div>
               </form>
+              <div className="df jc al mb10">
+                <div className="df al g10 w100 ">
+                  <button
+                    type="button"
+                    className="gray btn"
+                    onClick={() => setIsVisible(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="b btn"
+                    onClick={handleSubmit}
+                  >
+                    {isEditing ? "Update" : "Submit"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -466,8 +492,8 @@ const DynamicFieldBuilderPage = () => {
                 <label>Option Code</label>
                 <input
                   type="text"
-                  // value={optionInput}
-                  // onChange={(e) => setOptionInput(e.target.value)}
+                  value={optionCode}
+                  onChange={(e) => setOptionCode(e.target.value)}
                 />
               </div>
               <div className="input mt10 ">
@@ -524,8 +550,10 @@ const DynamicFieldBuilderPage = () => {
                         value: optionInput.trim(),
                         order: optionOrder || 0,
                         status: optionStatus,
+                        code:optionCode,
                       },
                     ]);
+                    setOptionCode("");
                     setOptionInput("");
                     setOptionOrder("");
                     setOptionStatus(null);

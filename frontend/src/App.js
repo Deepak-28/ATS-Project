@@ -1,6 +1,7 @@
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import { Toaster } from "react-hot-toast";
 import Login from './components/login/Login';
+import CandidateLogin from './components/login/CandidateLogin';
 import Register from './components/register/Register';
 import SuperAdmin from './components/admin/SuperAdmin';
 import CreateUser from './components/Users/CreateUser';
@@ -37,6 +38,8 @@ function App() {
    <BrowserRouter>
    <Routes>
     <Route path='/' element={<Login/>}/>
+    <Route path='/login' element={<CandidateLogin/>}/>
+    <Route path='/login/:jid' element={<CandidateLogin/>}/>
     <Route path='/register' element={<Register/>}/>
     <Route path='/company' element={<SuperAdmin/>}/>
     <Route path='/Users/:cid' element={<CreateUser/>}/>

@@ -31,20 +31,20 @@ body {
   /* background-color: aqua; */
 }
 .input {
-  width: 20vw;
+  width: 18vw;
   display: flex;
   flex-direction: column;
 }
 .input input{
-  height: 5vh;
+  height: 4.5vh;
   outline: none;
   font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
 }
 select{
-  width: 20vw;
-  height: 5vh;
+  width: 18vw;
+  height: 4.5vh;
   font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
@@ -64,4 +64,13 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.input-checkbox{
+  width: 18vw;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.input-checkbox{
+  transform: scale(0.95);
 }

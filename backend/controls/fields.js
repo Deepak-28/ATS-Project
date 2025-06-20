@@ -41,6 +41,7 @@ router.post("/create", async (req, res) => {
           value: opt.value.trim(),
           order: opt.order || 0,
           status: opt.status || "Active",
+          code: opt.optionCode
         }));
 
       if (optionsToCreate.length > 0) {
@@ -81,9 +82,9 @@ router.get('/job', async (req, res)=>{
     console.error("Error in Fetching Fields", error)
   }
 });
-router.get("/all", async(req, res)=>{
+router.get("/job", async(req, res)=>{
   try{
-    const data = await field.findAll();
+    const data = await field.findAll({where:{formType:job}});
     res.send(data);
     // console.log(data);
     

@@ -58,9 +58,7 @@ function Applicants() {
           />
         </div>
 
-        {applicants.length === 0 ? (
-          <p>No applicants found.</p>
-        ) : (
+       
           <table className="job-table">
             <thead>
               <tr>
@@ -106,7 +104,6 @@ function Applicants() {
               )}
             </tbody>
           </table>
-        )}
       </div>
     </div>
   );
