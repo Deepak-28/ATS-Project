@@ -11,6 +11,7 @@ Router.use('/user', require('./controls/user'));
 Router.use('/fields', require('./controls/fields'));
 Router.use('/application', require('./controls/application'));
 Router.use('/workFlow', require('./controls/workFlow'));
+Router.use('/workFlowStage', require('./controls/workFlowStage'));
 Router.use('/fieldOption', require('./controls/fieldOptions'));
 Router.use('/uploads', require("./controls/upload"));
 Router.use('/fieldData', require('./controls/fieldData'));

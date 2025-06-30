@@ -1,15 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import "../Job/JobList.css";
 import "./AdminPage.css";
 import Navbar from "../admin/Navbar";
 
 function Applicants() {
+  // const {slug} = useParams();
   const [applicants, setApplicants] = useState([]);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const path = window.location.pathname;
+  const segments = path.split('/'); 
+  const postSegment = segments[1];
+  // console.log(postSegment);
+  
 
   // Filter applicants
   const filteredApplicants = applicants.filter((applicant) =>
@@ -47,7 +53,7 @@ function Applicants() {
       <Navbar />
       <div className="admin-container">
         <div className="df h10 al jcsb ">
-          <h3 className="job-heading mt15 ml10">All Applicants</h3>
+          <h3 className="job-heading mt15 ml10">All {postSegment}</h3>
           <input
             type="text"
             placeholder="Search applicants..."
@@ -57,8 +63,6 @@ function Applicants() {
             style={{ padding: "6px", width: "250px" }}
           />
         </div>
-
-       
           <table className="job-table">
             <thead>
               <tr>

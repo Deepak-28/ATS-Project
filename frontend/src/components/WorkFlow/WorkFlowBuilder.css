@@ -1,7 +1,7 @@
 /* WorkflowBuilder.css */
 
 .wb-container {
-    max-width: 600px;
+    width: 60%;
     margin: auto;
     padding: 14px;
     background: #fdfdfd;
@@ -9,9 +9,20 @@
     box-shadow: 0 0 8px rgba(0,0,0,0.1);
     font-family: Arial, sans-serif;
     font-size: 12px;
-    height: auto;
+    min-height: 80vh;
     /* background-color: #007bff; */
   }
+.wb-container2{
+  width: 35%;
+   margin: auto;
+    padding: 14px;
+    background: #fdfdfd;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    min-height: 80vh;
+}
   
   .wb-heading {
     margin-bottom: 20px;
@@ -21,6 +32,7 @@
   }
   .wb-scroll{
     height: 100%;
+    min-height: 30vh;
     overflow-y: auto;
     /* background-color: #007bff; */
   }

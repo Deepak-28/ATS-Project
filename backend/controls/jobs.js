@@ -33,6 +33,7 @@ Router.post("/", async (req, res) => {
 Router.post("/create", async (req, res) => {
   try {
     const jobData = req.body;
+    
     const newJob = await job.create(jobData); // create job
     res.send(newJob); // return jobId to frontend
   } catch (err) {
@@ -383,6 +384,5 @@ Router.delete("/:id", async (req, res) => {
     res.status(500).send("Failed to delete job and associated applications");
   }
 });
-
 
 module.exports = Router;

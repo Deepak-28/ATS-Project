@@ -1,5 +1,3 @@
-const { field } = require("../config");
-
 module.exports = (sequelize, Sequelize) => {
   const DynamicField = sequelize.define("DynamicField", {
     id: {

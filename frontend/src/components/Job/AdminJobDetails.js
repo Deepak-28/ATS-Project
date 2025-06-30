@@ -21,6 +21,7 @@ const AdminJobDetails = () => {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPosted, setIsPosted] = useState(false);
   const [workflowStages, setWorkflowStages] = useState([]);
+  const [workFlowId, setWorkFlowId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
   const fetchJobDetails = async () => {
@@ -28,6 +29,11 @@ const AdminJobDetails = () => {
       const res = await axios.get(`/job/${id}`);
       const jobData = res.data;
       setJob(jobData);
+      setWorkFlowId(jobData.workFlowId);
+       if (jobData.workFlowId) {
+      fetchWorkflow(jobData.workFlowId); 
+    }
+      
       // Set dynamic fields (if any)
       // setFormValues(jobData.formValues || {});
       // console.log(jobData.formValues);
@@ -44,12 +50,12 @@ const AdminJobDetails = () => {
       console.error("Error fetching job details:", err);
     }
   };
-   const fetchWorkflow = () => {
+   const fetchWorkflow = (id) => {
     axios
-      .get("/workFlow/job")
+      .get(`/workFlow/job/${id}`)
       .then((res) => {
         if (Array.isArray(res.data)) {
-          setWorkflowStages(res.data.map((stage) => stage.stageName));
+          setWorkflowStages(res.data.map((stage) => stage.StageName));
         }
       })
       .catch((err) => console.error("Error fetching workflow stages:", err));
@@ -162,10 +168,10 @@ const AdminJobDetails = () => {
     "income",
     "stipend",
   ]);
-  useEffect(() => {
-    fetchJobDetails();
-    fetchWorkflow();
-  }, []);
+ useEffect(() => {
+  fetchJobDetails();
+}, []);
+
 
   return (
     <div className="container">

@@ -30,12 +30,10 @@ function Application() {
       console.error("Error fetching user data:", err);
     }
   };
-
   const handleInput = (e) => {
     const { id, value } = e.target;
     setData({ ...data, [id]: value });
   };
-
   const getJobs = async () => {
     try {
       const res = await axios.get(`/job/${jid}`);
@@ -54,11 +52,9 @@ function Application() {
       console.error("Error fetching job data:", err);
     }
   };
-
   const handleCancel = () => {
     navigate(-1);
   };
-
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) {
@@ -72,7 +68,6 @@ function Application() {
     setResume(file);
     setSelectedFile(file);
   };
-
   const handleResume = async () => {
     setLoading(true);
     try {
@@ -116,7 +111,6 @@ function Application() {
       setLoading(false);
     }
   };
-
   const extractOriginalName = (renamedFileName) => {
     if (renamedFileName && typeof renamedFileName === "string") {
       const dotIndex = renamedFileName.lastIndexOf(".");
@@ -130,19 +124,16 @@ function Application() {
     }
     return "No File Selected";
   };
-
   const resumename = (name) => {
     if (selectedFile && selectedFile.name) {
       return selectedFile.name;
     }
     return name || "No file selected";
   };
-
   const getUpdatedAppliedList = () => {
     const appliedUsers = jobs.applied ? JSON.parse(jobs.applied) : [];
     return JSON.stringify([...appliedUsers, Number(candidateId)]);
   };
-
   const handleError = (err) => {
     if (err.response?.status === 404) {
       toast.success("Job not found!");

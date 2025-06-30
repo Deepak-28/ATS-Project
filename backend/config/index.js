@@ -17,6 +17,7 @@ db.user = require('../model/userModel')(sequelize, Sequelize);
 db.field = require('../model/dynamicField')(sequelize, Sequelize);
 db.application = require('../model/applications')(sequelize, Sequelize);
 db.workFlow = require('../model/workFlow')(sequelize, Sequelize);
+db.workFlowStage = require('../model/workFlowStage')(sequelize, Sequelize);
 db.fieldOption = require('../model/fieldOptions')(sequelize, Sequelize);
 db.fieldData = require('../model/fieldData')(sequelize, Sequelize);
 db.portal = require('../model/portal')(sequelize, Sequelize);

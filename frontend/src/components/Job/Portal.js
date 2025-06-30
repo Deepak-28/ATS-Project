@@ -13,8 +13,11 @@ function Portal() {
   const [portal, setPortal] = useState([]);
   const [BgImage, setBgImage] = useState({});
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
   // console.log(BgImage);
-  
+
   const getPortal = async () => {
     try {
       const res = await axios.get("/portal");
@@ -26,29 +29,39 @@ function Portal() {
   };
   const handleSubmit = () => {
     if (!Name || !maskId) {
-      alert("Please fill all fields");
+      alert("Please fill all fields.");
       return;
     }
-    const PortalValue = {
-      Name,
-      maskId,
-    };
-    axios
-      .post("/portal", PortalValue)
-      .then((res) => {
-        toast.success("Portal Created successfully!");
+
+    const formData = new FormData();
+    formData.append("Name", Name);
+    formData.append("maskId", maskId);
+    if (BgImage) formData.append("image", BgImage); // optional in edit
+
+    const request = isEditing
+      ? axios.put(`/portal/${editId}`, formData)
+      : axios.post("/portal", formData);
+
+    request
+      .then(() => {
+        toast.success(
+          `Portal ${isEditing ? "updated" : "created"} successfully!`
+        );
         getPortal();
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to create portal.");
+        toast.error(`Failed to ${isEditing ? "update" : "create"} portal.`);
       });
-    getPortal();
-    console.log("Submitted:", { Name, maskId });
+
     setPopup(false);
     setName("");
     setMaskId("");
+    setBgImage(null);
+    setIsEditing(false);
+    setEditId(null);
   };
+
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) {
@@ -61,6 +74,7 @@ function Portal() {
     }
     setBgImage(file);
   };
+
   useEffect(() => {
     getPortal();
   }, []);
@@ -108,9 +122,19 @@ function Portal() {
                       </a>
                     </td>
                     <td className="df jcsa f14  w100" data-no-nav>
-                      <Link>
+                      <Link
+                        onClick={() => {
+                          setIsEditing(true);
+                          setEditId(portal.id);
+                          setName(portal.Name);
+                          setMaskId(portal.maskId);
+                          setBgImage(null);
+                          setPopup(true);
+                        }}
+                      >
                         <FaEdit />
                       </Link>
+
                       <MdDeleteForever className="applied-link" color="red" />
                     </td>
                   </tr>
@@ -167,7 +191,7 @@ function Portal() {
                 className="b s-btn mr10"
                 onClick={handleSubmit}
               >
-                Submit
+                {isEditing ? "Update" : "Submit"}
               </button>
             </div>
           </div>

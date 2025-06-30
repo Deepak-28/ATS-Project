@@ -31,7 +31,7 @@ import PublicJobPage from './components/Users/PublicJobPage';
 import AdminJobDetails from './components/Job/AdminJobDetails';
 import JobTemplate from './components/Job/JobTemplate';
 import axios from 'axios';
-axios.defaults.baseURL = 'http://localhost:7000'
+axios.defaults.baseURL = process.env.REACT_APP_BASE_URL
 
 function App() {
   return (
@@ -39,7 +39,7 @@ function App() {
    <Routes>
     <Route path='/' element={<Login/>}/>
     <Route path='/login' element={<CandidateLogin/>}/>
-    <Route path='/login/:jid' element={<CandidateLogin/>}/>
+    <Route path='/login/:slug/:jid' element={<CandidateLogin/>}/>
     <Route path='/register' element={<Register/>}/>
     <Route path='/company' element={<SuperAdmin/>}/>
     <Route path='/Users/:cid' element={<CreateUser/>}/>
@@ -49,7 +49,8 @@ function App() {
     <Route path='/allUsers' element={<CompanyUsers/>}/>
     <Route path='/allUsers/:CompanyId' element={<CompanyUsers/>}/>
     <Route path='/User/:cid' element={<CompanyUser/>}/>
-    <Route path='/applicants' element={<Applicants/>}/>
+    <Route path='/Applicants' element={<Applicants/>}/>
+    <Route path='/Candidates' element={<Applicants/>}/>
     <Route path='/addcompany' element={<CompanyForm/>}/>
     <Route path='/companyList' element={<CompanyList/>}/>
     <Route path="/editCompany/:id" element={<EditCompanyForm />} />

@@ -23,6 +23,7 @@ function JobCreate() {
   const [Fields, setFields] = useState([]);
   const [activeTab, setActiveTab] = useState("templates");
   const [editIndex, setEditIndex] = useState(null);
+  const [workFlow, setWorkFlow] = useState([]);
   // console.log(selectedTemplateId);
 
   const getCompanies = async () => {
@@ -54,20 +55,15 @@ function JobCreate() {
   };
   const fetchTemplate = async () => {
     try {
-      const res = await axios.get("/template/all");
-      // console.log(res.data);
-      setTemplates(res.data);
+      const res = await axios.get("/template/job");
+      const { data, templateFieldsdata } = res.data;
+      console.log(data);
+      console.log(templateFieldsdata);
+
+      setTemplates(data);
+      setTemplateFields(templateFieldsdata);
     } catch (err) {
       console.error("failed to fetch template", err);
-    }
-  };
-  const fetchTemplateFields = async () => {
-    try {
-      const res = await axios.get("/templateField/all");
-      // console.log(res.data);
-      setTemplateFields(res.data);
-    } catch (err) {
-      console.error("failed to fetch template fields", err);
     }
   };
   const fetchJobForEdit = async (id) => {
@@ -91,6 +87,15 @@ function JobCreate() {
       toast.error("Failed to load job data for edit");
     }
   };
+  const fetchWorkFlow = async () => {
+    try {
+      const res = await axios.get("/workFlow/job");
+      setWorkFlow(res.data);
+      // console.log(res.data);
+    } catch (err) {
+      console.error("Error in fetching workflow", err);
+    }
+  };
   const handleInputChange = (e) => {
     const { id, value } = e.target;
 
@@ -100,7 +105,13 @@ function JobCreate() {
         ...prev,
         companyId: value,
         companyName: selectedCompany?.name || "",
-        templateId: selectedTemplateId || "",
+      }));
+    } else if (id === "workflowId") {
+      const selectedWorkflow = workFlow.find((w) => w.id == value);
+      setJob((prev) => ({
+        ...prev,
+        workFlowId: value,
+        // workFlowName: selectedWorkflow?.name || "",
       }));
     } else {
       setJob((prev) => ({
@@ -109,8 +120,9 @@ function JobCreate() {
       }));
     }
   };
+
   const handleSubmit = async () => {
-    console.log(job);
+    // console.log(job);
 
     try {
       // Step 1: Merge form values into Fields
@@ -356,7 +368,8 @@ function JobCreate() {
     fetchFields();
     fetchFieldsOption();
     fetchTemplate();
-    fetchTemplateFields();
+    fetchWorkFlow();
+    // fetchTemplateFields();
     // fetchAllJobs();
     if (jobId) {
       fetchJobForEdit(jobId); // only run in edit mode
@@ -371,16 +384,16 @@ function JobCreate() {
         <nav className="h8 df al ml10">
           {!jobId ? <h3>Create Job</h3> : <h3>Update Job</h3>}
         </nav>
-        <div className="template-container">
-          <div className="template-card df jcsb fdc ">
+        <div className="df jcsa">
+          <div className="template-card df  jcsb fdc ">
             <div className="df jcsb fdc">
-              <div className="job-form">
+              <div className="job-form ">
                 {activeTab === "templates" && selectedTemplateId && (
-                  <div className="template-fields ml15 ">
+                  <div className="template-fields  ml15 ">
                     {/* <h4>Template Fields</h4> */}
 
                     {/* Left Column */}
-                    <div className="left-column">
+                    <div className="left-column ">
                       <div className="input mt5">
                         <label>Company</label>
                         <select
@@ -397,7 +410,8 @@ function JobCreate() {
                           ))}
                         </select>
                       </div>
-                      {/* <h5>Left</h5> */}
+                     
+
                       {templateFields
                         .filter(
                           (tf) =>
@@ -414,95 +428,127 @@ function JobCreate() {
                           if (!field) return null;
 
                           return (
-                            <div key={field.id} className="input mt5">
-                              <label>{field.fieldLabel}</label>
-                              {field.fieldType === "text" && (
-                                <input
-                                  type="text"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
+                            <div
+                              key={field.id}
+                              className={`input mt5 ${
+                                ["label", "header"].includes(field.fieldType)
+                                  ? "static-field"
+                                  : ""
+                              }`}
+                            >
+                              {field.fieldType === "header" && (
+                                <h3 className="field-header">
+                                  {field.label || field.fieldLabel}
+                                </h3>
                               )}
-                              {field.fieldType === "textarea" && (
-                                <textarea
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
+
+                              {field.fieldType === "label" && (
+                                <div className="field-label">
+                                  {field.label || field.fieldLabel}
+                                </div>
                               )}
-                              {field.fieldType === "dropdown" && (
-                                <select
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                >
-                                  <option value="">Select</option>
-                                  {options.map((opt) => (
-                                    <option key={opt.id} value={opt.value}>
-                                      {opt.value}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                              {field.fieldType === "checkbox" && (
-                                <input
-                                  type="checkbox"
-                                  checked={formValues[field.id] || false}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.checked,
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "file" && (
-                                <input
-                                  type="file"
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.files[0], // storing the File object
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "number" && (
-                                <input
-                                  type="number"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "date" && (
-                                <input
-                                  type="date"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
+                              {!["label", "header"].includes(
+                                field.fieldType
+                              ) && (
+                                <>
+                                  <label>{field.fieldLabel}</label>
+
+                                  {field.fieldType === "text" && (
+                                    <input
+                                      type="text"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "textarea" && (
+                                    <textarea
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "dropdown" && (
+                                    <select
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    >
+                                      <option value="">Select</option>
+                                      {options
+                                        .filter(
+                                          (opt) => opt.fieldId === field.id
+                                        )
+                                        .map((opt) => (
+                                          <option
+                                            key={opt.id}
+                                            value={opt.value}
+                                          >
+                                            {opt.value}
+                                          </option>
+                                        ))}
+                                    </select>
+                                  )}
+                                  {field.fieldType === "checkbox" && (
+                                    <input
+                                      type="checkbox"
+                                      checked={formValues[field.id] || false}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.checked,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "file" && (
+                                    <input
+                                      type="file"
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.files[0],
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "date" && (
+                                    <input
+                                      type="date"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "number" && (
+                                    <input
+                                      type="number"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                </>
                               )}
                             </div>
                           );
@@ -511,6 +557,22 @@ function JobCreate() {
 
                     {/* Right Column */}
                     <div className="right-column">
+                       <div className="input mt5">
+                        <label>Workflow</label>
+                        <select
+                          id="workflowId"
+                          value={job.workFlowId}
+                          onChange={handleInputChange}
+                          className="h5"
+                        >
+                          <option value="">Select a workflow</option>
+                          {workFlow.map((flow) => (
+                            <option key={flow.id} value={flow.id}>
+                              {flow.workFlowName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       {/* <h5>Right</h5> */}
                       {templateFields
                         .filter(
@@ -528,98 +590,127 @@ function JobCreate() {
                           if (!field) return null;
 
                           return (
-                            <div key={field.id} className="input mt5">
-                              <label>{field.fieldLabel}</label>
-                              {field.fieldType === "text" && (
-                                <input
-                                  type="text"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "textarea" && (
-                                <textarea
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "dropdown" && (
-                                <select
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                >
-                                  <option value="">Select</option>
-                                  {options
-                                    .filter((opt) => opt.fieldId === field.id) // Filter by matching field ID
-                                    .map((opt) => (
-                                      <option key={opt.id} value={opt.value}>
-                                        {opt.value}
-                                      </option>
-                                    ))}
-                                </select>
+                            <div
+                              key={field.id}
+                              className={`input mt5 ${
+                                ["label", "header"].includes(field.fieldType)
+                                  ? "static-field"
+                                  : ""
+                              }`}
+                            >
+                              {field.fieldType === "header" && (
+                                <h3 className="field-header">
+                                  {field.label || field.fieldLabel}
+                                </h3>
                               )}
 
-                              {field.fieldType === "checkbox" && (
-                                <input
-                                  type="checkbox"
-                                  checked={formValues[field.id] || false}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.checked,
-                                    })
-                                  }
-                                />
+                              {field.fieldType === "label" && (
+                                <div className="field-label">
+                                  {field.label || field.fieldLabel}
+                                </div>
                               )}
-                              {field.fieldType === "file" && (
-                                <input
-                                  type="file"
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.files[0], // storing the File object
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "date" && (
-                                <input
-                                  type="date"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
-                              )}
-                              {field.fieldType === "number" && (
-                                <input
-                                  type="number"
-                                  value={formValues[field.id] || ""}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      [field.id]: e.target.value,
-                                    })
-                                  }
-                                />
+                              {!["label", "header"].includes(
+                                field.fieldType
+                              ) && (
+                                <>
+                                  <label>{field.fieldLabel}</label>
+
+                                  {field.fieldType === "text" && (
+                                    <input
+                                      type="text"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "textarea" && (
+                                    <textarea
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "dropdown" && (
+                                    <select
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    >
+                                      <option value="">Select</option>
+                                      {options
+                                        .filter(
+                                          (opt) => opt.fieldId === field.id
+                                        )
+                                        .map((opt) => (
+                                          <option
+                                            key={opt.id}
+                                            value={opt.value}
+                                          >
+                                            {opt.value}
+                                          </option>
+                                        ))}
+                                    </select>
+                                  )}
+                                  {field.fieldType === "checkbox" && (
+                                    <input
+                                      type="checkbox"
+                                      checked={formValues[field.id] || false}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.checked,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "file" && (
+                                    <input
+                                      type="file"
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.files[0],
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "date" && (
+                                    <input
+                                      type="date"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {field.fieldType === "number" && (
+                                    <input
+                                      type="number"
+                                      value={formValues[field.id] || ""}
+                                      onChange={(e) =>
+                                        setFormValues({
+                                          ...formValues,
+                                          [field.id]: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                </>
                               )}
                             </div>
                           );
@@ -641,17 +732,17 @@ function JobCreate() {
               <div className="w15 df g10">
                 <button
                   type="button"
-                  className="gray s-btn"
-                  onClick={() => navigate(-1)}
+                  className="gray btn"
+                  onClick={clearFunction}
                 >
                   Cancel
                 </button>
                 {!jobId ? (
-                  <button onClick={handleSubmit} className="b s-btn">
+                  <button onClick={handleSubmit} className="b btn">
                     Submit
                   </button>
                 ) : (
-                  <button onClick={handleSubmit} className="b s-btn">
+                  <button onClick={handleSubmit} className="b btn">
                     Update
                   </button>
                 )}
@@ -673,7 +764,7 @@ function JobCreate() {
                 Templates
               </button>
             </div>
-            <div className="templates df fdc mt20 ">
+            <div className=" ">
               {activeTab === "fields" && (
                 <div>
                   <div className="input ">
@@ -744,7 +835,7 @@ function JobCreate() {
                 </div>
               )}
               {activeTab === "templates" && (
-                <div className="df al fdc">
+                <div className="templates df fdc ">
                   {templates.map((template) => {
                     const relatedTemplateFields = templateFields.filter(
                       (tf) => tf.templateId === template.id
@@ -758,7 +849,7 @@ function JobCreate() {
                     return (
                       <div
                         key={template.id}
-                        className={`templates-list df g10 al jcsb ${
+                        className={`templates-list df g10 al  jcsb ${
                           selectedTemplateId === template.id ? "selected" : ""
                         }`}
                         style={{

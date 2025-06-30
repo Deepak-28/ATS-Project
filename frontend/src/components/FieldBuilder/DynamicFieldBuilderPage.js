@@ -243,7 +243,8 @@ const DynamicFieldBuilderPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {fields.map((field, index) => (
+                {fields.length > 0 ? (
+                   fields.map((field, index) => (
                   <tr key={field.id}>
                     <td>{index + 1}</td>
                     <td>{field.fieldCode || "-"}</td>
@@ -265,7 +266,13 @@ const DynamicFieldBuilderPage = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+                ):(
+                  <tr>
+                  <td colSpan={fields.length + 7}>No Fields found</td>
+                </tr>
+                )}
+               
               </tbody>
             </table>
           </div>
@@ -336,6 +343,8 @@ const DynamicFieldBuilderPage = () => {
                         <option value="dropdown">Dropdown</option>
                         <option value="checkbox">Checkbox</option>
                         <option value="file">File</option>
+                        <option value="label">Label</option>
+                        <option value="header">Header</option>
                       </select>
                     </div>
                     <div>
@@ -369,6 +378,8 @@ const DynamicFieldBuilderPage = () => {
                         <option value="dropdown">Dropdown</option>
                         <option value="checkbox">Checkbox</option>
                         <option value="file">File</option>
+                        <option value="label">Label</option>
+                        <option value="header">Header</option>
                       </select>
                     </div>
                   </div>
@@ -434,8 +445,8 @@ const DynamicFieldBuilderPage = () => {
                 </div>
                 <div>
                   <label>Status:</label>
-                  <div className="input-checkbox g18 mt5">
-                    <div className="w45">
+                  <div className="input-checkbox g12 mt5">
+                    <div className="w5 ">
                       <label className="df jcsa">
                         <input
                           type="radio"

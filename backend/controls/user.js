@@ -29,7 +29,6 @@ Router.post('/', async (req, res) => {
         res.status(500).send(err);
     }
 });
-
 Router.get('/applicants', async(req,res)=>{
     try{
         const data = await user.findAll();
@@ -117,7 +116,6 @@ Router.put('/:uid/:jid', upload.single('resume'), async (req, res) => {
       res.status(500).send('Something went wrong while applying for the job.');
     }
   });
-// PATCH /application/status/:userId
 
 
   

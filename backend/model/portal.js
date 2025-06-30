@@ -10,6 +10,9 @@ module.exports = (sequelize, Sequelize) => {
     },
     maskId: {
         type: Sequelize.STRING
+    },
+    backgroundImage:{
+      type: Sequelize.STRING
     }
   });
   return portal;

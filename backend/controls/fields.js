@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { field, fieldOption } = require("../config/index");
-// POST: Create a new dynamic field
+
 router.post("/create", async (req, res) => {
   const {
     companyId,
@@ -55,7 +55,6 @@ router.post("/create", async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-// GET: Fetch all fields for a form (job/candidate) and company
 router.get("/:companyId/:formType", async (req, res) => {
   const { companyId, formType } = req.params;
 
@@ -72,9 +71,10 @@ router.get("/:companyId/:formType", async (req, res) => {
     res.status(500).send("Error fetching fields");
   }
 });
-router.get('/job', async (req, res)=>{
+router.get('/template/:formType', async (req, res)=>{
+  const{formType} = req.params
   try{
-    const fields = await field.findAll({where:{formType : 'job'}})
+    const fields = await field.findAll({where:{formType}})
     // console.log(fields);
     res.send(fields)
     
@@ -82,16 +82,17 @@ router.get('/job', async (req, res)=>{
     console.error("Error in Fetching Fields", error)
   }
 });
-router.get("/job", async(req, res)=>{
+router.get('/job', async (req, res)=>{
+  // const{formType} = req.params
   try{
-    const data = await field.findAll({where:{formType:job}});
-    res.send(data);
-    // console.log(data);
+    const fields = await field.findAll({where:{formType:"job"}})
+    // console.log(fields);
+    res.send(fields)
     
-  }catch(err){
-    console.error("Failed to Fetch Field Data", err)
+  }catch(error){
+    console.error("Error in Fetching Fields", error)
   }
-})
+});
 router.put("/update/:id", async (req, res) => {
   const { id } = req.params;
   const {

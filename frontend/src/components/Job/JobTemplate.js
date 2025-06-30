@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../admin/Navbar";
 import { MdOutlineLibraryAdd, MdDeleteForever, MdCreate } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
@@ -7,13 +7,15 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function JobTemplate() {
+  const [formType, setFormType] = useState("job");
   const [edited, setEdited] = useState(false);
   const [fields, setFields] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
   const [formValues, setFormValues] = useState({});
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedFieldIds, setSelectedFieldIds] = useState("");
+  const [selectedFieldIds, setSelectedFieldIds] = useState([]);
   const [fieldPositions, setFieldPositions] = useState({});
+  const [fieldOrder, setFieldOrder] = useState([]);
   const [name, SetName] = useState("");
   const [templateName, setTemplateName] = useState([]);
   const [templatefields, setTemplateFields] = useState([]);
@@ -24,9 +26,13 @@ function JobTemplate() {
 
   const fetchFields = async () => {
     try {
-      const res = await axios.get("/fields/job");
+      const res = await axios.get(`/fields/template/${formType}`);
       setFields(res.data);
       // console.log(res.data);
+      //  Safe default for non-edit mode
+      if (!edited) {
+        setFieldOrder(res.data.map((f) => f.id));
+      }
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
     }
@@ -42,18 +48,39 @@ function JobTemplate() {
   };
   const fetchTemplate = async () => {
     try {
-      const res = await axios.get("/template/all");
-      console.log(res.data);
-      setTemplateName(res.data);
+      const res = await axios.get(`/template/all/${formType}`);
+      const { templates, templateFieldsdata } = res.data;
+      // console.log(templates);
+      // console.log(templateFieldsdata);
+      setTemplateName(templates);
+      setTemplateFields(templateFieldsdata);
+      const orderedFieldIds = templateFieldsdata
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) // safely sort even if order is null
+        .map((item) => item.fieldId);
+
+      setFieldOrder(orderedFieldIds);
     } catch (err) {
       console.error("failed to fetch template", err);
     }
   };
+const mergedFields = edited
+  ? fieldOrder.map((fieldId) => {
+      const field = fields.find((f) => f.id === fieldId);
+      const templateField = templatefields.find((t) => t.fieldId === fieldId);
+      if (!field) return null;
+      return {
+        ...templateField,
+        ...field, // field comes second to preserve field.id
+      };
+    }).filter(Boolean)
+  : fields.filter((f) =>
+      f.fieldLabel.toLowerCase().includes(searchText.toLowerCase())
+    );
   const fetchTemplateFields = async () => {
     try {
       const res = await axios.get("/templateField/all");
       console.log(res.data);
-      setTemplateFields(res.data);
+      // setTemplateFields(res.data);
     } catch (err) {
       console.error("failed to fetch template fields", err);
     }
@@ -63,7 +90,12 @@ function JobTemplate() {
   };
   const handleSubmit = async () => {
     try {
-      await axios.post("/template", { fieldPositions, name });
+      await axios.post("/template", {
+        fieldPositions,
+        name,
+        formType,
+        fieldOrder,
+      });
       toast.success("Template Created");
       fetchFields();
       fetchFieldsOption();
@@ -76,37 +108,37 @@ function JobTemplate() {
     clearFunction();
   };
   const handleEditTemplate = (template) => {
-    setEdited(true);
-    SetName(template.name); // Set template name
-    setEditTemplateId(template.id); // Store template id being edited
+    SetName(template.name);
+    setEditTemplateId(template.id);
 
-    // Filter the fields for this template from templateFields
     const selectedFields = templatefields.filter(
       (tf) => tf.templateId === template.id
     );
 
-    // Extract fieldIds
     const fieldIds = selectedFields.map((tf) => tf.fieldId);
     setSelectedFieldIds(fieldIds);
 
-    // Set their positions
     const positions = {};
     selectedFields.forEach((tf) => {
       positions[tf.fieldId] = tf.position;
     });
     setFieldPositions(positions);
-
-    // Show the template field UI (if hidden)
+    const orderedIds = selectedFields
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((f) => f.fieldId);
+    setFieldOrder(orderedIds);
     setIsVisible(true);
+    setEdited(true);
   };
   const handleUpdate = async () => {
     try {
       await axios.put(`/template/${editTemplateId}`, {
         name,
         fieldPositions,
+        fieldOrder
       });
       toast.success("Template updated successfully");
-      // clearFunction();
+      clearFunction();
       fetchTemplate();
       fetchTemplateFields();
     } catch (err) {
@@ -144,15 +176,24 @@ function JobTemplate() {
       setFieldPositions({});
     }
   };
-  const leftFields = fields.filter(
-    (field) =>
-      selectedFieldIds.includes(field.id) && fieldPositions[field.id] === "left"
-  );
-  const rightFields = fields.filter(
-    (field) =>
-      selectedFieldIds.includes(field.id) &&
-      fieldPositions[field.id] === "right"
-  );
+  const leftFields = fieldOrder
+    .map((id) => fields.find((f) => f.id === id))
+    .filter(
+      (field) =>
+        field &&
+        fieldPositions[field.id] === "left" &&
+        selectedFieldIds.includes(field.id)
+    );
+
+  const rightFields = fieldOrder
+    .map((id) => fields.find((f) => f.id === id))
+    .filter(
+      (field) =>
+        field &&
+        fieldPositions[field.id] === "right" &&
+        selectedFieldIds.includes(field.id)
+    );
+
   const handleDeleteTemplate = async (templateId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this template?"
@@ -162,8 +203,6 @@ function JobTemplate() {
     try {
       await axios.delete(`/template/${templateId}`);
       toast.success("Template deleted successfully");
-
-      // Refresh templates and templateFields
       fetchTemplate();
       fetchTemplateFields();
     } catch (err) {
@@ -178,23 +217,66 @@ function JobTemplate() {
     SetName("");
     setSelectedFieldIds([]);
     setFieldPositions({});
+    setFieldOrder([]);
     setIsVisible(false);
-    navigate(-1);
+    navigate("/template");
   };
+  const moveRow = (index, direction) => {
+    const newOrder = [...fieldOrder];
+    const targetIndex = index + direction;
+
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+
+    [newOrder[index], newOrder[targetIndex]] = [
+      newOrder[targetIndex],
+      newOrder[index],
+    ];
+
+    setFieldOrder(newOrder);
+  };
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!edited && mergedFields.length > 0 && !initialized.current) {
+      setFieldOrder(mergedFields.map((f) => f.id));
+      initialized.current = true;
+    }
+  }, [mergedFields, edited]);
+
   useEffect(() => {
     fetchFields();
     fetchFieldsOption();
     fetchTemplate();
-    fetchTemplateFields();
-  }, []);
+    // fetchTemplateFields();
+  }, [formType]);
   return (
     <div className="container">
       <Navbar />
       <div className="admin-container">
-        <nav className="h8 df al ml10">
+        <nav className="h8 df al ml10 g10">
           <h3>Template</h3>
+          <label className={`toggle-btn ${formType === "job" ? "active" : ""}`}>
+            <input
+              type="radio"
+              value="job"
+              checked={formType === "job"}
+              onChange={() => setFormType("job")}
+            />
+            Job
+          </label>
+          <label
+            className={`toggle-btn ${formType === "candidate" ? "active" : ""}`}
+          >
+            <input
+              type="radio"
+              value="candidate"
+              checked={formType === "candidate"}
+              onChange={() => setFormType("candidate")}
+            />
+            Candidate
+          </label>
         </nav>
-        <div className="template-container">
+        <div className="df jcsa">
           <div className="template-card df jcsb fdc">
             <div className="df jcsb">
               <h3>Create Template</h3>
@@ -208,182 +290,258 @@ function JobTemplate() {
               <div>
                 <div className="df jcsb fdc">
                   <div className="job-form">
-                    {/* Left Column */}
                     <div className="left-column">
-                      {leftFields.map((field) => (
-                        <div key={field.id} className="input">
-                          <label>{field.fieldLabel}</label>
+                      {fieldOrder
+                        .map((id) => fields.find((f) => f.id === id))
+                        .filter(
+                          (field) =>
+                            field &&
+                            selectedFieldIds.includes(field.id) &&
+                            fieldPositions[field.id] === "left"
+                        )
+                        .map((field) => (
+                          <div
+                            key={field.id}
+                            className={`input ${
+                              ["label", "header"].includes(field.fieldType)
+                                ? "static-field"
+                                : ""
+                            }`}
+                          >
+                            {!["label", "header"].includes(field.fieldType) && (
+                              <label htmlFor={`field-${field.id}`}>
+                                {field.fieldLabel || field.label}
+                              </label>
+                            )}
 
-                          {field.fieldType === "text" && (
-                            <input
-                              type="text"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "text" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="text"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "textarea" && (
-                            <textarea
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "textarea" && (
+                              <textarea
+                                id={`field-${field.id}`}
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "dropdown" && (
-                            <select
-                              className="h5"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            >
-                              <option value="">Select</option>
-                              {fieldOptions
-                                .filter(
-                                  (opt) =>
-                                    opt.fieldId === field.id && opt.status
-                                )
-                                .sort((a, b) => a.order - b.order)
-                                .map((opt) => (
-                                  <option key={opt.id} value={opt.value}>
-                                    {opt.value}
-                                  </option>
-                                ))}
-                            </select>
-                          )}
+                            {field.fieldType === "dropdown" && (
+                              <select
+                                id={`field-${field.id}`}
+                                className="h5"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              >
+                                <option value="">Select</option>
+                                {fieldOptions
+                                  .filter(
+                                    (opt) =>
+                                      opt.fieldId === field.id && opt.status
+                                  )
+                                  .sort((a, b) => a.order - b.order)
+                                  .map((opt) => (
+                                    <option key={opt.id} value={opt.value}>
+                                      {opt.value}
+                                    </option>
+                                  ))}
+                              </select>
+                            )}
 
-                          {field.fieldType === "number" && (
-                            <input
-                              type="number"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "number" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="number"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "date" && (
-                            <input
-                              type="date"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "date" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="date"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "file" && (
-                            <input
-                              type="file"
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.files[0])
-                              }
-                            />
-                          )}
+                            {field.fieldType === "file" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="file"
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.files[0])
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "checkbox" && (
-                            <input
-                              type="checkbox"
-                              checked={formValues[field.id] || false}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.checked)
-                              }
-                            />
-                          )}
-                        </div>
-                      ))}
+                            {field.fieldType === "checkbox" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="checkbox"
+                                checked={formValues[field.id] || false}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.checked)
+                                }
+                              />
+                            )}
+
+                            {field.fieldType === "label" && (
+                              <div className="field-label">
+                                {field.label || field.fieldLabel}
+                              </div>
+                            )}
+
+                            {field.fieldType === "header" && (
+                              <h3 className="field-header">
+                                {field.label || field.fieldLabel}
+                              </h3>
+                            )}
+                          </div>
+                        ))}
                     </div>
+
                     <div className="right-column">
-                      {rightFields.map((field) => (
-                        <div key={field.id} className="input">
-                          <label>{field.fieldLabel}</label>
+                      {fieldOrder
+                        .map((id) => fields.find((f) => f.id === id))
+                        .filter(
+                          (field) =>
+                            field &&
+                            selectedFieldIds.includes(field.id) &&
+                            fieldPositions[field.id] === "right"
+                        )
+                        .map((field) => (
+                          <div
+                            key={field.id}
+                            className={`input ${
+                              ["label", "header"].includes(field.fieldType)
+                                ? "static-field"
+                                : ""
+                            }`}
+                          >
+                            {!["label", "header"].includes(field.fieldType) && (
+                              <label htmlFor={`field-${field.id}`}>
+                                {field.fieldLabel || field.label}
+                              </label>
+                            )}
 
-                          {field.fieldType === "text" && (
-                            <input
-                              type="text"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "text" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="text"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "textarea" && (
-                            <textarea
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "textarea" && (
+                              <textarea
+                                id={`field-${field.id}`}
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "dropdown" && (
-                            <select
-                              className="h5"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            >
-                              <option value="">Select</option>
-                              {fieldOptions
-                                .filter(
-                                  (opt) =>
-                                    opt.fieldId === field.id && opt.status
-                                )
-                                .sort((a, b) => a.order - b.order)
-                                .map((opt) => (
-                                  <option key={opt.id} value={opt.value}>
-                                    {opt.value}
-                                  </option>
-                                ))}
-                            </select>
-                          )}
+                            {field.fieldType === "dropdown" && (
+                              <select
+                                id={`field-${field.id}`}
+                                className="h5"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              >
+                                <option value="">Select</option>
+                                {fieldOptions
+                                  .filter(
+                                    (opt) =>
+                                      opt.fieldId === field.id && opt.status
+                                  )
+                                  .sort((a, b) => a.order - b.order)
+                                  .map((opt) => (
+                                    <option key={opt.id} value={opt.value}>
+                                      {opt.value}
+                                    </option>
+                                  ))}
+                              </select>
+                            )}
 
-                          {field.fieldType === "number" && (
-                            <input
-                              type="number"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "number" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="number"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "date" && (
-                            <input
-                              type="date"
-                              value={formValues[field.id] || ""}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.value)
-                              }
-                            />
-                          )}
+                            {field.fieldType === "date" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="date"
+                                value={formValues[field.id] || ""}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.value)
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "file" && (
-                            <input
-                              type="file"
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.files[0])
-                              }
-                            />
-                          )}
+                            {field.fieldType === "file" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="file"
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.files[0])
+                                }
+                              />
+                            )}
 
-                          {field.fieldType === "checkbox" && (
-                            <input
-                              type="checkbox"
-                              checked={formValues[field.id] || false}
-                              onChange={(e) =>
-                                handleChange(field.id, e.target.checked)
-                              }
-                            />
-                          )}
-                        </div>
-                      ))}
+                            {field.fieldType === "checkbox" && (
+                              <input
+                                id={`field-${field.id}`}
+                                type="checkbox"
+                                checked={formValues[field.id] || false}
+                                onChange={(e) =>
+                                  handleChange(field.id, e.target.checked)
+                                }
+                              />
+                            )}
+
+                            {field.fieldType === "label" && (
+                              <div className="field-label">
+                                {field.label || field.fieldLabel}
+                              </div>
+                            )}
+
+                            {field.fieldType === "header" && (
+                              <h3 className="field-header">
+                                {field.label || field.fieldLabel}
+                              </h3>
+                            )}
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -391,36 +549,37 @@ function JobTemplate() {
                   <div className="test df al jc">
                     <div className="field-box df al jcsb fdc">
                       <div className="w100 df h10 al jcsb">
-                       <div>
-                         <label className="df ml10">
-                          Template Name
-                          <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => SetName(e.target.value)}
-                            className="input-line ml0"
-                          /><MdCreate size={24}/>
-                        </label>
-                       </div>
+                        <div>
+                          <label className="df ml10">
+                            Template Name
+                            <input
+                              type="text"
+                              value={name}
+                              onChange={(e) => SetName(e.target.value)}
+                              className="input-line ml0"
+                            />
+                            <MdCreate size={24} />
+                          </label>
+                        </div>
                         <div>
                           <h3>Available Fields</h3>
                         </div>
                         <div className="">
-                        <input
-                          type="text"
-                          placeholder="Search fields..."
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                         className="mr10"
-                          style={{
-                            width: "20vw",
-                            padding: "8px",
-                            fontSize: "13px",
-                          }}
-                        />
+                          <input
+                            type="text"
+                            placeholder="Search fields..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            className="mr10"
+                            style={{
+                              width: "20vw",
+                              padding: "8px",
+                              fontSize: "13px",
+                            }}
+                          />
+                        </div>
                       </div>
-                      </div>
-                      
+
                       <table className="job-table w90">
                         <thead>
                           <tr>
@@ -430,8 +589,10 @@ function JobTemplate() {
                               <input
                                 type="checkbox"
                                 checked={
-                                  selectedFieldIds.length === fields.length &&
-                                  fields.length > 0
+                                  mergedFields.length > 0 &&
+                                  mergedFields.every((f) =>
+                                    selectedFieldIds.includes(f.id)
+                                  )
                                 }
                                 onChange={(e) =>
                                   handleSelectAll(e.target.checked)
@@ -441,17 +602,18 @@ function JobTemplate() {
                             </th>
                             <th>Field Label</th>
                             <th>Field Type</th>
-                            <th>Position</th>
+                            <th style={{ textAlign: "center" }}>Position</th>
+                            <th style={{ textAlign: "center" }}>Order</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {fields
-                            .filter((field) =>
-                              field.fieldLabel
-                                .toLowerCase()
-                                .includes(searchText.toLowerCase())
-                            )
-                            .map((field, index) => (
+                          {fieldOrder.map((fieldId, index) => {
+                            const field = mergedFields.find(
+                              (f) => f.id === fieldId
+                            );
+                            if (!field) return null;
+
+                            return (
                               <tr key={field.id}>
                                 <td>{index + 1}</td>
                                 <td>
@@ -467,9 +629,9 @@ function JobTemplate() {
                                 </td>
                                 <td>{field.fieldLabel}</td>
                                 <td>{field.fieldType}</td>
-                                <td>
+                                <td style={{ textAlign: "center" }}>
                                   {selectedFieldIds.includes(field.id) && (
-                                    <div className="df al">
+                                    <div className="df al jc">
                                       <label>
                                         <input
                                           type="radio"
@@ -507,10 +669,30 @@ function JobTemplate() {
                                     </div>
                                   )}
                                 </td>
+                                <td style={{ textAlign: "center" }}>
+                                  <div className="df al jc g5">
+                                    <button
+                                      onClick={() => moveRow(index, -1)}
+                                      disabled={index === 0}
+                                      title="Move Up"
+                                    >
+                                      ⬆️
+                                    </button>
+                                    <button
+                                      onClick={() => moveRow(index, 1)}
+                                      disabled={index === fieldOrder.length - 1}
+                                      title="Move Down"
+                                    >
+                                      ⬇️
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
-                            ))}
+                            );
+                          })}
                         </tbody>
                       </table>
+
                       <div className="df h10 al g10">
                         <button
                           className="gray btn mt20"
@@ -575,7 +757,7 @@ function JobTemplate() {
                 return (
                   <div
                     key={template.id}
-                    className="templates-list df g10 al jcsb"
+                    className="templates-list df g10 al  jcsb"
                   >
                     <div className="ml10">
                       <h4>{template.name}</h4>
@@ -584,7 +766,7 @@ function JobTemplate() {
                         {fieldNames.length > 0 ? fieldNames.join(", ") : "None"}
                       </p>
                     </div>
-                    <div className="df al g5 ">
+                    <div className="df al g5 mr10 ">
                       <FaEdit
                         size={16}
                         color="blue"
@@ -593,7 +775,7 @@ function JobTemplate() {
                         title="Edit Template"
                       />
                       <MdDeleteForever
-                        className="mr10 cursor-pointer"
+                        className="cursor-pointer"
                         onClick={() => handleDeleteTemplate(template.id)}
                         size={20}
                         color="red"

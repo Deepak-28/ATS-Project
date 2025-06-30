@@ -12,6 +12,7 @@ import Navbar from "../admin/Navbar";
 const AllJobs = () => {
   const { companyId } = useParams();
   const [jobs, setJobs] = useState([]);
+  const [JobId, setJobId] = useState("")
   const [popup, setPopup] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [fields, setFields] = useState([]);
@@ -30,6 +31,7 @@ const AllJobs = () => {
     return stored ? JSON.parse(stored) : [];
   });
   const navigate = useNavigate();
+// console.log(JobId);
 
   const getCompanies = async () => {
     try {
@@ -58,6 +60,8 @@ const AllJobs = () => {
     try {
       const res = await axios.get(`/job/${jobId}`);
       const job = res.data;
+      setJobId(job.id)
+      
       const formatDate = (dateString) => {
         return new Date(dateString).toISOString().slice(0, 10);
       };
@@ -110,8 +114,9 @@ const AllJobs = () => {
       expiryDate,
       visibility: postOption,
     };
+    
     axios
-      .post(`/job/visibility/${jobs.id}`, jobVisibilityData)
+      .post(`/job/visibility/${JobId}`, jobVisibilityData)
       .then((res) => {
         toast.success("Job posted successfully!");
         setIsPosted(true);
@@ -124,7 +129,7 @@ const AllJobs = () => {
   };
   const handleUnpost = async () => {
     try {
-      await axios.put(`/job/unpost/${jobs.id}`);
+      await axios.put(`/job/unpost/${JobId}`);
       toast.success("Job unposted");
       clearFunction();
     } catch (err) {
@@ -147,7 +152,11 @@ const AllJobs = () => {
     if (isActionClick) return;
     navigate(`/job/jobdetail/${id}`);
   };
-  const filteredFields = fields.filter((f) =>
+  const extendedFields = [
+    { id: "companyName", fieldLabel: "Company Name" },
+    ...fields,
+  ];
+  const filteredFields = extendedFields.filter((f) =>
     f.fieldLabel?.toLowerCase().includes(searchText?.toLowerCase() || "")
   );
   const isAllSelected = filteredFields.every((f) =>
@@ -191,9 +200,8 @@ const AllJobs = () => {
     fetchFieldsOption();
   }, []);
   useEffect(() => {
-  localStorage.setItem('selectedHeaders', JSON.stringify(selectedHeaders));
-}, [selectedHeaders]);
-
+    localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
+  }, [selectedHeaders]);
 
   return (
     <div className="container">
@@ -215,9 +223,6 @@ const AllJobs = () => {
               className="mr10 cursor-pointer"
               onClick={() => setPopup(true)}
             />
-            {/* <Link to="/Job">
-              <MdOutlineLibraryAdd size={24} className="g mr10" />
-            </Link> */}
           </div>
         </nav>
         <div className="data-table">
@@ -226,9 +231,10 @@ const AllJobs = () => {
               <tr>
                 <th>S.No</th>
                 <th>Job Id</th>
-                <th>Company Name</th>
+                {/* <th>Company Name</th> */}
                 {selectedHeaders.map((id) => {
-                  const label = fields.find((h) => h.id === id)?.fieldLabel;
+                  const label =
+                    extendedFields.find((h) => h.id === id)?.fieldLabel || id;
                   return <th key={id}>{label}</th>;
                 })}
                 <th>Status</th>
@@ -245,10 +251,15 @@ const AllJobs = () => {
                   >
                     <td>{index + 1}</td>
                     <td>2X0{job.id}</td>
-                    <td>{job.companyName || "N/A"}</td>
+                    {/* <td>{job.companyName || "N/A"}</td> */}
                     {selectedHeaders.map((fieldId) => {
-                      const key = `${job.id}-${fieldId}`;
-                      const value = dynamicLookup[key] ?? "N/A";
+                      let value;
+                      if (fieldId === "companyName") {
+                        value = job.companyName || "N/A";
+                      } else {
+                        const key = `${job.id}-${fieldId}`;
+                        value = dynamicLookup[key] ?? "N/A";
+                      }
                       return <td key={fieldId}>{value}</td>;
                     })}
                     <td>{job.status || "N/A"}</td>

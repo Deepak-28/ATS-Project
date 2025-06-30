@@ -31,7 +31,7 @@ const JobDetails = () => {
     );
   };
   const handleApply = () => {
-    navigate(`/login/${jid}`);
+    navigate(`/login/${slug}/${jid}`);
   };
   const handleCancel = () => {
     navigate(-1);

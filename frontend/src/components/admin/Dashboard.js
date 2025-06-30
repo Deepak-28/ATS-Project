@@ -192,7 +192,7 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
           <div className="dashboard-heading df al jcsb  ">
             {/* <button onClick={notify}>notify<Toaster/></button> */}
             <h2>Dashboard</h2>
-            <IoSettingsOutline size={20} />
+            {/* <IoSettingsOutline size={20} /> */}
           </div>
           <div className="summary-cards">
             <div

@@ -5,31 +5,12 @@ module.exports = (sequelize, Sequelize) => {
       primaryKey: true,
       autoIncrement: true,
     },
+    workFlowName:{
+      type: Sequelize.STRING
+    },
     workflowType: {
       type: Sequelize.ENUM("job", "applicant"),
-    },
-    stageName: {
-      type: Sequelize.STRING,
-    },
-    order: {
-      type: Sequelize.INTEGER,
-    },
-    // jobId: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: true,
-    //   references: {
-    //     model: "job", // Name of the job table
-    //     key: "id",
-    //   },
-    // },
-    // applicantId: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: true,
-    //   references: {
-    //     model: "applicants", // Name of the applicant table
-    //     key: "id",
-    //   },
-    // },
+    }
   });
   return workflowSchema;
 };

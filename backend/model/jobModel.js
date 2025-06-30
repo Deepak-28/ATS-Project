@@ -1,3 +1,5 @@
+const workFlow = require("./workFlow");
+
 module.exports = (sequelize, Sequelize) => {
     const Job = sequelize.define('Jobs', {
         id: {
@@ -12,6 +14,9 @@ module.exports = (sequelize, Sequelize) => {
             type:Sequelize.INTEGER
         },
         templateId:{
+            type: Sequelize.INTEGER
+        },
+        workFlowId:{
             type: Sequelize.INTEGER
         },
         status: {

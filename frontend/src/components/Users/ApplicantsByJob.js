@@ -28,7 +28,7 @@ function ApplicantsByJob() {
         const jobData = res.data
         setJob(jobData)
         setFormValues(jobData.formValues);
-        console.log(jobData.formValues);
+        // console.log(jobData.formValues);
         
       } catch (error) {
         console.error("failed to fetch job", error);
@@ -49,6 +49,18 @@ function ApplicantsByJob() {
 
   navigate(`/applicants/${id}`);
 };
+  const getDynamicField = (formValues, keywords) => {
+    return (
+      Object.entries(formValues || {}).find(([label]) =>
+        keywords.some((keyword) => new RegExp(keyword, "i").test(label))
+      )?.[1] || "Not provided"
+    );
+  };
+ const jobTitle = getDynamicField(formValues, [
+              "title",
+              "job title",
+              "position",
+            ]);
   useEffect(() => {
     fetchApplicants();
     fetchJob();
@@ -59,8 +71,11 @@ function ApplicantsByJob() {
       <Navbar/>
       <div className="admin-container">
         <nav className="df h10 al">
-          <h2 className="ml10 w100">Job Applicants</h2> 
-          {/* {formValues[3]['Job Title ']} */}
+          <h3 className="ml10 w100"> <Link to="/alljobs" style={{ textDecoration: 'none', color: 'blue' }}>
+        All Jobs
+      </Link>
+      {' / '}Applicants for <span style={{fontStyle: 'italic', fontWeight: 'normal'}}>{jobTitle}</span></h3> 
+
         </nav>
         <table className="job-table">
           <thead>
