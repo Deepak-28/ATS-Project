@@ -172,7 +172,6 @@ const AdminJobDetails = () => {
   fetchJobDetails();
 }, []);
 
-
   return (
     <div className="container">
       <Navbar />

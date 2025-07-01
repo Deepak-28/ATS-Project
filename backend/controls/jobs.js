@@ -1,26 +1,27 @@
 const Router = require("express").Router();
+const { Op } = require('sequelize');
 const { job, application, fieldData, field } = require("../config/index");
 
 Router.post("/", async (req, res) => {
   const { payload, formValues } = req.body;
 
-  const {
-    companyId,
-    companyName,
-  } = payload;
+  const { companyId, companyName } = payload;
 
   try {
-    const newJob = await job.create({  
+    const newJob = await job.create({
       companyId,
       companyName,
     });
     const jobId = newJob.id;
 
-    const dynamicInserts = Object.entries(formValues).map(([fieldId, value]) => ({  //converts objects into an array of key-value pairs
-      jobId,
-      fieldId,
-      value: typeof value === "object" ? JSON.stringify(value) : value,
-    }));
+    const dynamicInserts = Object.entries(formValues).map(
+      ([fieldId, value]) => ({
+        //converts objects into an array of key-value pairs
+        jobId,
+        fieldId,
+        value: typeof value === "object" ? JSON.stringify(value) : value,
+      })
+    );
 
     await fieldData.bulkCreate(dynamicInserts);
 
@@ -33,7 +34,7 @@ Router.post("/", async (req, res) => {
 Router.post("/create", async (req, res) => {
   try {
     const jobData = req.body;
-    
+
     const newJob = await job.create(jobData); // create job
     res.send(newJob); // return jobId to frontend
   } catch (err) {
@@ -41,15 +42,18 @@ Router.post("/create", async (req, res) => {
     res.status(500).json({ error: "Job creation failed" });
   }
 });
-Router.post("/visibility/:id", async(req, res)=>{
-  const {id : jobId} = req.params;
+Router.post("/visibility/:id", async (req, res) => {
+  const { id: jobId } = req.params;
   // console.log(req.body);
-  const { postDate, expiryDate, visibility} = req.body;
-  try{
-    const data = await job.update({postDate, expiryDate, visibility},{where:{id:jobId}});
-    res.send("Job Posted")
-  }catch(err){
-    console.error(err)
+  const { postDate, expiryDate, visibility } = req.body;
+  try {
+    const data = await job.update(
+      { postDate, expiryDate, visibility },
+      { where: { id: jobId } }
+    );
+    res.send("Job Posted");
+  } catch (err) {
+    console.error(err);
   }
 });
 Router.post("/manualFieldSubmit", async (req, res) => {
@@ -59,9 +63,14 @@ Router.post("/manualFieldSubmit", async (req, res) => {
   }
   try {
     for (const customField of Fields) {
-      const { fieldLabel: label, fieldType: type, position, value } = customField;
+      const {
+        fieldLabel: label,
+        fieldType: type,
+        position,
+        value,
+      } = customField;
       // Check if field with the same label exists
-      let existingField = await field.findOne({ where: {fieldLabel: label} });
+      let existingField = await field.findOne({ where: { fieldLabel: label } });
       // If not exists, create a new field
       if (!existingField) {
         existingField = await field.create({
@@ -78,29 +87,31 @@ Router.post("/manualFieldSubmit", async (req, res) => {
         position,
       });
     }
-    return res.status(200).json({ message: "Fields and values saved successfully" });
+    return res
+      .status(200)
+      .json({ message: "Fields and values saved successfully" });
   } catch (error) {
     console.error("Error saving fields:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
-Router.get('/', async (req, res) => {
+Router.get("/", async (req, res) => {
   try {
-      const getjobs = await job.findAll();
-      const dynamicFields = await fieldData.findAll();
-      const fields = await field.findAll()
-      const payload = {getjobs, dynamicFields, fields}
-      res.send(payload);
+    const getjobs = await job.findAll();
+    const dynamicFields = await fieldData.findAll();
+    const fields = await field.findAll();
+    const payload = { getjobs, dynamicFields, fields };
+    res.send(payload);
   } catch (err) {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
-Router.get('/all', async (req, res) => {
+Router.get("/all", async (req, res) => {
   try {
-      const getjobs = await job.findAll();
-      res.send(getjobs);
+    const getjobs = await job.findAll();
+    res.send(getjobs);
   } catch (err) {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 Router.get("/data", async (req, res) => {
@@ -115,20 +126,20 @@ Router.get("/data", async (req, res) => {
     const dynamicFields = await fieldData.findAll();
 
     // Step 3: Get all field metadata (field labels, etc.)
-    const allFieldIds = [...new Set(dynamicFields.map(df => df.fieldId))];
+    const allFieldIds = [...new Set(dynamicFields.map((df) => df.fieldId))];
     const fieldsMeta = await field.findAll({
-      where: { id: allFieldIds }
+      where: { id: allFieldIds },
     });
 
     // Step 4: Build a lookup for fieldId => fieldLabel
     const fieldLabelMap = {};
-    fieldsMeta.forEach(f => {
+    fieldsMeta.forEach((f) => {
       fieldLabelMap[f.id] = f.fieldLabel;
     });
 
     // Step 5: Group dynamicFields by jobId
     const jobFieldMap = {};
-    dynamicFields.forEach(df => {
+    dynamicFields.forEach((df) => {
       if (!jobFieldMap[df.jobId]) {
         jobFieldMap[df.jobId] = [];
       }
@@ -136,12 +147,12 @@ Router.get("/data", async (req, res) => {
     });
 
     // Step 6: Combine job data with related form values
-    const jobListWithFields = jobs.map(job => {
+    const jobListWithFields = jobs.map((job) => {
       const jobData = job.toJSON();
       const relatedFields = jobFieldMap[job.id] || [];
 
       const formValues = {};
-      relatedFields.forEach(field => {
+      relatedFields.forEach((field) => {
         const label = fieldLabelMap[field.fieldId];
         if (label) {
           formValues[label] = field.value;
@@ -150,7 +161,7 @@ Router.get("/data", async (req, res) => {
 
       return {
         ...jobData,
-        formValues
+        formValues,
       };
     });
 
@@ -160,52 +171,53 @@ Router.get("/data", async (req, res) => {
       // dynamicFields: dynamicFields, // raw values if needed elsewhere
       // fields: fieldsMeta             // field metadata
     });
-
   } catch (err) {
     console.error("Error fetching all jobs:", err);
     res.status(500).send("Failed to fetch jobs");
   }
 });
-Router.get('/slug/:slug', async (req, res) => {
+Router.get("/slug/:slug", async (req, res) => {
   const { slug } = req.params;
   // console.log(slug);
   try {
-    // Step 1: Get all jobs with matching slug
-    const jobs = await job.findAll({ where: { visibility: slug } });
-    
-    
+    let visibilityFilter;
 
+    if (slug === "internal") {
+      visibilityFilter = { [Op.in]: ["internal", "internal-external"] };
+    } else if (slug === "external") {
+      visibilityFilter = { [Op.in]: ["external", "internal-external"] };
+    } else if (slug.includes("&")) {
+      visibilityFilter = { [Op.in]: slug.split("&") };
+    } else {
+      visibilityFilter = slug;
+    }
+
+    //  Get all jobs with matching slug
+    const jobs = await job.findAll({ where: { visibility: visibilityFilter } });
     // If no jobs, return early
     if (!jobs || jobs.length === 0) {
       return res.status(404).send("No jobs found with given slug.");
     }
-
-    // Step 2: Get all jobIds
-    const jobIds = jobs.map(j => j.id);
-    
-
-    // Step 3: Get all dynamic field data for these jobs
+    //  Get all jobIds
+    const jobIds = jobs.map((j) => j.id);
+    //  Get all dynamic field data for these jobs
     const allFieldData = await fieldData.findAll({
-      where: { jobId: jobIds }
+      where: { jobId: jobIds },
     });
-
-    // Step 4: Get all unique fieldIds from the field data
-    const fieldIds = [...new Set(allFieldData.map(fd => fd.fieldId))];
-    
-    // Step 5: Get metadata for the fields
+    //  Get all unique fieldIds from the field data
+    const fieldIds = [...new Set(allFieldData.map((fd) => fd.fieldId))];
+    //  Get metadata for the fields
     const fieldDefs = await field.findAll({
-      where: { id: fieldIds }
+      where: { id: fieldIds },
     });
-    
-    // Step 6: Create a map of fieldId => fieldLabel
+    // Create a map of fieldId => fieldLabel
     const fieldLabelMap = {};
-    fieldDefs.forEach(f => {
+    fieldDefs.forEach((f) => {
       fieldLabelMap[f.id] = f.fieldLabel;
     });
-   
-    // Step 7: Group fieldData by jobId and format them
+    //  Group fieldData by jobId and format them
     const jobFieldMap = {};
-    allFieldData.forEach(fd => {
+    allFieldData.forEach((fd) => {
       if (!jobFieldMap[fd.jobId]) {
         jobFieldMap[fd.jobId] = {};
       }
@@ -214,17 +226,12 @@ Router.get('/slug/:slug', async (req, res) => {
         jobFieldMap[fd.jobId][label] = fd.value;
       }
     });
-
-    // Step 8: Attach formValues to each job
-    const jobsWithFields = jobs.map(j => ({
+    //  Attach formValues to each job
+    const jobsWithFields = jobs.map((j) => ({
       ...j.toJSON(),
-      formValues: jobFieldMap[j.id] || {}
+      formValues: jobFieldMap[j.id] || {},
     }));
-
     res.send(jobsWithFields);
-    // console.log(jobsWithFields);
-    // res.send("done")
-    
   } catch (err) {
     console.error("Error fetching jobs with related fields:", err);
     res.status(500).send("Internal server error");
@@ -234,7 +241,7 @@ Router.get("/company/:companyId", async (req, res) => {
   const { companyId } = req.params;
   try {
     const jobs = await job.findAll({
-      where: { companyId }, 
+      where: { companyId },
     });
     res.status(200).send(jobs);
   } catch {
@@ -254,19 +261,19 @@ Router.get("/:id", async (req, res) => {
       return res.send(jobs);
     }
     // Step 1: Get all unique fieldIds
-    const fieldIds = dynamicFields.map(field => field.fieldId);
+    const fieldIds = dynamicFields.map((field) => field.fieldId);
     // Step 2: Fetch field metadata (assuming you have a model called "field")
     const fieldsMeta = await field.findAll({
-      where: { id: fieldIds }
+      where: { id: fieldIds },
     });
     // Step 3: Create a map of fieldId => fieldLabel
     const fieldLabelMap = {};
-    fieldsMeta.forEach(f => {
+    fieldsMeta.forEach((f) => {
       fieldLabelMap[f.id] = f.fieldLabel;
     });
     // Step 4: Build formValues with fieldLabel instead of fieldId
     const formValues = {};
-    dynamicFields.forEach(field => {
+    dynamicFields.forEach((field) => {
       const label = fieldLabelMap[field.fieldId];
       if (label) {
         formValues[label] = field.value;
@@ -275,7 +282,7 @@ Router.get("/:id", async (req, res) => {
     // Combine job + dynamic field values
     const jobWithFields = {
       ...jobs.toJSON(),
-      formValues
+      formValues,
     };
     res.send(jobWithFields);
   } catch (err) {
@@ -283,18 +290,17 @@ Router.get("/:id", async (req, res) => {
     res.status(500).send("Failed to fetch job");
   }
 });
-Router.get('/edit/:id', async (req, res) => {
-  const {id} = req.params;
+Router.get("/edit/:id", async (req, res) => {
+  const { id } = req.params;
   try {
-      const ejob = await job.findOne({ where: { id: id }, raw: true });
-      if (ejob) {
-          res.send(ejob)
-      }
-      else {
-          res.status(404).send( 'Job not found!' );
-      }
+    const ejob = await job.findOne({ where: { id: id }, raw: true });
+    if (ejob) {
+      res.send(ejob);
+    } else {
+      res.status(404).send("Job not found!");
+    }
   } catch (err) {
-      res.status(500).send(err.message );
+    res.status(500).send(err.message);
   }
   // res.send('wait')
 });
@@ -311,18 +317,18 @@ Router.put("/:jobId", async (req, res) => {
     await job.update(jobValues, { where: { id: jobId } });
     // Update or insert each dynamic field value
     for (const field of dynamicInserts) {
-  await fieldData.update(
-    {
-      value: field.value,
-    },
-    {
-      where: {
-        jobId: field.jobId,
-        fieldId: field.fieldId,
-      },
+      await fieldData.update(
+        {
+          value: field.value,
+        },
+        {
+          where: {
+            jobId: field.jobId,
+            fieldId: field.fieldId,
+          },
+        }
+      );
     }
-  );
-}
     res.send("Job updated successfully");
   } catch (err) {
     console.error("Error updating job:", err);
@@ -340,7 +346,7 @@ Router.put("/update/:id", async (req, res) => {
   }
 });
 Router.put("/unpost/:id", async (req, res) => {
-  const {id} = req.params
+  const { id } = req.params;
   try {
     await job.update(
       { postDate: null, expiryDate: null, visibility: null },
@@ -351,12 +357,12 @@ Router.put("/unpost/:id", async (req, res) => {
     res.status(500).send("Error unposting job");
   }
 });
-Router.put('/apply/:id', async (req, res) => {
+Router.put("/apply/:id", async (req, res) => {
   const { id } = req.params;
   const { applied } = req.body;
   const jobs = await job.update({ applied: applied }, { where: { id: id } });
-  res.send( 'Job applied!');
-})
+  res.send("Job applied!");
+});
 Router.patch("/status/:jobId", async (req, res) => {
   const { jobId } = req.params;
   const { status } = req.body;

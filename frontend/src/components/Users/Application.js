@@ -220,7 +220,7 @@ function Application() {
         <div className="input_box">
           <label>Experience</label>
           <select
-            className="job-type"
+            className="job-exp"
             id="experience"
             onChange={handleInput}
             value={data.experience || ""}

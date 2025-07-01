@@ -12,82 +12,96 @@ function JobTemplate() {
   const [fields, setFields] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
   const [formValues, setFormValues] = useState({});
+  const [tempValues, setTempValues] = useState({});
   const [isVisible, setIsVisible] = useState(false);
   const [selectedFieldIds, setSelectedFieldIds] = useState([]);
   const [fieldPositions, setFieldPositions] = useState({});
   const [fieldOrder, setFieldOrder] = useState([]);
-  const [name, SetName] = useState("");
-  const [templateName, setTemplateName] = useState([]);
-  const [templatefields, setTemplateFields] = useState([]);
-  const [templatePositions, setTemplatePositions] = useState("");
+  const [name, setName] = useState("");
+  const [templateNames, setTemplateNames] = useState([]);
+  const [templateFields, setTemplateFields] = useState([]);
   const [editTemplateId, setEditTemplateId] = useState(null);
   const [searchText, setSearchText] = useState("");
   const navigate = useNavigate();
 
+  // Fetch all fields for the template type
   const fetchFields = async () => {
     try {
       const res = await axios.get(`/fields/template/${formType}`);
       setFields(res.data);
-      // console.log(res.data);
-      //  Safe default for non-edit mode
       if (!edited) {
-        setFieldOrder(res.data.map((f) => f.id));
+        setFieldOrder([...new Set(res.data.map((f) => f.id))]);
       }
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
     }
   };
+  // Fetch all field options
   const fetchFieldsOption = async () => {
     try {
       const res = await axios.get("/fieldOption/all");
       setFieldOptions(res.data);
-      // console.log(res.data);
     } catch (error) {
       console.error("Error in Fetching Field Options");
     }
   };
+  // Fetch all templates and their fields for the form type
   const fetchTemplate = async () => {
     try {
       const res = await axios.get(`/template/all/${formType}`);
       const { templates, templateFieldsdata } = res.data;
-      // console.log(templates);
-      // console.log(templateFieldsdata);
-      setTemplateName(templates);
+      setTemplateNames(templates);
       setTemplateFields(templateFieldsdata);
+
+      // Set unique ordered field IDs
       const orderedFieldIds = templateFieldsdata
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) // safely sort even if order is null
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((item) => item.fieldId);
 
-      setFieldOrder(orderedFieldIds);
+      setFieldOrder([...new Set(orderedFieldIds)]);
     } catch (err) {
       console.error("failed to fetch template", err);
     }
   };
-const mergedFields = edited
-  ? fieldOrder.map((fieldId) => {
-      const field = fields.find((f) => f.id === fieldId);
-      const templateField = templatefields.find((t) => t.fieldId === fieldId);
-      if (!field) return null;
-      return {
-        ...templateField,
-        ...field, // field comes second to preserve field.id
-      };
-    }).filter(Boolean)
-  : fields.filter((f) =>
-      f.fieldLabel.toLowerCase().includes(searchText.toLowerCase())
-    );
+
+  // Merge fields for display, ensuring uniqueness
+  const mergedFields = edited
+    ? fieldOrder
+        .map((fieldId) => {
+          const field = fields.find((f) => f.id === fieldId);
+          const templateField = templateFields.find(
+            (t) => t.fieldId === fieldId
+          );
+          if (!field) return null;
+          return { ...templateField, ...field };
+        })
+        .filter(Boolean)
+    : fields
+        .filter((f) =>
+          f.fieldLabel.toLowerCase().includes(searchText.toLowerCase())
+        )
+        .filter(
+          (f, idx, arr) => arr.findIndex((item) => item.id === f.id) === idx // Ensure unique fields
+        );
+        
   const fetchTemplateFields = async () => {
     try {
-      const res = await axios.get("/templateField/all");
-      console.log(res.data);
-      // setTemplateFields(res.data);
+      await axios.get("/templateField/all");
     } catch (err) {
       console.error("failed to fetch template fields", err);
     }
   };
+
   const handleChange = (name, value) => {
-    setFormValues({ ...formValues, [name]: value });
+    setTempValues((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleFieldSubmit = (e) => {
+    e.preventDefault();
+    setFormValues(tempValues);
+    setIsVisible(false);
+  };
+
   const handleSubmit = async () => {
     try {
       await axios.post("/template", {
@@ -107,35 +121,37 @@ const mergedFields = edited
     }
     clearFunction();
   };
-  const handleEditTemplate = (template) => {
-    SetName(template.name);
-    setEditTemplateId(template.id);
 
-    const selectedFields = templatefields.filter(
+  const handleEditTemplate = (template) => {
+    setName(template.name);
+    setEditTemplateId(template.id);
+    const selectedFields = templateFields.filter(
       (tf) => tf.templateId === template.id
     );
-
     const fieldIds = selectedFields.map((tf) => tf.fieldId);
-    setSelectedFieldIds(fieldIds);
+    setSelectedFieldIds([...new Set(fieldIds)]);
 
     const positions = {};
     selectedFields.forEach((tf) => {
       positions[tf.fieldId] = tf.position;
     });
     setFieldPositions(positions);
+
     const orderedIds = selectedFields
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((f) => f.fieldId);
-    setFieldOrder(orderedIds);
+
+    setFieldOrder([...new Set(orderedIds)]);
     setIsVisible(true);
     setEdited(true);
   };
+
   const handleUpdate = async () => {
     try {
       await axios.put(`/template/${editTemplateId}`, {
         name,
         fieldPositions,
-        fieldOrder
+        fieldOrder,
       });
       toast.success("Template updated successfully");
       clearFunction();
@@ -146,6 +162,8 @@ const mergedFields = edited
       toast.error("Template update failed");
     }
   };
+
+  // Toggle selection, ensure no duplicates
   const toggleFieldSelection = (fieldId) => {
     if (selectedFieldIds.includes(fieldId)) {
       setSelectedFieldIds(selectedFieldIds.filter((id) => id !== fieldId));
@@ -153,19 +171,16 @@ const mergedFields = edited
       delete updatedPositions[fieldId];
       setFieldPositions(updatedPositions);
     } else {
-      setSelectedFieldIds([...selectedFieldIds, fieldId]);
-      setFieldPositions({
-        ...fieldPositions,
-        [fieldId]: "left", // default to left when selected
-      });
+      setSelectedFieldIds([...new Set([...selectedFieldIds, fieldId])]);
+      setFieldPositions({ ...fieldPositions, [fieldId]: "left" });
     }
   };
+
+  // Select all, ensure uniqueness
   const handleSelectAll = (isChecked) => {
     if (isChecked) {
       const allIds = fields.map((field) => field.id);
-      setSelectedFieldIds(allIds);
-
-      // Set default positions for all selected fields (if not already set)
+      setSelectedFieldIds([...new Set(allIds)]);
       const updatedPositions = {};
       allIds.forEach((id) => {
         updatedPositions[id] = fieldPositions[id] || "left";
@@ -176,30 +191,24 @@ const mergedFields = edited
       setFieldPositions({});
     }
   };
-  const leftFields = fieldOrder
-    .map((id) => fields.find((f) => f.id === id))
-    .filter(
-      (field) =>
-        field &&
-        fieldPositions[field.id] === "left" &&
-        selectedFieldIds.includes(field.id)
-    );
 
-  const rightFields = fieldOrder
-    .map((id) => fields.find((f) => f.id === id))
-    .filter(
-      (field) =>
-        field &&
-        fieldPositions[field.id] === "right" &&
-        selectedFieldIds.includes(field.id)
-    );
+  // Move row up or down in order, ensure uniqueness
+  const moveRow = (index, direction) => {
+    const newOrder = [...fieldOrder];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    [newOrder[index], newOrder[targetIndex]] = [
+      newOrder[targetIndex],
+      newOrder[index],
+    ];
+    setFieldOrder([...new Set(newOrder)]);
+  };
 
   const handleDeleteTemplate = async (templateId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this template?"
     );
     if (!confirmDelete) return;
-
     try {
       await axios.delete(`/template/${templateId}`);
       toast.success("Template deleted successfully");
@@ -210,45 +219,48 @@ const mergedFields = edited
       toast.error("Failed to delete template");
     }
   };
+
   const clearFunction = () => {
     setEdited(false);
     setEditTemplateId(null);
     setFormValues({});
-    SetName("");
+    setTempValues({});
+    setName("");
     setSelectedFieldIds([]);
     setFieldPositions({});
     setFieldOrder([]);
     setIsVisible(false);
-    navigate("/template");
+    // No navigate("/template") unless you want to always reload the route
   };
-  const moveRow = (index, direction) => {
-    const newOrder = [...fieldOrder];
-    const targetIndex = index + direction;
 
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-
-    [newOrder[index], newOrder[targetIndex]] = [
-      newOrder[targetIndex],
-      newOrder[index],
-    ];
-
-    setFieldOrder(newOrder);
+  const handleFieldCancel = () => {
+    clearFunction();
   };
-  const initialized = useRef(false);
 
+  // Ensure fieldOrder is unique after mergedFields change
   useEffect(() => {
-    if (!edited && mergedFields.length > 0 && !initialized.current) {
-      setFieldOrder(mergedFields.map((f) => f.id));
-      initialized.current = true;
+    if (!edited && fields.length > 0) {
+      const uniqueIds = [...new Set(fields.map((f) => f.id))];
+      setFieldOrder(uniqueIds);
     }
-  }, [mergedFields, edited]);
-
+  }, [fields, edited]);
   useEffect(() => {
+    setEdited(false);
+    setEditTemplateId(null);
+    setSelectedFieldIds([]);
+    setFieldPositions({});
+    setFieldOrder([]);
+    setIsVisible(false);
+    setTempValues({});
+    setName("");
+  }, [formType]);
+  useEffect(() => {
+    clearFunction();
     fetchFields();
     fetchFieldsOption();
     fetchTemplate();
-    // fetchTemplateFields();
   }, [formType]);
+
   return (
     <div className="container">
       <Navbar />
@@ -318,7 +330,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="text"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -328,7 +340,7 @@ const mergedFields = edited
                             {field.fieldType === "textarea" && (
                               <textarea
                                 id={`field-${field.id}`}
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -339,7 +351,7 @@ const mergedFields = edited
                               <select
                                 id={`field-${field.id}`}
                                 className="h5"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -363,7 +375,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="number"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -374,7 +386,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="date"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -395,7 +407,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="checkbox"
-                                checked={formValues[field.id] || false}
+                                checked={tempValues[field.id] || false}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.checked)
                                 }
@@ -445,7 +457,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="text"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -455,7 +467,7 @@ const mergedFields = edited
                             {field.fieldType === "textarea" && (
                               <textarea
                                 id={`field-${field.id}`}
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -466,7 +478,7 @@ const mergedFields = edited
                               <select
                                 id={`field-${field.id}`}
                                 className="h5"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -490,7 +502,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="number"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -501,7 +513,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="date"
-                                value={formValues[field.id] || ""}
+                                value={tempValues[field.id] || ""}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.value)
                                 }
@@ -522,7 +534,7 @@ const mergedFields = edited
                               <input
                                 id={`field-${field.id}`}
                                 type="checkbox"
-                                checked={formValues[field.id] || false}
+                                checked={tempValues[field.id] || false}
                                 onChange={(e) =>
                                   handleChange(field.id, e.target.checked)
                                 }
@@ -555,7 +567,7 @@ const mergedFields = edited
                             <input
                               type="text"
                               value={name}
-                              onChange={(e) => SetName(e.target.value)}
+                              onChange={(e) => setName(e.target.value)}
                               className="input-line ml0"
                             />
                             <MdCreate size={24} />
@@ -607,14 +619,14 @@ const mergedFields = edited
                           </tr>
                         </thead>
                         <tbody>
-                          {fieldOrder.map((fieldId, index) => {
+                          {[...new Set(fieldOrder)].map((fieldId, index) => {
                             const field = mergedFields.find(
                               (f) => f.id === fieldId
                             );
                             if (!field) return null;
 
                             return (
-                              <tr key={field.id}>
+                              <tr key={`${field.id}-${index}`}>
                                 <td>{index + 1}</td>
                                 <td>
                                   <input
@@ -696,13 +708,13 @@ const mergedFields = edited
                       <div className="df h10 al g10">
                         <button
                           className="gray btn mt20"
-                          onClick={() => setIsVisible(false)}
+                          onClick={handleFieldCancel}
                         >
                           Cancel
                         </button>
                         <button
                           className="green btn mt20"
-                          onClick={() => setIsVisible(false)}
+                          onClick={handleFieldSubmit}
                         >
                           Submit
                         </button>
@@ -744,8 +756,8 @@ const mergedFields = edited
           <div className="template-card2 df al jc fdc">
             <h3>Existing Template</h3>
             <div className="templates df fdc ">
-              {templateName.map((template) => {
-                const relatedTemplateFields = templatefields.filter(
+              {templateNames.map((template) => {
+                const relatedTemplateFields = templateFields.filter(
                   (tf) => tf.templateId === template.id
                 );
 

@@ -165,7 +165,7 @@ const UserCreation = () => {
               </select>
             </div>
            </div>
-            <div className=" h8  df al jce mr10">
+            <div className=" h8  df al jc mr10">
               <button type="button" className="gray btn mr10" onClick={()=>navigate(-1)}>
                 Cancel
               </button>

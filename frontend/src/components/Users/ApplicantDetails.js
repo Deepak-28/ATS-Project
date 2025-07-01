@@ -83,7 +83,23 @@ function ApplicantDetail() {
         <div className="df jcsa">
           <div className="applicant-detail-container">
             <div className="applicant-card">
-              <h3>Applicant Details</h3>
+              <div className="df jcsb al  h5  ">
+                <h3>Applicant Details</h3>
+                 <p>
+                <strong>Resume:</strong>{" "}
+                <button
+                  onClick={() =>
+                    window.open(
+                      `http://localhost:7000/uploads/${user.resume}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  View
+                </button>
+              </p>
+              </div>
+
               <p>
                 <strong>Name:</strong> {user.firstname} {user.lastname}
               </p>
@@ -101,19 +117,7 @@ function ApplicantDetail() {
                 <strong>Experience:</strong> {job.jobExperience} years
               </p>
               {/* <p><strong>Company:</strong> {job.companyName || "N/A"}</p> */}
-              <p>
-                <strong>Resume:</strong>{" "}
-                <button
-                  onClick={() =>
-                    window.open(
-                      `http://localhost:7000/uploads/${user.resume}`,
-                      "_blank"
-                    )
-                  }
-                >
-                  View
-                </button>
-              </p>
+             
             </div>
 
             <div className="applicant-card">

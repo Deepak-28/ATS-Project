@@ -71,7 +71,7 @@ function CandidateLogin() {
       .then((res) => {
         const { role, candidateId, cid } = res.data;
         // Store data in localstorage
-        localStorage.setItem("role", role);
+        // localStorage.setItem("role", role);
         if (cid) localStorage.setItem("cid", cid);
         if (candidateId) localStorage.setItem("cadidateId", candidateId);
 
@@ -89,7 +89,7 @@ function CandidateLogin() {
     try {
       const res = await axios.post("/user", data);
       console.log(res.data);
-      navigate("/");
+      navigate(-1);
     } catch (err) {
       console.log(err.response?.data || "Registration failed");
     }

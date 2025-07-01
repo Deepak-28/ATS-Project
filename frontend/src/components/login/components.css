@@ -531,6 +531,7 @@ textarea::placeholder{
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   margin-top: 10px;
+  /* overflow-y: auto; */
 }
 .template-fields{
   /* background-color: #c0392b; */
@@ -878,6 +879,9 @@ label {
 }
 .h75 {
   height: 75vh;
+}
+.hP70{
+  height: 70%;
 }
 .h80 {
   height: 80vh;

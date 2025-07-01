@@ -24,6 +24,17 @@
   border: 1px solid rgba(0, 0, 0, 0.2);
   padding: 0 0 0 10px;
 }
+.job-exp{
+     width: 65%;
+  height: 5vh;
+  outline: none;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 0 0 0 10px;
+  background: transparent;
+}
 .job-type{
     background-color: #f5f5f5;
 }

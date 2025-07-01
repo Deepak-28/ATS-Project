@@ -120,7 +120,6 @@ function JobCreate() {
       }));
     }
   };
-
   const handleSubmit = async () => {
     // console.log(job);
 

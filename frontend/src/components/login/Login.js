@@ -24,7 +24,7 @@ function Login() {
         // Store data in localstorage
         localStorage.setItem('role',role);
         if(cid) localStorage.setItem('cid', cid);
-        if (candidateId) localStorage.setItem('cadidateId', candidateId);
+        // if (candidateId) localStorage.setItem('cadidateId', candidateId);
 
         
         if (role === 'SuperAdmin') {
@@ -33,9 +33,10 @@ function Login() {
           navigate(`/admin/${cid}`);
         } else if (role === 'user') {
           navigate(`/User/${cid}`);
-        } else if (role === 'candidate') {
-          navigate(`/candidate/${candidateId}`);
         }
+        // } else if (role === 'candidate') {
+        //   navigate(`/candidate/${candidateId}`);
+        // }
       })
       .catch(err => {
         console.log('Login failed:', err);
