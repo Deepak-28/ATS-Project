@@ -130,7 +130,10 @@
   flex-direction: column;
   gap: 20px;
   width: 95%;
+  height: 50vh;
   margin: 20px auto;
+  overflow-y: auto;
+  /* overflow-y: visible; */
 }
 .job-card {
   display: flex;

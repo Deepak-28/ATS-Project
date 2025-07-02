@@ -12,7 +12,9 @@ const JobDetails = () => {
   const [job, setJob] = useState(null);
   const [applied, setApplied] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const token = localStorage.getItem('candidate_token');
+  const candidateId = localStorage.getItem("candidateId");
+  
   const fetchJobDetails = async () => {
     try {
       const res = await axios.get(`/job/${jid}`);
@@ -23,6 +25,14 @@ const JobDetails = () => {
       setLoading(false);
     }
   };
+  const fetchApplicantStatus = async () =>{
+    try{
+      const res = await axios.get(`/application/status/${candidateId}/${jid}`)
+      setApplied(res.data);
+    }catch(err){
+      console.error("Error getting Status", err);
+    }
+  }
   const getDynamicField = (formValues, keywords) => {
     return (
       Object.entries(formValues || {}).find(([label]) =>
@@ -31,13 +41,27 @@ const JobDetails = () => {
     );
   };
   const handleApply = () => {
-    navigate(`/login/${slug}/${jid}`);
+    if (token) {
+    try {
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      const candidateId = decoded.candidateId;
+
+      if (candidateId) {
+        navigate(`/application/${slug}/${jid}/${candidateId}`);
+        return;
+      }
+    } catch (err) {
+      console.error("Invalid token:", err);
+    }
+  }
+  navigate(`/login/${slug}/${jid}?mode=login`);
   };
   const handleCancel = () => {
     navigate(-1);
   };
   useEffect(() => {
     fetchJobDetails();
+    fetchApplicantStatus();
   }, []);
   if (loading) {
     return <div className="job-details-container">Loading...</div>;
@@ -45,7 +69,6 @@ const JobDetails = () => {
   if (!job) {
     return <div className="job-details-container">Job not found.</div>;
   }
-
   const formValues = job.formValues || {};
   const companyName = job.companyName || "No Company";
   const experience = formValues["Experience"] || "N/A";

@@ -38,7 +38,7 @@ function App() {
    <BrowserRouter>
    <Routes>
     <Route path='/' element={<Login/>}/>
-    <Route path='/login' element={<CandidateLogin/>}/>
+    <Route path='/login/:slug' element={<CandidateLogin/>}/>
     <Route path='/login/:slug/:jid' element={<CandidateLogin/>}/>
     <Route path='/register' element={<Register/>}/>
     <Route path='/company' element={<SuperAdmin/>}/>
@@ -65,7 +65,7 @@ function App() {
     <Route path='/alljobs' element={<AllJobs/>}/>
     <Route path='/template' element={<JobTemplate/>}/>
     <Route path="/company/:companyId/jobs" element={<AllJobs />} />
-    <Route path='/application/:jid/:candidateId' element={<Application />} />
+    <Route path='/application/:slug/:jid/:candidateId' element={<Application />} />
     <Route path="/applicants/:id" element={<ApplicantDetail />} />
     <Route path='/applicants/job/:jobId' element={<ApplicantsByJob/>}/> 
     <Route path='/admin/:cid' element={<Admin/>}/>

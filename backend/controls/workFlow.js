@@ -35,6 +35,24 @@ Router.post("/create", async (req, res) => {
     res.status(500).json({ error: "Server error." });
   }
 });
+
+
+Router.get("/job", async(req, res)=>{
+  try{
+    const data = await workFlow.findAll({where:{workflowType:"job"}, raw:true})
+    res.send(data);
+  }catch(err){
+    console.error("Error in getting workflow", err)
+  }
+});
+Router.get("/applicant", async(req, res)=>{
+  try{
+    const data = await workFlow.findAll({where:{workflowType:"applicant"}, raw:true});
+    res.send(data);
+  }catch(err){
+    console.error("Error in getting workflow", err)
+  }
+});
 Router.get("/:type", async (req, res) => {
   const { type } = req.params;
 
@@ -79,16 +97,6 @@ Router.get("/:type", async (req, res) => {
   } catch (error) {
     console.error("Error fetching workflows:", error);
     res.status(500).json({ error: "Server error." });
-  }
-});
-Router.get("/job", async(req, res)=>{
-  try{
-    const data = await workFlow.findAll({where:{workflowType:"job"}, raw:true})
-    res.send(data);
-    // console.log(data);
-    
-  }catch(err){
-    console.error("Error in getting workflow", err)
   }
 });
 Router.get("/job/:id", async (req, res)=>{

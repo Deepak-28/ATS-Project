@@ -1,6 +1,8 @@
 const Router = require('express').Router();
 const {login} = require('../config/index');
 const { Op } = require('sequelize');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = process.env.JWT_SECRET
 
 Router.post('/check', async (req, res) => {
     const { email, password } = req.body;
@@ -15,14 +17,24 @@ Router.post('/check', async (req, res) => {
         return res.status(404).send("Invalid email or password");
       }
   
-      res.send({ role: user.role, candidateId: user.candidateId, cid: user.cid });
+        const token = jwt.sign(
+      {
+        email: user.email,
+        role: user.role,
+        candidateId: user.candidateId,
+        cid: user.cid,
+      },
+      SECRET_KEY,
+      { expiresIn: '1h' }
+    );
+
+    res.send({ token });
 
     } catch (err) {
       console.error(err);
       res.status(500).send("Server error");
     }
-  });
-// Example Express.js POST route
+});
 Router.post('/admin/users', async (req, res) => {
     const { username, email, password, role, companyId } = req.body;
     try {
@@ -31,8 +43,7 @@ Router.post('/admin/users', async (req, res) => {
     } catch (error) {
       res.status(500).send( 'User creation failed',err);
     }
-  });
-  
+});
 Router.get('/user', async (req, res) => {
     try {
         const data = await login.findAll();
@@ -89,7 +100,6 @@ Router.get('/all', async (req, res) => {
     res.status(500).send("Failed to fetch users");
   }
 });
-// GET /login/user/company/:companyId
 Router.get("/user/company/:companyId", async (req, res) => {
     const { companyId } = req.params;
     try {
@@ -99,8 +109,7 @@ Router.get("/user/company/:companyId", async (req, res) => {
       console.error("Error fetching users for company:", err);
       res.status(500).send ("Failed to fetch users",err );
     }
-  });
-  
+});  
 Router.delete('/user/:id', async (req, res) => {
     try {
         const id = req.params.id;
@@ -130,20 +139,7 @@ Router.put('/admin/user/:id', async (req,res)=>{
         res.status(500).send("Update Failed")
     }
 });
-// Router.put('/user/:id', async (req,res)=>{
-//     const {id} = req.params;
-//     const data = req.body;
-//     try{
-//         const update_user = await login.update(data,{where:{id}, raw:true});
-//         if(update_user){
-//             res.send('User Updated');
-//         }else{
-//             res.status(404).send("User Not Found")
-//         }
-//     }catch(err){
-//         res.status(500).send("Update Failed")
-//     }
-// })
+
 
 
 module.exports = Router;

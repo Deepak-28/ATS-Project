@@ -21,10 +21,17 @@ function JobTemplate() {
   const [templateNames, setTemplateNames] = useState([]);
   const [templateFields, setTemplateFields] = useState([]);
   const [editTemplateId, setEditTemplateId] = useState(null);
+  const [jobWorkflows, setJobWorkFlows] = useState([]);
+  const [candidateWorkflows, setCandidateWorkflows] = useState([]);
+  const [candidateForms, setCandidateForms] = useState([]);
   const [searchText, setSearchText] = useState("");
   const navigate = useNavigate();
+  const [jobTemplateData, setJobTemplateData] = useState({
+    jobWorkFlowId: "",
+    candidateWorkFlowId: "",
+    candidateFormId: "",
+  });
 
-  // Fetch all fields for the template type
   const fetchFields = async () => {
     try {
       const res = await axios.get(`/fields/template/${formType}`);
@@ -36,7 +43,6 @@ function JobTemplate() {
       console.error("Failed to Fetch Fields", err);
     }
   };
-  // Fetch all field options
   const fetchFieldsOption = async () => {
     try {
       const res = await axios.get("/fieldOption/all");
@@ -45,7 +51,6 @@ function JobTemplate() {
       console.error("Error in Fetching Field Options");
     }
   };
-  // Fetch all templates and their fields for the form type
   const fetchTemplate = async () => {
     try {
       const res = await axios.get(`/template/all/${formType}`);
@@ -63,7 +68,30 @@ function JobTemplate() {
       console.error("failed to fetch template", err);
     }
   };
-
+  const fetchJobWorkFlow = async () => {
+    try {
+      const res = await axios.get("/workFlow/job");
+      setJobWorkFlows(res.data);
+    } catch (err) {
+      console.error("Error in fetching workflow", err);
+    }
+  };
+  const fetchCandidateWorkFlow = async () => {
+    try {
+      const res = await axios.get("/workFlow/applicant");
+      setCandidateWorkflows(res.data);
+    } catch (err) {
+      console.error("Error in fetching candidate workflow", err);
+    }
+  };
+  const fetchCandidateForms = async () => {
+    try {
+      const res = await axios.get("/template/candidate");
+      setCandidateForms(res.data);
+    } catch (err) {
+      console.error("Error in fetching the candidate form", err);
+    }
+  };
   // Merge fields for display, ensuring uniqueness
   const mergedFields = edited
     ? fieldOrder
@@ -83,7 +111,7 @@ function JobTemplate() {
         .filter(
           (f, idx, arr) => arr.findIndex((item) => item.id === f.id) === idx // Ensure unique fields
         );
-        
+
   const fetchTemplateFields = async () => {
     try {
       await axios.get("/templateField/all");
@@ -95,6 +123,22 @@ function JobTemplate() {
   const handleChange = (name, value) => {
     setTempValues((prev) => ({ ...prev, [name]: value }));
   };
+  const handleTemplateChange = (e) => {
+    const { name, value } = e.target;
+    const intFields = [
+      "jobWorkFlowId",
+      "candidateWorkFlowId",
+      "candidateFormId",
+    ];
+    const parsedValue = intFields.includes(name)
+      ? parseInt(value, 10) || ""
+      : value;
+
+    setJobTemplateData((prev) => ({
+      ...prev,
+      [name]: parsedValue,
+    }));
+  };
 
   const handleFieldSubmit = (e) => {
     e.preventDefault();
@@ -103,12 +147,15 @@ function JobTemplate() {
   };
 
   const handleSubmit = async () => {
+    // console.log(jobTemplateData);
+
     try {
       await axios.post("/template", {
         fieldPositions,
         name,
         formType,
         fieldOrder,
+        jobTemplateData,
       });
       toast.success("Template Created");
       fetchFields();
@@ -163,7 +210,6 @@ function JobTemplate() {
     }
   };
 
-  // Toggle selection, ensure no duplicates
   const toggleFieldSelection = (fieldId) => {
     if (selectedFieldIds.includes(fieldId)) {
       setSelectedFieldIds(selectedFieldIds.filter((id) => id !== fieldId));
@@ -230,6 +276,11 @@ function JobTemplate() {
     setFieldPositions({});
     setFieldOrder([]);
     setIsVisible(false);
+    setJobTemplateData({
+      jobWorkFlowId: "",
+      candidateWorkFlowId: "",
+      candidateFormId: "",
+    });
     // No navigate("/template") unless you want to always reload the route
   };
 
@@ -237,7 +288,6 @@ function JobTemplate() {
     clearFunction();
   };
 
-  // Ensure fieldOrder is unique after mergedFields change
   useEffect(() => {
     if (!edited && fields.length > 0) {
       const uniqueIds = [...new Set(fields.map((f) => f.id))];
@@ -259,6 +309,9 @@ function JobTemplate() {
     fetchFields();
     fetchFieldsOption();
     fetchTemplate();
+    fetchJobWorkFlow();
+    fetchCandidateWorkFlow();
+    fetchCandidateForms();
   }, [formType]);
 
   return (
@@ -300,8 +353,59 @@ function JobTemplate() {
             </div>
             <div className="">
               <div>
-                <div className="df jcsb fdc">
-                  <div className="job-form">
+                <div className="df jcsb fdc h100">
+                  <div className="df jcsb b-border  ">
+                    <div>
+                      <div className="input mt5">
+                        <label>Job Workflow</label>
+                        <select
+                          name="jobWorkFlowId"
+                          value={jobTemplateData.jobWorkFlowId}
+                          onChange={handleTemplateChange}
+                        >
+                          <option value="">Select Job Workflow</option>
+                          {jobWorkflows.map((flow) => (
+                            <option key={flow.id} value={flow.id}>
+                              {flow.workFlowName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="input mt5 mb5">
+                        <label>Candidate Workflow</label>
+                        <select
+                          name="candidateWorkFlowId"
+                          value={jobTemplateData.candidateWorkFlowId}
+                          onChange={handleTemplateChange}
+                        >
+                          <option value="">Select Candidate Workflow</option>
+                          {candidateWorkflows.map((flow) => (
+                            <option key={flow.id} value={flow.id}>
+                              {flow.workFlowName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="input mt5">
+                      <label>Candidate Form</label>
+                      <select
+                        name="candidateFormId"
+                        value={jobTemplateData.candidateFormId}
+                        onChange={handleTemplateChange}
+                      >
+                        <option value="">Select Candidate Form</option>
+                        {candidateForms.map((form) => (
+                          <option key={form.id} value={form.id}>
+                            {form.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="job-form mt10">
                     <div className="left-column">
                       {fieldOrder
                         .map((id) => fields.find((f) => f.id === id))

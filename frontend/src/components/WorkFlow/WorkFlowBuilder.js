@@ -171,7 +171,7 @@ const handleSaveWorkflow = async () => {
               placeholder="e.g., Applied, Interview"
             />
 
-            <div className="df al jc">
+            <div className="df al jc ">
               <button className="b btn" onClick={handleAddStage}>
                 Add
               </button>

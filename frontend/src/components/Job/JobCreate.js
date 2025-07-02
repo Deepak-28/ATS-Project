@@ -556,7 +556,7 @@ function JobCreate() {
 
                     {/* Right Column */}
                     <div className="right-column">
-                       <div className="input mt5">
+                       {/* <div className="input mt5">
                         <label>Workflow</label>
                         <select
                           id="workflowId"
@@ -571,7 +571,7 @@ function JobCreate() {
                             </option>
                           ))}
                         </select>
-                      </div>
+                      </div> */}
                       {/* <h5>Right</h5> */}
                       {templateFields
                         .filter(

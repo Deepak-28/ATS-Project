@@ -437,7 +437,7 @@ textarea::placeholder{
 }
 .job-form {
   width: 98%;
-  height: 55vh;
+  min-height: 45vh;
   display: grid;
   column-gap: 10px;
   grid-template-columns: auto auto;
@@ -901,6 +901,9 @@ label {
 .input textarea {
   height: 9vh;
   outline: none;
+}
+.f13{
+  font-size: 13px;
 }
 .f14 {
   font-size: 16px;

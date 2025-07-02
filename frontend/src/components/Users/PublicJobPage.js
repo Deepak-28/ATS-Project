@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { FaBriefcase } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import { FaBriefcase, FaRegUserCircle } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 import { MdOutlineAvTimer } from "react-icons/md";
 import axios from "axios";
@@ -14,7 +14,21 @@ const PublicJobPage = () => {
   const [searchText, setSearchText] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
+  const [data, setData] = useState([]);
+  const popupRef = useRef(null);
   const navigate = useNavigate();
+  const candidateId = localStorage.getItem("candidateId");
+  // const role = localStorage.getItem("role");
+  const email = localStorage.getItem("email");
+
+  let currentUser;
+
+  // if (!cid && !candidateId) {
+  //   currentUser = data.find((user) => user.role === "SuperAdmin");
+  // } else {
+  //   currentUser = null;
+  // }
 
   const getJobs = async () => {
     try {
@@ -27,15 +41,6 @@ const PublicJobPage = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    getJobs();
-  }, [slug]);
-
-  useEffect(() => {
-    filterJobs();
-  }, [searchText, locationFilter, typeFilter, jobs]);
-
   const filterJobs = () => {
     const lowerSearch = searchText.toLowerCase();
     const lowerLocation = locationFilter.toLowerCase();
@@ -63,21 +68,57 @@ const PublicJobPage = () => {
       )?.[1] || "Not provided"
     );
   };
-  const handleSignin = () =>{
-    navigate('/login')
-  }
-  const handleSignUp = ()=>{
-    navigate('/register')
-  }
+  const handleSignin = () => {
+    navigate(`/login/${slug}?mode=login`);
+  };
+  const handleSignUp = () => {
+    navigate(`/login/${slug}?mode=register`);
+  };
+  const handleCandidateLogout = () => {
+    localStorage.removeItem("candidate_token");
+    localStorage.removeItem("candidateId");
+    localStorage.removeItem("cid");
+
+    navigate(`/careers/${slug}`);
+  };
+  useEffect(() => {
+    getJobs();
+  }, [slug]);
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShowPopup(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  useEffect(() => {
+    filterJobs();
+  }, [searchText, locationFilter, typeFilter, jobs]);
+
   return (
     <div className="public-page-container">
       {/* Top Nav */}
       <div className="top-nav">
         <img src="/logo.png" alt="logo" className="logo" />
-        <div className="w13 df jcsb mr10">
-          <button className="s-btn b" onClick={handleSignin} >Sign In</button>
-          <button className="s-btn b" onClick={handleSignUp} >Sign Up</button>
-        </div>
+        {candidateId ? (
+          <div className="nav-icon df al mr10 ">
+            <FaRegUserCircle
+              className="cursor-pointer"
+              onClick={() => setShowPopup(!showPopup)}
+            />
+          </div>
+        ) : (
+          <div className="w13 df jcsb mr10">
+            <button className="s-btn b" onClick={handleSignin}>
+              Sign In
+            </button>
+            <button className="s-btn b" onClick={handleSignUp}>
+              Sign Up
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Header */}
@@ -131,7 +172,7 @@ const PublicJobPage = () => {
       </div>
 
       {/* Job Listings */}
-      <div className="job-listings">
+      <div className="job-listings ">
         {loading ? (
           <p>Loading jobs...</p>
         ) : filteredJobs.length === 0 ? (
@@ -163,7 +204,12 @@ const PublicJobPage = () => {
               "onsite",
               "hybrid",
             ]);
-            const salary = getDynamicField(job.formValues, ["salary", "pay", "income", "stipend"]);
+            const salary = getDynamicField(job.formValues, [
+              "salary",
+              "pay",
+              "income",
+              "stipend",
+            ]);
 
             return (
               <div className="job-card" key={index}>
@@ -178,7 +224,7 @@ const PublicJobPage = () => {
                 </div>
                 <div className="df al">
                   <Link to={`/job/${slug}/${job.id}`}>
-                  <button className="s-btn b">Apply</button>
+                    <button className="s-btn b">Apply</button>
                   </Link>
                   {/* onClick={navigate()} */}
                 </div>
@@ -187,6 +233,37 @@ const PublicJobPage = () => {
           })
         )}
       </div>
+      {showPopup && (
+        <div className="popup df fdc jcsb f13" ref={popupRef}>
+          <div className="">
+            <div className="w100 df al ">
+              <div className="h10 w5 df al jc ">
+                <label htmlFor="profile">
+                  {" "}
+                  <FaRegUserCircle size={30} className="cursor-pointer" />
+                </label>
+                <input
+                  type="file"
+                  id="profile"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
+                {/* onChange={handleImageUpload} */}
+              </div>
+              <div className=" ">
+                {/* {role} */}
+                <p>{email || "Email not found"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="df al w100   jc">
+              <button className="s-btn r" onClick={handleCandidateLogout}>
+                Logout
+              </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

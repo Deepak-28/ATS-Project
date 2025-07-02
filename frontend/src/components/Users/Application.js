@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FaCloudUploadAlt } from "react-icons/fa";
 
 function Application() {
-  const { jid, candidateId } = useParams();
+  const {slug, jid, candidateId } = useParams();
   const [data, setData] = useState({});
   const [jobs, setJobs] = useState([]);
   const [job, setJob] = useState({});
@@ -14,7 +14,6 @@ function Application() {
   const [resume, setResume] = useState({});
   const [selectedFile, setSelectedFile] = useState({});
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
   const Experience = ["0-1", "1-3", "3-5", "5-7", "7-10", "10-15", "15+"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -92,19 +91,19 @@ function Application() {
       formData.append("resume", renamedFile);
       formData.append("data", JSON.stringify(data));
 
-      // Upload the resume and update user data
+    
       await axios.put(`/user/${candidateId}/${jid}`, formData);
 
       // Update the "applied" field in the job
       await axios.put(`/application/update`, {
         candidateId: Number(candidateId),
         jobId: Number(jid),
-        status: "applied", // or whatever status you use
+        status: "applied", 
       });
 
       setApplied(true);
       toast.success("Applied Successfully");
-      navigate(-1);
+      navigate(`/careers/${slug}`);
     } catch (err) {
       handleError(err);
     } finally {

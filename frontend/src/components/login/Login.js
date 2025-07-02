@@ -9,7 +9,7 @@ function Login() {
     email: "",
     password: "",
   });
-  const [error, setError] = useState(""); // ❗ error state
+  const [error, setError] = useState(""); 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -20,13 +20,14 @@ function Login() {
     e.preventDefault();
     axios.post('/login/check', formData)
       .then(res => {
-        const { role, candidateId, cid } = res.data;
-        // Store data in localstorage
-        localStorage.setItem('role',role);
+        const token = res.data.token;
+      localStorage.setItem("admin_token", token); // ✅ Save JWT
+
+      const decoded = JSON.parse(atob(token.split('.')[1])); // Decode payload
+      const { role, candidateId, cid } = decoded;
+      localStorage.setItem('role',role);
         if(cid) localStorage.setItem('cid', cid);
         // if (candidateId) localStorage.setItem('cadidateId', candidateId);
-
-        
         if (role === 'SuperAdmin') {
           navigate('/dashboard');
         } else if (role === 'admin') {

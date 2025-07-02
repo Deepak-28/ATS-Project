@@ -10,6 +10,15 @@ module.exports = (sequelize, Sequelize)=>{
         },
         type:{
             type: Sequelize.STRING
+        },
+        jobWorkFlowId:{
+            type: Sequelize.INTEGER
+        },
+        candidateWorkFlowId:{
+            type: Sequelize.INTEGER
+        },
+        candidateTemplateId:{
+            type: Sequelize.INTEGER
         }
     });
     return Template;

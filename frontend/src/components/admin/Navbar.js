@@ -65,9 +65,7 @@ function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  useEffect(() => {
-    getDetails();
-  }, []);
+
   const role = localStorage.getItem("role");
   const cid = localStorage.getItem("cid");
   const candidateId = localStorage.getItem("candidateId");
@@ -79,7 +77,9 @@ function Navbar() {
   } else {
     currentUser = null;
   }
-
+  useEffect(() => {
+    getDetails();
+  }, []);
   return (
     <>
       {/* Top Navbar */}
@@ -110,8 +110,13 @@ function Navbar() {
                   {" "}
                   <FaRegUserCircle size={30} className="cursor-pointer" />
                 </label>
-                <input type="file" id="profile" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />  
-                
+                <input
+                  type="file"
+                  id="profile"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "none" }}
+                />
               </div>
               <div className=" ">
                 {role}

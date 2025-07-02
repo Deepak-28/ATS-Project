@@ -1,13 +1,13 @@
 const Router = require('express').Router();
 const {application, user, job} = require('../config/index')
 const { Op } = require("sequelize");
-// GET /application/status?candidateId=123&jobId=456
-Router.get('/status', async (req, res) => {
-    const { candidateId, jobId } = req.query;
+
+Router.get('/status/:candidateId/:jobId', async (req, res) => {
+    const { candidateId, jobId } = req.params;
     const existing = await application.findOne({
         where: { candidateId: Number(candidateId), jobId: Number(jobId) }
     });
-    res.json({ applied: !!existing });
+    res.send(!!existing);
 });
 
 // POST /application

@@ -1,14 +1,17 @@
 const Router = require("express").Router();
 const { template, templateField } = require("../config/index");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
-Router.post("/", async (req, res) => {
-  const { fieldPositions, name, formType, fieldOrder } = req.body;
-  //   console.log(fieldPositions);
+Router.post("/", async (req, res) => {  
+  const { fieldPositions, name, formType, fieldOrder, jobTemplateData } = req.body;
+  console.log(jobTemplateData);
+  
+  const { jobWorkFlowId, candidateWorkFlowId, candidateFormId } = jobTemplateData;
+  console.log(jobWorkFlowId,candidateWorkFlowId, candidateFormId );
+  
   try {
     const newTemplate = await template.create(
-      { name, type: formType },
-      { where: { type: formType } }
+      { name, type: formType, jobWorkFlowId,candidateWorkFlowId ,candidateTemplateId : candidateFormId },
     );
     // console.log(newTemplate);
     const templateId = newTemplate.id;
@@ -53,6 +56,14 @@ Router.get("/all/:formType", async (req, res) => {
     console.error("Error in getting template", err);
   }
 });
+Router.get("/candidate", async(req, res)=>{
+  try{
+    const data = await template.findAll({where:{type:"candidate"}, raw : true});
+    res.send(data);
+  }catch(err){
+    console.error("Error in Fetching candidate template", err)
+  }
+})
 Router.get("/job", async (req, res) => {
   try {
     const data = await template.findAll({ where: { type: "job" }, raw: true });
@@ -61,8 +72,6 @@ Router.get("/job", async (req, res) => {
       where: { templateId: dataId },
       raw: true,
     });
-    // console.log(templateFieldsdata);
-    // console.log(data);
     const payload = { data, templateFieldsdata };
     res.send(payload);
   } catch (err) {
