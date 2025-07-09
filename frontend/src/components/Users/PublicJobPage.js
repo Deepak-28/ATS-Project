@@ -15,21 +15,17 @@ const PublicJobPage = () => {
   const [locationFilter, setLocationFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(false);
+  const [isRegister, setIsRegister] = useState(true);
   const popupRef = useRef(null);
   const navigate = useNavigate();
   const candidateId = localStorage.getItem("candidateId");
-  // const role = localStorage.getItem("role");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
   const email = localStorage.getItem("email");
-
-  let currentUser;
-
-  // if (!cid && !candidateId) {
-  //   currentUser = data.find((user) => user.role === "SuperAdmin");
-  // } else {
-  //   currentUser = null;
-  // }
-
   const getJobs = async () => {
     try {
       const res = await axios.get(`/job/slug/${slug}`);
@@ -48,25 +44,72 @@ const PublicJobPage = () => {
 
     const results = jobs.filter((job) => {
       const form = job.formValues || {};
-      const title = form["Job-Title"] || job.jobTitle || "";
-      const location = job.jobLocation || "";
-      const type = job.jobType || "";
+      const title = getDynamicField(form, ["title", "job title", "position"]);
+      const location = getDynamicField(form, [
+        "location",
+        "place",
+        "job location",
+      ]);
+      const type = getDynamicField(form, [
+        "work type",
+        "job type",
+        "employment type",
+      ]);
 
-      return (
-        title.toLowerCase().includes(lowerSearch) &&
-        location.toLowerCase().includes(lowerLocation) &&
-        type.toLowerCase().includes(lowerType)
-      );
+      const matchSearch =
+        !lowerSearch || title.toLowerCase().includes(lowerSearch);
+      const matchLocation =
+        !lowerLocation || location.toLowerCase().includes(lowerLocation);
+      const matchType = !lowerType || type.toLowerCase().includes(lowerType);
+
+      return matchSearch && matchLocation && matchType;
     });
 
     setFilteredJobs(results);
   };
+
   const getDynamicField = (formValues, keywords) => {
     return (
       Object.entries(formValues || {}).find(([label]) =>
         keywords.some((keyword) => new RegExp(keyword, "i").test(label))
       )?.[1] || "Not provided"
     );
+  };
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setError("");
+  };
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const res = await axios.post("/login/check", formData);
+      const token = res.data.token;
+      // Store token
+      localStorage.setItem("candidate_token", token);
+      // Decode token
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      const { role, candidateId, cid, email } = decoded;
+
+      if (cid) localStorage.setItem("cid", cid);
+      if (candidateId) localStorage.setItem("candidateId", candidateId);
+      if (email) localStorage.setItem("email", email);
+
+      //   if (role === "candidate") {
+      //     if (jid) {
+
+      //     navigate(`/application/${slug}/${jid}/${candidateId}`);
+      //   } else {
+      //     navigate(`/careers/${slug}`);
+      //   }
+      // } else {
+      //   // Not a candidate (fallback)
+      //   navigate("/unauthorized");
+      // }
+    } catch (err) {
+      console.error("Login failed:", err);
+      setError("Invalid email or password.");
+    }
   };
   const handleSignin = () => {
     navigate(`/login/${slug}?mode=login`);
@@ -78,7 +121,7 @@ const PublicJobPage = () => {
     localStorage.removeItem("candidate_token");
     localStorage.removeItem("candidateId");
     localStorage.removeItem("cid");
-
+    setShowPopup(false);
     navigate(`/careers/${slug}`);
   };
   useEffect(() => {
@@ -103,11 +146,14 @@ const PublicJobPage = () => {
       <div className="top-nav">
         <img src="/logo.png" alt="logo" className="logo" />
         {candidateId ? (
-          <div className="nav-icon df al mr10 ">
-            <FaRegUserCircle
-              className="cursor-pointer"
-              onClick={() => setShowPopup(!showPopup)}
-            />
+          <div className="df al fdr g10">
+            <button className="b s-btn">Applied Jobs</button>
+            <div className="nav-icon df al mr10 ">
+              <FaRegUserCircle
+                className="cursor-pointer"
+                onClick={() => setShowPopup(!showPopup)}
+              />
+            </div>
           </div>
         ) : (
           <div className="w13 df jcsb mr10">
@@ -240,14 +286,16 @@ const PublicJobPage = () => {
               <div className="h10 w5 df al jc ">
                 <label htmlFor="profile">
                   {" "}
-                  <FaRegUserCircle size={30} className="cursor-pointer" />
+                  <Link to={`/profile/${candidateId}`}>
+                    <FaRegUserCircle size={30} className="cursor-pointer" />
+                  </Link>
                 </label>
-                <input
+                {/* <input
                   type="file"
                   id="profile"
                   accept="image/*"
                   style={{ display: "none" }}
-                />
+                /> */}
                 {/* onChange={handleImageUpload} */}
               </div>
               <div className=" ">
@@ -256,11 +304,15 @@ const PublicJobPage = () => {
               </div>
             </div>
           </div>
+          <div>
+            {/* <p>View Status</p> */}
+            {/* <p>Update Profile</p> */}
+          </div>
 
           <div className="df al w100   jc">
-              <button className="s-btn r" onClick={handleCandidateLogout}>
-                Logout
-              </button>
+            <button className="s-btn r" onClick={handleCandidateLogout}>
+              Logout
+            </button>
           </div>
         </div>
       )}

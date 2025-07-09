@@ -35,8 +35,6 @@ Router.post("/create", async (req, res) => {
     res.status(500).json({ error: "Server error." });
   }
 });
-
-
 Router.get("/job", async(req, res)=>{
   try{
     const data = await workFlow.findAll({where:{workflowType:"job"}, raw:true})
@@ -53,7 +51,7 @@ Router.get("/applicant", async(req, res)=>{
     console.error("Error in getting workflow", err)
   }
 });
-Router.get("/:type", async (req, res) => {
+Router.get("/flow/:type", async (req, res) => {
   const { type } = req.params;
 
   try {

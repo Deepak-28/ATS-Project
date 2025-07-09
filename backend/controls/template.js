@@ -1,13 +1,14 @@
 const Router = require("express").Router();
-const { template, templateField } = require("../config/index");
+const { raw } = require("express");
+const { template, templateField, workFlowStage,job } = require("../config/index");
 const { Op, where } = require("sequelize");
 
 Router.post("/", async (req, res) => {  
   const { fieldPositions, name, formType, fieldOrder, jobTemplateData } = req.body;
-  console.log(jobTemplateData);
+  // console.log(jobTemplateData);
   
   const { jobWorkFlowId, candidateWorkFlowId, candidateFormId } = jobTemplateData;
-  console.log(jobWorkFlowId,candidateWorkFlowId, candidateFormId );
+  // console.log(jobWorkFlowId,candidateWorkFlowId, candidateFormId );
   
   try {
     const newTemplate = await template.create(
@@ -32,7 +33,6 @@ Router.post("/", async (req, res) => {
     console.error("Error in creation template", err);
   }
 });
-
 Router.get("/all/:formType", async (req, res) => {
   const { formType } = req.params;
   try {
@@ -78,13 +78,39 @@ Router.get("/job", async (req, res) => {
     console.error("Error in getting template", err);
   }
 });
+Router.get("/job/:id", async (req, res)=>{
+  const {id} = req.params;
+  // console.log(id);
+  try{
+    const templateId = await template.findOne({where:{id}, raw:true})
+    const workFlowId = templateId.jobWorkFlowId || "";
+    const workflowStages = await workFlowStage.findAll({where:{workFlowId}, raw:true});
+    res.send(workflowStages)
+  }catch(err){
+    console.error("Error in Fetching Stages", err)
+  }
+})
+Router.get("/candidate/:id", async(req, res)=>{
+  const {id} = req.params;
+   try{
+    const JobId = await job.findOne({where:{id}, raw:true});
+    const templateId = JobId.templateId || "";
+    const TemplateData  =  await template.findOne({where:{id:templateId}, raw:true});
+    const workFlowId = TemplateData.candidateWorkFlowId || "";
+    const workflowStages = await workFlowStage.findAll({where:{workFlowId}, raw:true});
+    res.send(workflowStages)
+  }catch(err){
+    console.error("Error in Fetching Stages", err)
+  }
+})
 Router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, fieldPositions, fieldOrder } = req.body;
+  const { name, fieldPositions, fieldOrder, jobTemplateData } = req.body;
+  const { jobWorkFlowId, candidateWorkFlowId, candidateFormId } = jobTemplateData;
 
   try {
     // Update template name
-    await template.update({ name }, { where: { id } });
+    await template.update({ name,jobWorkFlowId,candidateWorkFlowId ,candidateTemplateId : candidateFormId }, { where: { id } });
 
     // Remove previous mappings
     await templateField.destroy({ where: { templateId: id } });
@@ -108,7 +134,6 @@ Router.put("/:id", async (req, res) => {
     res.status(500).send("Failed to update template");
   }
 });
-
 Router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   // console.log(id, 123);

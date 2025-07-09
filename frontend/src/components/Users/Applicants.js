@@ -14,23 +14,15 @@ function Applicants() {
   const path = window.location.pathname;
   const segments = path.split('/'); 
   const postSegment = segments[1];
-  // console.log(postSegment);
   
-
-  // Filter applicants
   const filteredApplicants = applicants.filter((applicant) =>
     `${applicant.firstname} ${applicant.lastname} ${applicant.email} ${applicant.ph_no} ${applicant.skills}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
-
-  // const role = localStorage.getItem("role");
-  // const cid = localStorage.getItem("cid");
-  // const candidateId = localStorage.getItem("candidateId");
-
   const fetchApplicants = async () => {
     try {
-      const res = await axios.get("/user/applicants");
+      const res = await axios.get(`/user/${postSegment}`);
       setApplicants(res.data);
     } catch (err) {
       console.error("Failed to fetch applicants:", err);
@@ -46,7 +38,7 @@ function Applicants() {
   };
   useEffect(() => {
     fetchApplicants();
-  }, []);
+  }, [postSegment]);
 
   return (
     <div className="container">

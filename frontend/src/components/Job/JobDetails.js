@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import TopNav from "../admin/TopNav";
 import "./JobDetails.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -103,16 +104,10 @@ const JobDetails = () => {
 
   return (
     <div className="job-details-container">
-      <div className="top-nav">
-        <img src="/logo.png" alt="logo" className="logo" />
-        {/* <div className="w13 df jcsb mr10">
-          <button className="s-btn b">Sign In</button>
-          <button className="s-btn b">Sign Up</button>
-        </div> */}
-      </div>
-  
+      <TopNav/>
         <div className="job-details ">
         <div className="job-details-header df jc fdc">
+          <span className="df f13 "> Job ID:  <h4>2X0{job.id}</h4></span>
           <h2>{jobTitle}</h2>
           <p>
             <span className="highlight">{companyName}</span>
@@ -122,7 +117,7 @@ const JobDetails = () => {
             <IoLocationOutline /> {location}
           </p>
         </div>
-        <div className="job-details-body ">
+        <div className="job-details-body df fdc jcsb ">
           {Object.keys(formValues).length > 0 && (
             <div className="admin-job-section ">
               <div className="">

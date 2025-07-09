@@ -89,7 +89,7 @@ function CandidateLogin() {
       if (role === "candidate") {
         if (jid) {
         
-        navigate(`/application/${jid}/${candidateId}`);
+        navigate(`/application/${slug}/${jid}/${candidateId}`);
       } else {
         navigate(`/careers/${slug}`);
       }
@@ -190,6 +190,7 @@ function CandidateLogin() {
           </div>
         </form>
       ) : (
+        <div className={`register-container ${!isRegister ? "open" : ""}`}>
         <div className="register-header">
           <div className=" df fdc jcsb al">
             <h3>Register Here</h3>
@@ -333,6 +334,7 @@ function CandidateLogin() {
               </p>
             </div>
           </div>
+        </div>
         </div>
       )}
     </div>

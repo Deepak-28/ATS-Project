@@ -16,7 +16,7 @@ const WorkflowBuilder = () => {
 
   const fetchWorkflow = async () => {
     try {
-      const res = await axios.get(`/workFlow/${workflowType}`);
+      const res = await axios.get(`/workFlow/flow/${workflowType}`);
       setWorkFlowData(res.data.workflows || res.data); // supports both response formats
     } catch (err) {
       console.error("Error fetching workflow:", err);
@@ -207,7 +207,7 @@ const handleSaveWorkflow = async () => {
           <h3>Existing Workflows</h3>
           <div className="templates df fdc ">
             {workFlowData.map((workflow) => (
-              <div key={workflow.id} className="templates-list df al jcsb g10 ">
+              <div key={workflow.id} className="box-field df al jcsb g10 ">
                 <div className="ml10">
                   <h4>{workflow.workFlowName}</h4>
                    <p className="mt5">

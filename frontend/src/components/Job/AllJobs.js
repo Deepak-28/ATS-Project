@@ -12,7 +12,7 @@ import Navbar from "../admin/Navbar";
 const AllJobs = () => {
   const { companyId } = useParams();
   const [jobs, setJobs] = useState([]);
-  const [JobId, setJobId] = useState("")
+  const [JobId, setJobId] = useState("");
   const [popup, setPopup] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [fields, setFields] = useState([]);
@@ -30,8 +30,10 @@ const AllJobs = () => {
     const stored = localStorage.getItem("selectedHeaders");
     return stored ? JSON.parse(stored) : [];
   });
+  const [options, setOptions] = useState([]);
+  const [formData, setFormData] = useState([]);
   const navigate = useNavigate();
-// console.log(JobId);
+  // console.log(JobId);
 
   const getCompanies = async () => {
     try {
@@ -60,8 +62,8 @@ const AllJobs = () => {
     try {
       const res = await axios.get(`/job/${jobId}`);
       const job = res.data;
-      setJobId(job.id)
-      
+      setJobId(job.id);
+
       const formatDate = (dateString) => {
         return new Date(dateString).toISOString().slice(0, 10);
       };
@@ -103,23 +105,49 @@ const AllJobs = () => {
       }
     }
   };
-  const handleSubmit = () => {
-    if (!postOption) {
-      alert("Please select a post option before submitting.");
-      return;
+  const getPortal = async () => {
+    try {
+      const res = await axios.get("/portal");
+      const portal = res.data;
+      setOptions(portal); // ✅ just set options, NOT formData here
+    } catch (err) {
+      console.error("failed to get portal", err);
     }
+  };
+
+  const getPostOption = async (id) => {
+    try {
+      const res = await axios.get(`/postOption/${id}`);
+
+      // Ensure postDate and expiryDate are string format (YYYY-MM-DD)
+      const formatted = res.data.map((item) => ({
+        ...item,
+        postDate: item.postDate?.slice(0, 10) || "",
+        expiryDate: item.expiryDate?.slice(0, 10) || "",
+      }));
+
+      setFormData(formatted);
+    } catch (err) {
+      console.error("Error in fetching Post Options", err);
+    }
+  };
+
+  const handleFormChange = (index, field, value) => {
+    const updatedForm = [...formData];
+    updatedForm[index][field] = value;
+    setFormData(updatedForm);
+  };
+  const handleSubmit = () => {
     const jobVisibilityData = {
       jobId: selectedJobId,
-      postDate,
-      expiryDate,
-      visibility: postOption,
+      formData,
     };
-    
     axios
       .post(`/job/visibility/${JobId}`, jobVisibilityData)
       .then((res) => {
         toast.success("Job posted successfully!");
         setIsPosted(true);
+        getPostOption(JobId);
         clearFunction();
       })
       .catch((err) => {
@@ -136,8 +164,10 @@ const AllJobs = () => {
       console.error("Error unposting job", err);
     }
   };
-  const handlePopup = (jobId) => {
+  const handlePopup = async (jobId) => {
     fetchJob(jobId);
+    await getPortal();
+    await getPostOption(jobId);
     setIsVisibilty(true);
   };
   const filteredJobs = jobs.filter((job) =>
@@ -198,6 +228,7 @@ const AllJobs = () => {
     getCompanies();
     fetchFields();
     fetchFieldsOption();
+    getPortal();
   }, []);
   useEffect(() => {
     localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
@@ -217,6 +248,11 @@ const AllJobs = () => {
               className="mr20"
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ padding: "6px", width: "250px" }}
+            />
+            <MdOutlineLibraryAdd
+              size={24}
+              className="g mr10 cursor-pointer"
+              onClick={() => navigate("/Job")}
             />
             <RiListSettingsLine
               size={20}
@@ -369,36 +405,49 @@ const AllJobs = () => {
           <div className="post-box df jcsb al fdc">
             <div className="w90 df fdc mt20 g10">
               {postOption ? <h3>Job Unpost</h3> : <h3>Job Post</h3>}
-              <div className="df fdr w100 g10">
-                <label className="input">
-                  Post Date:
-                  <input
-                    type="date"
-                    value={postDate}
-                    onChange={(e) => setPostDate(e.target.value)}
-                  />
-                </label>
-                <label className="input">
-                  Expiry Date:
-                  <input
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                  />
-                </label>
-                <label className="input">
-                  Post Option:
-                  <select
-                    value={postOption}
-                    onChange={(e) => setPostOption(e.target.value)}
-                  >
-                    <option value="">Select Option</option>
-                    <option value="internal">Internal</option>
-                    <option value="external">External</option>
-                    <option value="internal-external">Internal-External</option>
-                    <option value="agency">Agency</option>
-                  </select>
-                </label>
+              <div className="df fdc w100 g10">
+                {" "}
+                {formData.map((entry, index) => (
+                  <div key={entry.id} className="df fdr w100 g10 al">
+                    {" "}
+                    <label className="input fdc mt10">
+                      Post Date:
+                      <input
+                        type="date"
+                        value={entry.postDate}
+                        onChange={(e) =>
+                          handleFormChange(index, "postDate", e.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="input fdc mt10">
+                      Expiry Date:
+                      <input
+                        type="date"
+                        value={entry.expiryDate}
+                        onChange={(e) =>
+                          handleFormChange(index, "expiryDate", e.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="input fdc mt10">
+                      Post Option:
+                      <select
+                        value={entry.postOption}
+                        onChange={(e) =>
+                          handleFormChange(index, "postOption", e.target.value)
+                        }
+                      >
+                        <option value="">Select Option</option>
+                        {options.map((opt) => (
+                          <option key={opt.id} value={opt.Name}>
+                            {opt.Name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="box-border w100 df jce ae g10 mt10 mb20">
@@ -415,7 +464,7 @@ const AllJobs = () => {
                   <button
                     type="button"
                     onClick={handleUnpost}
-                    className="b s-btn mr30"
+                    className="b s-btn orange mr30"
                   >
                     Unpost
                   </button>

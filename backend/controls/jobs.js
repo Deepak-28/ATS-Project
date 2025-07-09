@@ -1,6 +1,7 @@
 const Router = require("express").Router();
 const { Op } = require('sequelize');
 const { job, application, fieldData, field } = require("../config/index");
+const { postOption: PostOption } = require("../config/index");
 
 Router.post("/", async (req, res) => {
   const { payload, formValues } = req.body;
@@ -42,20 +43,36 @@ Router.post("/create", async (req, res) => {
     res.status(500).json({ error: "Job creation failed" });
   }
 });
+
+
 Router.post("/visibility/:id", async (req, res) => {
   const { id: jobId } = req.params;
-  // console.log(req.body);
-  const { postDate, expiryDate, visibility } = req.body;
+  const { formData } = req.body;
+
   try {
-    const data = await job.update(
-      { postDate, expiryDate, visibility },
-      { where: { id: jobId } }
-    );
+    if (Array.isArray(formData)) {
+      const entries = formData.map(({ postDate, expiryDate, postOption }) => ({
+        jobId,
+        postDate,
+        expiryDate,
+        postOption
+      }));
+      await PostOption.destroy({where:{jobId}})
+      await PostOption.bulkCreate(entries);
+      await job.update({visibility:"posted"},{where:{id:jobId}})
+    } else {
+      const { postDate, expiryDate, postOption } = formData;
+      await PostOption.create({ jobId, postDate, expiryDate, postOption });
+      await job.update({visibility:"posted"},{where:{id:jobId}})
+    }
+
     res.send("Job Posted");
   } catch (err) {
     console.error(err);
+    res.status(500).send("Failed to post job");
   }
 });
+
 Router.post("/manualFieldSubmit", async (req, res) => {
   const { jobId, Fields } = req.body;
   if (!jobId || !Array.isArray(Fields)) {
@@ -178,44 +195,56 @@ Router.get("/data", async (req, res) => {
 });
 Router.get("/slug/:slug", async (req, res) => {
   const { slug } = req.params;
-  // console.log(slug);
+
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
   try {
+    // Build visibility filter (matching DB format)
     let visibilityFilter;
 
     if (slug === "internal") {
-      visibilityFilter = { [Op.in]: ["internal", "internal-external"] };
+      visibilityFilter = { [Op.in]: ["Internal", "Internal-External"] };
     } else if (slug === "external") {
-      visibilityFilter = { [Op.in]: ["external", "internal-external"] };
+      visibilityFilter = { [Op.in]: ["External", "Internal-External"] };
     } else if (slug.includes("&")) {
-      visibilityFilter = { [Op.in]: slug.split("&") };
+      visibilityFilter = {
+        [Op.in]: slug.split("&").map(capitalize), // Capitalize each part
+      };
     } else {
-      visibilityFilter = slug;
+      visibilityFilter = capitalize(slug);
     }
 
-    //  Get all jobs with matching slug
-    const jobs = await job.findAll({ where: { visibility: visibilityFilter } });
-    // If no jobs, return early
-    if (!jobs || jobs.length === 0) {
-      return res.status(404).send("No jobs found with given slug.");
+    // Step 1: Get jobIds from PostOption table
+    const matchedOptions = await PostOption.findAll({
+      where: { postOption: visibilityFilter },
+      attributes: ["jobId"],
+      raw: true,
+    });
+
+    const jobIds = [...new Set(matchedOptions.map((opt) => opt.jobId))];
+
+    if (!jobIds.length) {
+      return res.status(404).send("No jobs found for given visibility slug.");
     }
-    //  Get all jobIds
-    const jobIds = jobs.map((j) => j.id);
-    //  Get all dynamic field data for these jobs
+
+    // Step 2: Get jobs
+    const jobs = await job.findAll({ where: { id: jobIds } });
+
+    // Step 3: Field Data
     const allFieldData = await fieldData.findAll({
       where: { jobId: jobIds },
     });
-    //  Get all unique fieldIds from the field data
+
     const fieldIds = [...new Set(allFieldData.map((fd) => fd.fieldId))];
-    //  Get metadata for the fields
     const fieldDefs = await field.findAll({
       where: { id: fieldIds },
     });
-    // Create a map of fieldId => fieldLabel
+
     const fieldLabelMap = {};
     fieldDefs.forEach((f) => {
       fieldLabelMap[f.id] = f.fieldLabel;
     });
-    //  Group fieldData by jobId and format them
+
     const jobFieldMap = {};
     allFieldData.forEach((fd) => {
       if (!jobFieldMap[fd.jobId]) {
@@ -226,11 +255,12 @@ Router.get("/slug/:slug", async (req, res) => {
         jobFieldMap[fd.jobId][label] = fd.value;
       }
     });
-    //  Attach formValues to each job
+
     const jobsWithFields = jobs.map((j) => ({
       ...j.toJSON(),
       formValues: jobFieldMap[j.id] || {},
     }));
+
     res.send(jobsWithFields);
   } catch (err) {
     console.error("Error fetching jobs with related fields:", err);
@@ -256,7 +286,13 @@ Router.get("/:id", async (req, res) => {
     if (!jobs) {
       return res.status(404).send("Job not found");
     }
-    const dynamicFields = await fieldData.findAll({ where: { jobId: id } });
+    const dynamicFields = await fieldData.findAll({
+      where: {
+        jobId: id,
+        candidateId: null, 
+      },
+    });
+
     if (dynamicFields.length === 0) {
       return res.send(jobs);
     }
@@ -349,9 +385,10 @@ Router.put("/unpost/:id", async (req, res) => {
   const { id } = req.params;
   try {
     await job.update(
-      { postDate: null, expiryDate: null, visibility: null },
+      { visibility: null },
       { where: { id } }
     );
+    await PostOption.destroy({where:{id}});
     res.send("Job unposted");
   } catch (err) {
     res.status(500).send("Error unposting job");
@@ -384,6 +421,7 @@ Router.delete("/:id", async (req, res) => {
     await application.destroy({ where: { jobId: id } });
     // Then delete the job itself
     await job.destroy({ where: { id } });
+    await PostOption.destroy({where:{jobId:id}})
     res.send("Job and associated applications deleted");
   } catch (error) {
     console.error("Error deleting job or applications:", error);

@@ -59,7 +59,9 @@ Router.get("/:slug", async(req, res)=>{
 })
 Router.get('/', async(req,res)=>{
     try{
-        const data = await portal.findAll()
+        const data = await portal.findAll({raw:true});
+        // console.log(data);
+        
         res.send(data)
     }catch(err){
         console.error("failed to fetch portals",err)

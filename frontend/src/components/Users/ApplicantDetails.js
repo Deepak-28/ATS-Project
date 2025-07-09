@@ -7,7 +7,7 @@ import Navbar from "../admin/Navbar";
 import "./ApplicantDetails.css";
 
 function ApplicantDetail() {
-  const { id } = useParams();
+  const {jid, id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [applicant, setApplicant] = useState(null);
@@ -24,15 +24,13 @@ function ApplicantDetail() {
       .catch((err) => console.error("Error loading applicant:", err));
   };
 
-  const fetchWorkflow = () => {
-    axios
-      .get("/workFlow/applicant")
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setWorkflowStages(res.data.map((stage) => stage.stageName));
-        }
-      })
-      .catch((err) => console.error("Error fetching workflow stages:", err));
+  const fetchWorkflow = async () => {
+   try{
+    const res = await axios.get(`/template/candidate/${jid}`);
+    setWorkflowStages(res.data);
+   }catch(err){
+    console.log("Error in Fetching WorkFlow", err);
+   }
   };
 
   useEffect(() => {
@@ -114,7 +112,7 @@ function ApplicantDetail() {
                 <strong>Location:</strong> {user.city}, {user.country}
               </p>
               <p>
-                <strong>Experience:</strong> {job.jobExperience} years
+                {/* <strong>Experience:</strong> {job.jobExperience} years */}
               </p>
               {/* <p><strong>Company:</strong> {job.companyName || "N/A"}</p> */}
              
@@ -132,8 +130,8 @@ function ApplicantDetail() {
                   onChange={handleStatusChange}
                 >
                   {workflowStages.map((stage, idx) => (
-                    <option key={idx} value={stage}>
-                      {stage}
+                    <option key={idx} value={stage.StageName}>
+                      {stage.StageName}
                     </option>
                   ))}
                 </select>

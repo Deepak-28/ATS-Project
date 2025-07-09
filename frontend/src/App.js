@@ -30,6 +30,7 @@ import Portal from './components/Job/Portal';
 import PublicJobPage from './components/Users/PublicJobPage';
 import AdminJobDetails from './components/Job/AdminJobDetails';
 import JobTemplate from './components/Job/JobTemplate';
+import Profile from './components/Users/Profile';
 import axios from 'axios';
 axios.defaults.baseURL = process.env.REACT_APP_BASE_URL
 
@@ -66,6 +67,7 @@ function App() {
     <Route path='/template' element={<JobTemplate/>}/>
     <Route path="/company/:companyId/jobs" element={<AllJobs />} />
     <Route path='/application/:slug/:jid/:candidateId' element={<Application />} />
+    <Route path="/applicants/:jid/:id" element={<ApplicantDetail />} />
     <Route path="/applicants/:id" element={<ApplicantDetail />} />
     <Route path='/applicants/job/:jobId' element={<ApplicantsByJob/>}/> 
     <Route path='/admin/:cid' element={<Admin/>}/>
@@ -75,7 +77,8 @@ function App() {
     <Route path='/dashboard' element={<Dashboard/>}/>
     <Route path='/portal' element={<Portal/>}/>
     <Route path='/candidate/:slug' element={<UserPage/>}/>
-    <Route path="/careers/:slug" element={<PublicJobPage />} />   
+    <Route path="/careers/:slug" element={<PublicJobPage />} />
+    <Route path='/profile/:id' element={<Profile/>} />
    </Routes>
     <Toaster position="top-right" />
    </BrowserRouter>

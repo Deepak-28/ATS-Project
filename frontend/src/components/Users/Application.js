@@ -6,13 +6,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FaCloudUploadAlt } from "react-icons/fa";
 
 function Application() {
-  const {slug, jid, candidateId } = useParams();
+  const { slug, jid, candidateId } = useParams();
   const [data, setData] = useState({});
   const [jobs, setJobs] = useState([]);
   const [job, setJob] = useState({});
   const [applied, setApplied] = useState(false);
   const [resume, setResume] = useState({});
   const [selectedFile, setSelectedFile] = useState({});
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const [templateFields, setTemplateFields] = useState([]);
+  const [fieldOptions, setFieldOptions] = useState([]);
+  const [allFields, setAllFields] = useState([]);
+  const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const Experience = ["0-1", "1-3", "3-5", "5-7", "7-10", "10-15", "15+"];
@@ -38,17 +43,32 @@ function Application() {
       const res = await axios.get(`/job/${jid}`);
       const jobData = res.data;
       setJob(jobData);
-      console.log(jobData);
-
-      // if (jobData.applied) {
-      //     const appliedUsers = JSON.parse(jobData.applied);
-      //     const uidNum = Number(candidateId);
-      //     setApplied(appliedUsers.includes(uidNum));
-      // } else {
-      //     setApplied(false);
-      // }
+      // console.log(jobData.templateId);
+      setSelectedTemplateId(jobData.templateId);
+      fetchTemplate(jobData.templateId);
     } catch (err) {
       console.error("Error fetching job data:", err);
+    }
+  };
+  const fetchTemplate = async (id) => {
+    try {
+      const res = await axios.get(`/template/candidate/${id}`);
+      const templateData = res.data;
+      setSelectedTemplateId(templateData.candidateTemplateId);
+
+      fetchTemplateFields(templateData.candidateTemplateId);
+    } catch (err) {
+      console.error("Error in Fetching Template", err);
+    }
+  };
+  const fetchTemplateFields = async (id) => {
+    try {
+      const res = await axios.get(`/templateField/all/${id}`);
+      const data = res.data;
+      setTemplateFields(data);
+      // console.log("templateFields", data);
+    } catch (err) {
+      console.error("Error in fetching fields", err);
     }
   };
   const handleCancel = () => {
@@ -70,35 +90,44 @@ function Application() {
   const handleResume = async () => {
     setLoading(true);
     try {
-      if (!selectedFile || !selectedFile.name) {
-        throw new Error("No file selected.");
+      const fileEntry = Object.entries(formValues).find(
+        ([_, value]) => value instanceof File
+      );
+
+      if (!fileEntry) {
+        throw new Error("No file selected in dynamic fields.");
       }
 
-      const name = selectedFile.name.slice(
-        0,
-        selectedFile.name.lastIndexOf(".")
-      );
-      const extension = selectedFile.name.slice(
-        selectedFile.name.lastIndexOf(".")
-      );
+      const [fileFieldId, file] = fileEntry;
+
+      // Rename file
+      const name = file.name.slice(0, file.name.lastIndexOf("."));
+      const extension = file.name.slice(file.name.lastIndexOf("."));
       const newFileName = `${name}_${Date.now()}${extension}`;
 
-      const renamedFile = new File([selectedFile], newFileName, {
-        type: selectedFile.type,
+      const renamedFile = new File([file], newFileName, {
+        type: file.type,
       });
 
       const formData = new FormData();
-      formData.append("resume", renamedFile);
+      formData.append(fileFieldId, renamedFile);
       formData.append("data", JSON.stringify(data));
 
-    
+      Object.entries(formValues).forEach(([key, value]) => {
+        if (value instanceof File && key !== fileFieldId) {
+          formData.append(key, value);
+        } else if (!(value instanceof File)) {
+          formData.append(key, value);
+        }
+      });
+      console.log(formData);
+
       await axios.put(`/user/${candidateId}/${jid}`, formData);
 
-      // Update the "applied" field in the job
       await axios.put(`/application/update`, {
         candidateId: Number(candidateId),
         jobId: Number(jid),
-        status: "applied", 
+        status: "applied",
       });
 
       setApplied(true);
@@ -148,7 +177,6 @@ function Application() {
       )?.[1] || "Not provided"
     );
   };
-  const formValues = job.formValues || {};
   const companyName = job.companyName || "No Company";
   const experience = formValues["Experience"] || "N/A";
   const jobTitle = getDynamicField(formValues, [
@@ -156,123 +184,86 @@ function Application() {
     "job title",
     "position",
   ]);
+  const renderFields = (position) => {
+    if (!templateFields.length || !selectedTemplateId) return null;
+
+    const filtered = templateFields.filter(
+      (tf) =>
+        String(tf.templateId) === String(selectedTemplateId) &&
+        tf.position?.toLowerCase() === position.toLowerCase()
+    );
+
+    return filtered.map((tf) => {
+      const field = tf.field;
+      if (!field) return null;
+
+      return (
+        <div key={field.id} className="input mt5">
+          <label>{field.fieldLabel}</label>
+          {field.fieldType === "text" && (
+            <input
+              type="text"
+              value={formValues[field.id] || ""}
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.value })
+              }
+            />
+          )}
+          {field.fieldType === "dropdown" && (
+            <select
+              value={formValues[field.id] || ""}
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.value })
+              }
+            >
+              <option value="">Select</option>
+              {(field.options || []).map((opt, idx) => (
+                <option key={idx} value={opt.value || opt}>
+                  {opt.value || opt}
+                </option>
+              ))}
+            </select>
+          )}
+          {field.fieldType === "file" && (
+            <input
+              type="file"
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.files[0] })
+              }
+            />
+          )}
+        </div>
+      );
+    });
+  };
   useEffect(() => {
     handleUser();
     getJobs();
   }, []);
-
   return (
     <div className="application_container df jcsb fdc">
       <div>
         <div className="top-nav">
-        <img src="/logo.png" alt="logo" className="logo" />
-      </div>
-        <div className="application_content">
-        <div className="a-job-header">
-          <h3>{jobTitle}</h3>
-          <p>{companyName}</p>
+          <img src="/logo.png" alt="logo" className="logo" />
         </div>
-        <div className="input_box">
-          <label>First Name</label>
-          <input
-            type="text"
-            id="firstname"
-            placeholder="First Name"
-            onChange={handleInput}
-            value={data.firstname || ""}
-            required
-          />
-        </div>
-        <div className="input_box">
-          <label>Last Name</label>
-          <input
-            type="text"
-            id="lastname"
-            placeholder="Last Name"
-            onChange={handleInput}
-            value={data.lastname || ""}
-            required
-          />
-        </div>
-        <div className="input_box">
-          <label>Email</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="Email"
-            onChange={handleInput}
-            value={data.email || ""}
-            required
-          />
-        </div>
-        <div className="input_box">
-          <label>Skills</label>
-          <input
-            type="text"
-            id="skills"
-            placeholder="Skills"
-            onChange={handleInput}
-            value={data.skills || ""}
-            required
-          />
-        </div>
-        <div className="input_box">
-          <label>Experience</label>
-          <select
-            className="job-exp"
-            id="experience"
-            onChange={handleInput}
-            value={data.experience || ""}
-          >
-            <option>Select Option</option>
-            {Experience.map((item, index) => (
-              <option value={item} key={index}>
-                {item} year
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="input_box">
-          <label>Education</label>
-          <input
-            type="text"
-            id="education"
-            placeholder="Education"
-            onChange={handleInput}
-            value={data.education || ""}
-            required
-          />
-        </div>
-        <div className="input_box resume">
-          <label>Resume</label>
-          <div className="resume_box">
-            <label htmlFor="resume" className="resume_upload">
-              {" "}
-              <FaCloudUploadAlt />
-            </label>
-            <input
-              type="file"
-              id="resume"
-              accept=".pdf"
-              onChange={handleFile}
-              required
-            />
-            {data.resume && (
-              <p className="uploaded-filename">{resumename(data.resume)}</p>
-            )}
+        <div className="application_content ml20">
+          <div className="a-job-header">
+            <h3>{jobTitle}</h3>
+            <p>{companyName}</p>
           </div>
+
+          <div className="left-column">{renderFields("left")}</div>
+          <div className="right-column">{renderFields("right")}</div>
         </div>
-        
-      </div>
       </div>
       <div className="w100 df jc g10 mb10 ">
-          <button className="gray btn" onClick={handleCancel}>
-            Cancel
-          </button>
-          <button className="btn b" onClick={handleResume} disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </div>
+        <button className="gray btn" onClick={handleCancel}>
+          Cancel
+        </button>
+        <button className="btn b" onClick={handleResume} disabled={loading}>
+          {loading ? "Submitting..." : "Submit"}
+        </button>
+      </div>
     </div>
   );
 }

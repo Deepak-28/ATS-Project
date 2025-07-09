@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { MdOutlineLibraryAdd } from "react-icons/md";
+import { FaEdit, FaWpforms } from "react-icons/fa";
+import { LiaProjectDiagramSolid } from "react-icons/lia";
+import { FiUsers } from "react-icons/fi";
 import Navbar from "../admin/Navbar";
-import { FaEdit } from "react-icons/fa";
 
 function JobCreate() {
   const { id: jobId } = useParams();
@@ -24,6 +26,9 @@ function JobCreate() {
   const [activeTab, setActiveTab] = useState("templates");
   const [editIndex, setEditIndex] = useState(null);
   const [workFlow, setWorkFlow] = useState([]);
+  const [jobWorkflows, setJobWorkFlows] = useState([]);
+  const [candidateWorkflows, setCandidateWorkflows] = useState([]);
+  const [candidateForms, setCandidateForms] = useState([]);
   // console.log(selectedTemplateId);
 
   const getCompanies = async () => {
@@ -57,8 +62,8 @@ function JobCreate() {
     try {
       const res = await axios.get("/template/job");
       const { data, templateFieldsdata } = res.data;
-      console.log(data);
-      console.log(templateFieldsdata);
+      // console.log(data);
+      // console.log(templateFieldsdata);
 
       setTemplates(data);
       setTemplateFields(templateFieldsdata);
@@ -96,6 +101,30 @@ function JobCreate() {
       console.error("Error in fetching workflow", err);
     }
   };
+  const fetchJobWorkFlow = async () => {
+    try {
+      const res = await axios.get("/workFlow/job");
+      setJobWorkFlows(res.data);
+    } catch (err) {
+      console.error("Error in fetching workflow", err);
+    }
+  };
+  const fetchCandidateWorkFlow = async () => {
+    try {
+      const res = await axios.get("/workFlow/applicant");
+      setCandidateWorkflows(res.data);
+    } catch (err) {
+      console.error("Error in fetching candidate workflow", err);
+    }
+  };
+  const fetchCandidateForms = async () => {
+    try {
+      const res = await axios.get("/template/candidate");
+      setCandidateForms(res.data);
+    } catch (err) {
+      console.error("Error in fetching the candidate form", err);
+    }
+  };
   const handleInputChange = (e) => {
     const { id, value } = e.target;
 
@@ -124,7 +153,7 @@ function JobCreate() {
     // console.log(job);
 
     try {
-      // Step 1: Merge form values into Fields
+      // Merge form values into Fields
       const enrichedFields = Fields.map((field) => ({
         ...field,
         value: formValues[field.fieldLabel] || "", // Capture user input
@@ -150,7 +179,7 @@ function JobCreate() {
         // CREATE new job
         const res = await axios.post("/job/create", job);
         const newJobId = res.data.id;
-        console.log("New Job ID:", newJobId);
+        // console.log("New Job ID:", newJobId);
 
         if (activeTab === "fields") {
           // Manual field creation
@@ -183,7 +212,7 @@ function JobCreate() {
   };
   const handleAddField = () => {
     const newField = {
-      id: Date.now(), // 👈 Add a unique ID here
+      id: Date.now(), // Add a unique ID here
       fieldLabel,
       fieldType,
       position,
@@ -368,6 +397,9 @@ function JobCreate() {
     fetchFieldsOption();
     fetchTemplate();
     fetchWorkFlow();
+    fetchCandidateForms();
+    fetchCandidateWorkFlow();
+    fetchJobWorkFlow();
     // fetchTemplateFields();
     // fetchAllJobs();
     if (jobId) {
@@ -386,9 +418,9 @@ function JobCreate() {
         <div className="df jcsa">
           <div className="template-card df  jcsb fdc ">
             <div className="df jcsb fdc">
-              <div className="job-form ">
+              <div className="job-form-wrapper ">
                 {activeTab === "templates" && selectedTemplateId && (
-                  <div className="template-fields  ml15 ">
+                  <div className="job-form  mt10 ">
                     {/* <h4>Template Fields</h4> */}
 
                     {/* Left Column */}
@@ -409,7 +441,6 @@ function JobCreate() {
                           ))}
                         </select>
                       </div>
-                     
 
                       {templateFields
                         .filter(
@@ -436,7 +467,7 @@ function JobCreate() {
                               }`}
                             >
                               {field.fieldType === "header" && (
-                                <h3 className="field-header">
+                                <h3 className="field-header header-with-line">
                                   {field.label || field.fieldLabel}
                                 </h3>
                               )}
@@ -556,23 +587,6 @@ function JobCreate() {
 
                     {/* Right Column */}
                     <div className="right-column">
-                       {/* <div className="input mt5">
-                        <label>Workflow</label>
-                        <select
-                          id="workflowId"
-                          value={job.workFlowId}
-                          onChange={handleInputChange}
-                          className="h5"
-                        >
-                          <option value="">Select a workflow</option>
-                          {workFlow.map((flow) => (
-                            <option key={flow.id} value={flow.id}>
-                              {flow.workFlowName}
-                            </option>
-                          ))}
-                        </select>
-                      </div> */}
-                      {/* <h5>Right</h5> */}
                       {templateFields
                         .filter(
                           (tf) =>
@@ -727,7 +741,7 @@ function JobCreate() {
                 )}
               </div>
             </div>
-            <div className="h5 df al  jc ">
+         <div className="h5 df al  jc mt10 ">
               <div className="w15 df g10">
                 <button
                   type="button"
@@ -844,7 +858,15 @@ function JobCreate() {
                       const field = allFields.find((f) => f.id === tf.fieldId);
                       return field ? field.fieldLabel : "Unknown Field";
                     });
-
+                    const jobWorkflow = jobWorkflows.find(
+                      (jw) => jw.id === template.jobWorkFlowId
+                    );
+                    const candidateWorkflow = candidateWorkflows.find(
+                      (cw) => cw.id === template.candidateWorkFlowId
+                    );
+                    const candidateForm = candidateForms.find(
+                      (cf) => cf.id === template.candidateTemplateId
+                    );
                     return (
                       <div
                         key={template.id}
@@ -865,6 +887,22 @@ function JobCreate() {
                         <div className="ml10">
                           <h4>{template.name}</h4>
                           <p className="mt5">
+                            <LiaProjectDiagramSolid className="mr3" />
+                            Job:{" "}
+                            {jobWorkflow ? jobWorkflow.workFlowName : "N/A"}
+                          </p>
+                          <p className="mt5">
+                            <FiUsers className="mr3" />
+                            Candidate:{" "}
+                            {candidateWorkflow
+                              ? candidateWorkflow.workFlowName
+                              : "N/A"}
+                          </p>
+                          <p className="mt5">
+                            <FaWpforms className="mr3" />
+                            Form: {candidateForm ? candidateForm.name : "N/A"}
+                          </p>
+                          <p className="mt5 field-color">
                             <strong>Fields:</strong>{" "}
                             {fieldNames.length > 0
                               ? fieldNames.join(", ")

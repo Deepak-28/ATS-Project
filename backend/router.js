@@ -18,5 +18,6 @@ Router.use('/fieldData', require('./controls/fieldData'));
 Router.use('/portal', require('./controls/portal'));
 Router.use('/template', require('./controls/template'));
 Router.use('/templateField', require('./controls/templateField'));
+Router.use('/postOption', require('./controls/postOptions'));
 
 module.exports =Router;

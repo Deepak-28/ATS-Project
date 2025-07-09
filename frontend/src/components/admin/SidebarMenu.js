@@ -26,7 +26,7 @@ const SidebarMenu = ({ isOpen }) => {
   const toggleDropdown = (name) => {
     setOpenDropdown(openDropdown === name ? null : name);
     if (name !== "settings") {
-      setOpenNestedDropdown(null); // Close nested when switching sections
+      setOpenNestedDropdown(null);
     }
   };
 

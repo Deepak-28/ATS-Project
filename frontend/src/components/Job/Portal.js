@@ -74,6 +74,17 @@ function Portal() {
     }
     setBgImage(file);
   };
+  const handleDelete = async (id) =>{
+    try{
+      const res = await axios.delete(`/portal/${id}`);
+      toast.success("Portal Deleted");
+      getPortal();
+
+    }catch(err){
+      console.error("Error in deleting portal", err);
+      toast.error("Error in Deleting")
+    }
+  } 
 
   useEffect(() => {
     getPortal();
@@ -135,7 +146,7 @@ function Portal() {
                         <FaEdit />
                       </Link>
 
-                      <MdDeleteForever className="applied-link" color="red" />
+                      <MdDeleteForever className="applied-link" color="red" onClick={()=>handleDelete(portal.id)}/>
                     </td>
                   </tr>
                 ))

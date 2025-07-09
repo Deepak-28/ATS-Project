@@ -47,7 +47,7 @@ function ApplicantsByJob() {
   const isActionClick = e.target.closest("[data-no-nav]");
   if (isActionClick) return;
 
-  navigate(`/applicants/${id}`);
+  navigate(`/applicants/${jobId}/${id}`);
 };
   const getDynamicField = (formValues, keywords) => {
     return (
@@ -107,7 +107,7 @@ function ApplicantsByJob() {
                 </td>
                 <td data-no-nav>
                   <Link
-                    to={`/applicants/${app.candidateId}`}
+                    to={`/applicants/${jobId}/${app.candidateId}`}
                     state={{ from: "job", jobId }}
                   >
                     View

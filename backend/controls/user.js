@@ -1,5 +1,5 @@
 const Router = require('express').Router();
-const { user,login,application } = require("../config/index");
+const { user,login,application,fieldData } = require("../config/index");
 const multer = require('multer');
 
 const storage = multer.diskStorage({
@@ -10,7 +10,6 @@ const storage = multer.diskStorage({
         cb(null, file.originalname);
     }
 });
-
 const upload = multer({ storage: storage });
 
 Router.post('/', async (req, res) => {
@@ -29,15 +28,38 @@ Router.post('/', async (req, res) => {
         res.status(500).send(err);
     }
 });
-Router.get('/applicants', async(req,res)=>{
-    try{
-        const data = await user.findAll();
-        res.send(data)
-    }catch(err){
-        res.status(500).send(err.message)
-    }
+Router.get('/:postsegment', async (req, res) => {
+  const { postsegment } = req.params;
 
-   
+  try {
+    let users;
+
+    if (postsegment === 'candidates') {
+      users = await user.findAll(); // return all users
+    } else if (postsegment === 'applicants') {
+      // Get all candidateIds from applications
+      const applications = await application.findAll({
+        attributes: ['candidateId'],
+        raw: true,
+      });
+
+      const candidateIds = applications.map(app => app.candidateId);
+
+      // Get users matching those candidateIds
+      users = await user.findAll({
+        where: {
+          id: candidateIds,
+        }, raw:true
+      });
+    } else {
+      return res.status(400).json({ message: 'Invalid post segment' });
+    }
+console.log(users);
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 Router.get('/:id', async (req, res) => {
     const { id } = req.params;
@@ -76,47 +98,66 @@ Router.get('/get-pdf/:filename', (req, res) => {
   const filepath = path.join(__dirname, 'uploads', filename);
   res.sendFile(filepath);
 });
-Router.put('/:uid/:jid', upload.single('resume'), async (req, res) => {
-    const { uid, jid } = req.params;
-  
-    try {
-      const { firstname, lastname, email, ph_no, skills, experience, education } = JSON.parse(req.body.data);
-      const resume = req.file ? req.file.filename : null;
-  
-      // Update user info
-      const [updatedCount] = await user.update(
-        {
-          firstname,
-          lastname,
-          email,
-          ph_no,
-          skills,
-          experience,
-          education,
-          ...(resume && { resume }) // Only update resume if file exists
-        },
-        { where: { id: uid } }
-      );
-  
-      if (updatedCount === 0) {
-        return res.status(404).send('Candidate not found or update failed.');
+Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
+  const { candidateId, jobId } = req.params;
+
+  try {
+    // Log incoming multipart/form-data
+    console.log("Uploaded Files:", req.files);
+    console.log("Text Fields:", req.body);
+
+    // Parse static user data
+    const userData = JSON.parse(req.body.data || "{}");
+    console.log("Parsed User Data:", userData);
+
+    // Merge form fields from dynamic inputs (excluding 'data')
+    const formValues = Object.entries(req.body).reduce((acc, [key, value]) => {
+      if (key !== "data") {
+        acc[key] = value;
       }
-  
-      // Insert into Application table
-      await application.create({
-        candidateId: uid,
-        jobId: jid,
-        status: 'applied', // initial status
-        appliedAt: new Date()
+      return acc;
+    }, {});
+
+    // Include file field values
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file) => {
+        formValues[file.fieldname] = file.filename; // or file.path
       });
-  
-      res.send('Job applied and candidate data updated successfully.');
-    } catch (err) {
-      console.error('Application error:', err);
-      res.status(500).send('Something went wrong while applying for the job.');
     }
-  });
 
+    console.log("Parsed formValues:", formValues);
 
-  
+    // Prepare for saving: loop and insert/update into fieldData table
+    const dynamicInserts = Object.entries(formValues).map(([fieldId, value]) => ({
+      candidateId: parseInt(candidateId),
+      jobId: parseInt(jobId),
+      fieldId: parseInt(fieldId),
+      value: typeof value === "object" ? JSON.stringify(value) : value,
+    })).filter(f => !isNaN(f.fieldId)); // filter out any non-field entries
+
+    // Save to database
+    for (const field of dynamicInserts) {
+      const [record, created] = await fieldData.findOrCreate({
+        where: {
+          candidateId: field.candidateId,
+          jobId: field.jobId,
+          fieldId: field.fieldId,
+        },
+        defaults: {
+          value: field.value,
+        },
+      });
+
+      if (!created) {
+        await record.update({ value: field.value });
+      }
+    }
+
+    res.status(200).json({ success: true, message: "Application saved." });
+  } catch (err) {
+    console.error("Error handling application submission:", err);
+    res.status(500).json({ error: "Failed to process application." });
+  }
+});
+
 module.exports = Router;
