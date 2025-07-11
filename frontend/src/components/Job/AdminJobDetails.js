@@ -23,12 +23,8 @@ const AdminJobDetails = () => {
   const [workflowStages, setWorkflowStages] = useState([]);
   const [workFlowId, setWorkFlowId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [TemplateId, setTemplateId] = useState("");
-  const [selectedOptions, setSelectedOptions] = useState([]);
   const [options, setOptions] = useState([]);
   const [formData, setFormData] = useState([]);
-  console.log(formData);
-  
 
   const fetchJobDetails = async () => {
     try {
@@ -43,17 +39,6 @@ const AdminJobDetails = () => {
       if (jobData.workFlowId) {
         fetchWorkflow(jobData.workFlowId);
       }
-
-      // Set dynamic fields (if any)
-      // setFormValues(jobData.formValues || {});
-      // console.log(jobData.formValues);
-
-      // Format date helper
-      const formatDate = (dateStr) =>
-        dateStr ? new Date(dateStr).toISOString().slice(0, 10) : "";
-
-      // setPostDate(formatDate(jobData.postDate));
-      // setExpiryDate(formatDate(jobData.expiryDate));
       setPostOption(jobData.visibility || "");
       setIsPosted(!!jobData.visibility);
     } catch (err) {
@@ -197,6 +182,7 @@ const AdminJobDetails = () => {
   const workMode = getDynamicField(formValues, [
     "mode",
     "work mode",
+    "job type",
     "remote",
     "onsite",
     "hybrid",
@@ -225,8 +211,8 @@ const AdminJobDetails = () => {
           />
           <span>Job ID:<strong>2X0{job.id}</strong></span>
           </div>
-          <div className=" w30 df mr10 jcsb al g10">
-            <div className="status-dropdown">
+          <div className=" w25  df mr10 jcsb al g10">
+            <div className="status-dropdown w20  ">
               <label htmlFor="status">
                 <strong>Status:</strong>
               </label>
@@ -234,6 +220,7 @@ const AdminJobDetails = () => {
                 id="status"
                 value={selectedStatus}
                 onChange={handleStatusChange}
+                className="w15 "
               >
                 <option value="">Update Status</option>
                 {workflowStages.map((stage, idx) => (
@@ -243,7 +230,8 @@ const AdminJobDetails = () => {
                 ))}
               </select>
             </div>
-            <FaEdit
+        <div className="w5 df jcsb">
+              <FaEdit
               onClick={() => navigate(`/Job/${job.id}`)}
               size={20}
               color="blue"
@@ -255,10 +243,11 @@ const AdminJobDetails = () => {
               color="red"
               className="cursor-pointer"
             />
+        </div>
           </div>
         </div>
-        <div className="h15 job-detail df al jcsb ml10 w99 mr10 ">
-          <div className="ml10">
+        <div className="h15 job-detail df al jcsb ml10 w99 mr10  ">
+          <div className="ml10  h90  df fdc jcsa">
             <h2>{jobTitle}</h2>
             
             <p>

@@ -1,6 +1,6 @@
 const Router = require("express").Router();
 const { raw } = require("express");
-const { template, templateField, workFlowStage,job } = require("../config/index");
+const { template, templateField, workFlowStage,job, field } = require("../config/index");
 const { Op, where } = require("sequelize");
 
 Router.post("/", async (req, res) => {  
@@ -63,7 +63,7 @@ Router.get("/candidate", async(req, res)=>{
   }catch(err){
     console.error("Error in Fetching candidate template", err)
   }
-})
+});
 Router.get("/job", async (req, res) => {
   try {
     const data = await template.findAll({ where: { type: "job" }, raw: true });
@@ -78,29 +78,90 @@ Router.get("/job", async (req, res) => {
     console.error("Error in getting template", err);
   }
 });
-Router.get("/job/:id", async (req, res)=>{
-  const {id} = req.params;
-  // console.log(id);
-  try{
-    const templateId = await template.findOne({where:{id}, raw:true})
-    const workFlowId = templateId.jobWorkFlowId || "";
-    const workflowStages = await workFlowStage.findAll({where:{workFlowId}, raw:true});
-    res.send(workflowStages)
-  }catch(err){
-    console.error("Error in Fetching Stages", err)
+Router.get("/job/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const templateData = await template.findOne({ where: { id }, raw: true });
+    if (!templateData) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+
+    const workFlowId = templateData.jobWorkFlowId;
+    if (!workFlowId) {
+      return res.status(404).json({ message: "Workflow ID not found in template" });
+    }
+
+    const workflowStages = await workFlowStage.findAll({ where: { workFlowId }, raw: true });
+
+    res.json(workflowStages);
+
+  } catch (err) {
+    console.error("Error in Fetching Stages", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
-})
-Router.get("/candidate/:id", async(req, res)=>{
+});
+Router.get("/candidate/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const jobData = await job.findOne({ where: { id }, raw: true });
+    if (!jobData) return res.status(404).json({ message: "Job not found" });
+
+    const templateId = jobData.templateId;
+    if (!templateId) return res.status(404).json({ message: "Template ID not found in job" });
+
+    const templateData = await template.findOne({ where: { id: templateId }, raw: true });
+    if (!templateData) return res.status(404).json({ message: "Template not found" });
+
+    const workFlowId = templateData.candidateWorkFlowId;
+    if (!workFlowId) return res.status(404).json({ message: "Workflow ID not found in template" });
+
+    const workflowStages = await workFlowStage.findAll({ where: { workFlowId }, raw: true });
+    res.json(workflowStages);
+    // console.log(workflowStages);
+    
+    
+  } catch (err) {
+    console.error("Error in Fetching Stages", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+});
+Router.get("/fields/candidate/:id", async(req, res)=>{
   const {id} = req.params;
-   try{
-    const JobId = await job.findOne({where:{id}, raw:true});
-    const templateId = JobId.templateId || "";
-    const TemplateData  =  await template.findOne({where:{id:templateId}, raw:true});
-    const workFlowId = TemplateData.candidateWorkFlowId || "";
-    const workflowStages = await workFlowStage.findAll({where:{workFlowId}, raw:true});
-    res.send(workflowStages)
-  }catch(err){
-    console.error("Error in Fetching Stages", err)
+  // console.log(id, 123);
+  try {
+    const templateData = await template.findOne({ where: { id }, raw: true });
+    const candidateFormId = templateData.candidateTemplateId;
+
+    const templateFields = await templateField.findAll({
+      where: { templateId: candidateFormId },
+      raw: true,
+    });
+
+    const fieldIds = templateFields.map((tf) => tf.fieldId);
+    const allFields = await field.findAll({
+      where: { id: fieldIds },
+      raw: true,
+    });
+    
+
+    const fieldMap = allFields.reduce((acc, f) => {
+      acc[f.id] = f;
+      return acc;
+    }, {});
+
+    // // Merge field into each templateField
+    const result = templateFields.map((tf) => ({
+      ...tf,
+      field: fieldMap[tf.fieldId],
+    }));
+    // console.log(result);
+
+    res.send(result);
+  } catch (err) {
+    console.error("Error in fetch data", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 })
 Router.put("/:id", async (req, res) => {

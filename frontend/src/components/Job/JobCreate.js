@@ -29,7 +29,6 @@ function JobCreate() {
   const [jobWorkflows, setJobWorkFlows] = useState([]);
   const [candidateWorkflows, setCandidateWorkflows] = useState([]);
   const [candidateForms, setCandidateForms] = useState([]);
-  // console.log(selectedTemplateId);
 
   const getCompanies = async () => {
     try {
@@ -156,7 +155,7 @@ function JobCreate() {
       // Merge form values into Fields
       const enrichedFields = Fields.map((field) => ({
         ...field,
-        value: formValues[field.fieldLabel] || "", // Capture user input
+        value: formValues[field.fieldLabel] || "", 
       }));
 
       if (jobId) {

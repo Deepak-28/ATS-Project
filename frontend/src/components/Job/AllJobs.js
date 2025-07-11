@@ -109,7 +109,17 @@ const AllJobs = () => {
     try {
       const res = await axios.get("/portal");
       const portal = res.data;
-      setOptions(portal); // ✅ just set options, NOT formData here
+      // const portalNames = portal.map((p) => p.Name);
+      const initialForm = portal.map((p) => ({
+        id: p.id,
+        name: p.Name,
+        postDate: "",
+        expiryDate: "",
+        postOption: "",
+      }));
+      setFormData(initialForm);
+
+      setOptions(portal);
     } catch (err) {
       console.error("failed to get portal", err);
     }
@@ -131,7 +141,6 @@ const AllJobs = () => {
       console.error("Error in fetching Post Options", err);
     }
   };
-
   const handleFormChange = (index, field, value) => {
     const updatedForm = [...formData];
     updatedForm[index][field] = value;
@@ -165,11 +174,39 @@ const AllJobs = () => {
     }
   };
   const handlePopup = async (jobId) => {
-    fetchJob(jobId);
-    await getPortal();
-    await getPostOption(jobId);
+    console.log("Opening popup for jobId:", jobId);
+    setSelectedJobId(jobId);
+
+    await fetchJob(jobId);
+
+    const portalRes = await axios.get("/portal");
+    const portals = portalRes.data;
+
+    const postOptionRes = await axios.get(`/postOption/${jobId}`);
+    const options = postOptionRes.data;
+
+    let formatted = [];
+
+    if (options.length > 0) {
+      formatted = options.map((item) => ({
+        ...item,
+        postDate: item.postDate?.slice(0, 10) || "",
+        expiryDate: item.expiryDate?.slice(0, 10) || "",
+      }));
+    } else {
+      formatted = portals.map((p) => ({
+        id: p.id,
+        name: p.Name,
+        postDate: "",
+        expiryDate: "",
+        postOption: "",
+      }));
+    }
+    setOptions(portals);
+    setFormData(formatted);
     setIsVisibilty(true);
   };
+
   const filteredJobs = jobs.filter((job) =>
     [job.jobTitle, job.companyName, job.jobLocation]
       .join(" ")

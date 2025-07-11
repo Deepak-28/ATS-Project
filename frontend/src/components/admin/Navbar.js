@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaRegUserCircle } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { IoMdCreate } from "react-icons/io";
 import SidebarMenu from "./SidebarMenu";
 import { Link } from "react-router-dom";
 import axios from "axios";

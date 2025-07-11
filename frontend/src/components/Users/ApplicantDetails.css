@@ -33,16 +33,15 @@
 
 .status-dropdown{
  
-  width: 50%;
+  
   height: 4vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .status-dropdown select {
-  /* padding: 5px; */
   font-size: 12px;
-  width: 80%;
+  width: 15vw;
   height: 5vh;
 }
 
@@ -50,7 +49,7 @@
   display: grid;
   grid-template-columns: auto auto;
   column-gap: 1rem;
-  background-color: #fffff7;
+  
   row-gap: 0.5rem;
   height: 100%;
 }
@@ -90,17 +89,6 @@
   font-size: 12px;
 }
 
-.status-dropdown {
-  margin-top: 10px;
-}
-
-.status-dropdown select {
-  margin-left: 10px;
-  padding: 5px 10px;
-  font-size: 12px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
 
 .resume-link {
   margin-left: 8px;
@@ -121,4 +109,7 @@
 
 .back-link:hover {
   text-decoration: underline;
+}
+.candidate-fields p {
+  margin: 8px 0;
 }

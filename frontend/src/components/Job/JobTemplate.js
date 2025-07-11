@@ -33,6 +33,7 @@ function JobTemplate() {
     candidateWorkFlowId: "",
     candidateFormId: "",
   });
+  // console.log(formValues);
 
   const fetchFields = async () => {
     try {
@@ -89,6 +90,8 @@ function JobTemplate() {
   const fetchCandidateForms = async () => {
     try {
       const res = await axios.get("/template/candidate");
+      // console.log(res.data);
+      
       setCandidateForms(res.data);
     } catch (err) {
       console.error("Error in fetching the candidate form", err);
@@ -140,22 +143,45 @@ function JobTemplate() {
       [name]: parsedValue,
     }));
   };
-  const handleFieldSubmit = (e) => {
-    e.preventDefault();
-    setFormValues(tempValues);
-    setIsVisible(false);
-  };
-  const handleSubmit = async () => {
-    // console.log(jobTemplateData);
+const handleFieldSubmit = (e) => {
+  e.preventDefault();
 
+  const updatedPositions = { ...fieldPositions };
+  selectedFieldIds.forEach((id) => {
+    if (!updatedPositions[id]) {
+      updatedPositions[id] = "left";
+    }
+  });
+  setFieldPositions(updatedPositions);
+
+  setFieldOrder((prevOrder) =>
+    prevOrder.filter((id) => selectedFieldIds.includes(id))
+  );
+  setFormValues(tempValues);
+  setIsVisible(false);
+};
+
+  const handleSubmit = async () => {
     try {
+      // Ensure only selected field IDs are submitted
+      const filteredFieldOrder = fieldOrder.filter((id) =>
+        selectedFieldIds.includes(id)
+      );
+
+      const filteredFieldPositions = Object.fromEntries(
+        Object.entries(fieldPositions).filter(([id]) =>
+          selectedFieldIds.includes(parseInt(id))
+        )
+      );
+
       await axios.post("/template", {
-        fieldPositions,
+        fieldPositions: filteredFieldPositions,
         name,
         formType,
-        fieldOrder,
+        fieldOrder: filteredFieldOrder,
         jobTemplateData,
       });
+
       toast.success("Template Created");
       fetchFields();
       fetchFieldsOption();
@@ -167,6 +193,7 @@ function JobTemplate() {
     }
     clearFunction();
   };
+
   const handleEditTemplate = (template) => {
     setName(template.name);
     setEditTemplateId(template.id);
@@ -197,12 +224,23 @@ function JobTemplate() {
   };
   const handleUpdate = async () => {
     try {
+      const filteredFieldOrder = fieldOrder.filter((id) =>
+        selectedFieldIds.includes(id)
+      );
+
+      const filteredFieldPositions = Object.fromEntries(
+        Object.entries(fieldPositions).filter(([id]) =>
+          selectedFieldIds.includes(parseInt(id))
+        )
+      );
+
       await axios.put(`/template/${editTemplateId}`, {
         name,
-        fieldPositions,
-        fieldOrder,
+        fieldPositions: filteredFieldPositions,
+        fieldOrder: filteredFieldOrder,
         jobTemplateData,
       });
+
       toast.success("Template updated successfully");
       clearFunction();
       fetchTemplate();
@@ -212,6 +250,7 @@ function JobTemplate() {
       toast.error("Template update failed");
     }
   };
+
   const toggleFieldSelection = (fieldId) => {
     if (selectedFieldIds.includes(fieldId)) {
       setSelectedFieldIds(selectedFieldIds.filter((id) => id !== fieldId));
@@ -284,11 +323,12 @@ function JobTemplate() {
     clearFunction();
   };
   useEffect(() => {
-    if (!edited && fields.length > 0) {
+    if (!edited && fields.length > 0 && fieldOrder.length === 0) {
       const uniqueIds = [...new Set(fields.map((f) => f.id))];
       setFieldOrder(uniqueIds);
     }
-  }, [fields, edited]);
+  }, [fields, edited, fieldOrder]);
+
   useEffect(() => {
     setEdited(false);
     setEditTemplateId(null);
@@ -668,7 +708,6 @@ function JobTemplate() {
                           ))}
                       </div>
                     </div>
-                   
                   </div>
                 </div>
                 {isVisible && (
@@ -711,7 +750,7 @@ function JobTemplate() {
                           <thead>
                             <tr>
                               <th>S.No</th>
-                              <th className="df al g3">
+                              <th className="g3">
                                 Select All
                                 <input
                                   type="checkbox"
@@ -864,38 +903,37 @@ function JobTemplate() {
                   </div>
                 )}
               </div>
-               
             </div>
             {selectedFieldIds.length > 0 && (
-                      <div className="h5 df al w100 jc ">
-                        <div className="w15 df g10">
-                          <button
-                            type="button"
-                            className="gray btn"
-                            onClick={clearFunction}
-                          >
-                            Clear
-                          </button>
-                          {edited ? (
-                            <button
-                              type="submit"
-                              onClick={handleUpdate}
-                              className="b btn"
-                            >
-                              Update
-                            </button>
-                          ) : (
-                            <button
-                              type="submit"
-                              onClick={handleSubmit}
-                              className="b btn"
-                            >
-                              Submit
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
+              <div className="h5 df al w100 jc mt10 ">
+                <div className="w15 df g10">
+                  <button
+                    type="button"
+                    className="gray btn"
+                    onClick={clearFunction}
+                  >
+                    Clear
+                  </button>
+                  {edited ? (
+                    <button
+                      type="submit"
+                      onClick={handleUpdate}
+                      className="b btn"
+                    >
+                      Update
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      onClick={handleSubmit}
+                      className="b btn"
+                    >
+                      Submit
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div className="template-card2">
             <h3>Existing Template</h3>

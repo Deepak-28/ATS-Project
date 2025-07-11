@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ApplicantsByJob.css";
@@ -7,7 +7,6 @@ import Navbar from "../admin/Navbar";
 function ApplicantsByJob() {
   const { jobId } = useParams();
   const [applicants, setApplicants] = useState([]);
-  const [job, setJob] = useState([]);
   const [formValues, setFormValues]= useState({});
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,7 +25,6 @@ function ApplicantsByJob() {
       try {
         const res = await axios.get(`/job/${jobId}`);
         const jobData = res.data
-        setJob(jobData)
         setFormValues(jobData.formValues);
         // console.log(jobData.formValues);
         
@@ -35,13 +33,6 @@ function ApplicantsByJob() {
       }
     };
 
-  const handleBack = () => {
-    if (from === "superadmin") {
-      navigate("/superadmin");
-    } else {
-      navigate(-1); // or navigate(`/admin/${cid}`) if you need more control
-    }
-  };
  const handleRowClick = (e, id) => {
   // If the clicked element (or its parent) has data-no-nav, don't navigate
   const isActionClick = e.target.closest("[data-no-nav]");

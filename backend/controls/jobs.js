@@ -43,8 +43,6 @@ Router.post("/create", async (req, res) => {
     res.status(500).json({ error: "Job creation failed" });
   }
 });
-
-
 Router.post("/visibility/:id", async (req, res) => {
   const { id: jobId } = req.params;
   const { formData } = req.body;
@@ -72,7 +70,6 @@ Router.post("/visibility/:id", async (req, res) => {
     res.status(500).send("Failed to post job");
   }
 });
-
 Router.post("/manualFieldSubmit", async (req, res) => {
   const { jobId, Fields } = req.body;
   if (!jobId || !Array.isArray(Fields)) {
@@ -133,28 +130,26 @@ Router.get("/all", async (req, res) => {
 });
 Router.get("/data", async (req, res) => {
   try {
-    // Step 1: Get all jobs
+    // Get all jobs
     const jobs = await job.findAll();
     if (!jobs || jobs.length === 0) {
       return res.status(404).send("No jobs found");
     }
-
-    // Step 2: Get all dynamic fields for all jobs
+    //  Get all dynamic fields for all jobs
     const dynamicFields = await fieldData.findAll();
-
-    // Step 3: Get all field metadata (field labels, etc.)
+    //  Get all field metadata (field labels, etc.)
     const allFieldIds = [...new Set(dynamicFields.map((df) => df.fieldId))];
     const fieldsMeta = await field.findAll({
       where: { id: allFieldIds },
     });
 
-    // Step 4: Build a lookup for fieldId => fieldLabel
+    // Build a lookup for fieldId => fieldLabel
     const fieldLabelMap = {};
     fieldsMeta.forEach((f) => {
       fieldLabelMap[f.id] = f.fieldLabel;
     });
 
-    // Step 5: Group dynamicFields by jobId
+    // Group dynamicFields by jobId
     const jobFieldMap = {};
     dynamicFields.forEach((df) => {
       if (!jobFieldMap[df.jobId]) {
@@ -163,7 +158,7 @@ Router.get("/data", async (req, res) => {
       jobFieldMap[df.jobId].push(df);
     });
 
-    // Step 6: Combine job data with related form values
+    // Combine job data with related form values
     const jobListWithFields = jobs.map((job) => {
       const jobData = job.toJSON();
       const relatedFields = jobFieldMap[job.id] || [];
@@ -182,12 +177,8 @@ Router.get("/data", async (req, res) => {
       };
     });
 
-    // Final response
-    res.send({
-      getjobs: jobListWithFields,
-      // dynamicFields: dynamicFields, // raw values if needed elsewhere
-      // fields: fieldsMeta             // field metadata
-    });
+
+    res.send({getjobs: jobListWithFields,});
   } catch (err) {
     console.error("Error fetching all jobs:", err);
     res.status(500).send("Failed to fetch jobs");
@@ -320,6 +311,8 @@ Router.get("/:id", async (req, res) => {
       ...jobs.toJSON(),
       formValues,
     };
+    // console.log(jobWithFields);
+    
     res.send(jobWithFields);
   } catch (err) {
     console.error("Error fetching job:", err);

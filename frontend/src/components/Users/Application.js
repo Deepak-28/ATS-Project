@@ -8,20 +8,20 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 function Application() {
   const { slug, jid, candidateId } = useParams();
   const [data, setData] = useState({});
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState({});
   const [job, setJob] = useState({});
   const [applied, setApplied] = useState(false);
-  const [resume, setResume] = useState({});
-  const [selectedFile, setSelectedFile] = useState({});
+  const [resume, setResume] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [templateFields, setTemplateFields] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
-  const [allFields, setAllFields] = useState([]);
   const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const Experience = ["0-1", "1-3", "3-5", "5-7", "7-10", "10-15", "15+"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  // console.log(templateFields);
+  // console.log(selectedTemplateId);
 
   const handleUser = async () => {
     try {
@@ -42,33 +42,23 @@ function Application() {
     try {
       const res = await axios.get(`/job/${jid}`);
       const jobData = res.data;
+      // console.log(jobData);
+
       setJob(jobData);
-      // console.log(jobData.templateId);
       setSelectedTemplateId(jobData.templateId);
-      fetchTemplate(jobData.templateId);
+      await fetchTemplate(jobData.templateId);
     } catch (err) {
       console.error("Error fetching job data:", err);
     }
   };
   const fetchTemplate = async (id) => {
     try {
-      const res = await axios.get(`/template/candidate/${id}`);
+      const res = await axios.get(`/template/fields/candidate/${id}`);
       const templateData = res.data;
-      setSelectedTemplateId(templateData.candidateTemplateId);
-
-      fetchTemplateFields(templateData.candidateTemplateId);
+      // console.log(res.data);
+      setTemplateFields(templateData);
     } catch (err) {
       console.error("Error in Fetching Template", err);
-    }
-  };
-  const fetchTemplateFields = async (id) => {
-    try {
-      const res = await axios.get(`/templateField/all/${id}`);
-      const data = res.data;
-      setTemplateFields(data);
-      // console.log("templateFields", data);
-    } catch (err) {
-      console.error("Error in fetching fields", err);
     }
   };
   const handleCancel = () => {
@@ -77,11 +67,11 @@ function Application() {
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) {
-      alert("No file selected.");
+      toast.error("No file selected.");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      alert("File size is too large.");
+      toast.error("File size is too large.");
       return;
     }
     setResume(file);
@@ -121,6 +111,7 @@ function Application() {
         }
       });
       console.log(formData);
+
 
       await axios.put(`/user/${candidateId}/${jid}`, formData);
 
@@ -164,7 +155,7 @@ function Application() {
   };
   const handleError = (err) => {
     if (err.response?.status === 404) {
-      toast.success("Job not found!");
+      toast.error("Job not found!");
     } else {
       console.error("Apply failed:", err);
       toast.error("Application failed. Please try again.");
@@ -179,7 +170,7 @@ function Application() {
   };
   const companyName = job.companyName || "No Company";
   const experience = formValues["Experience"] || "N/A";
-  const jobTitle = getDynamicField(formValues, [
+  const jobTitle = getDynamicField(job.formValues, [
     "title",
     "job title",
     "position",
@@ -187,55 +178,123 @@ function Application() {
   const renderFields = (position) => {
     if (!templateFields.length || !selectedTemplateId) return null;
 
-    const filtered = templateFields.filter(
-      (tf) =>
-        String(tf.templateId) === String(selectedTemplateId) &&
-        tf.position?.toLowerCase() === position.toLowerCase()
-    );
+    const filtered = templateFields.filter(tf => tf.position?.toLowerCase() === "left");
 
-    return filtered.map((tf) => {
-      const field = tf.field;
-      if (!field) return null;
+//  const filtered = templateFields
+//   .filter(
+//     (tf) =>
+//       tf.templateId === selectedTemplateId &&
+//       tf.position?.toLowerCase() === position.toLowerCase()
+//   )
+//   .sort((a, b) => a.order - b.order);
 
+return filtered.map((tf) => {
+  const field = tf.field;
+  if (!field) {
+    console.warn("Missing field object:", tf); 
+    return null;
+  }
+
+  const { id, fieldLabel, fieldType, isRequired } = field;
+  const required = !!isRequired;
+  const label = (
+    <label htmlFor={id}>
+      {fieldLabel}
+      {required && <span style={{ color: "red" }}> *</span>}
+    </label>
+  );
+
+  switch (fieldType) {
+    case "header":
       return (
-        <div key={field.id} className="input mt5">
-          <label>{field.fieldLabel}</label>
-          {field.fieldType === "text" && (
-            <input
-              type="text"
-              value={formValues[field.id] || ""}
-              onChange={(e) =>
-                setFormValues({ ...formValues, [field.id]: e.target.value })
+        <div key={id} className="input">
+          <h3>{fieldLabel}</h3>
+        </div>
+      );
+    case "text":
+      return (
+        <div key={id} className="input">
+          {label}
+          <input
+            id={id}
+            type="text"
+            value={formValues[id] || ""}
+            required={required}
+            onChange={(e) =>
+              setFormValues({ ...formValues, [id]: e.target.value })
+            }
+            className="input"
+          />
+        </div>
+      );
+    case "number":
+      return (
+        <div key={id} className="input">
+          {label}
+          <input
+            id={id}
+            type="number"
+            value={formValues[id] || ""}
+            required={required}
+            onChange={(e) =>
+              setFormValues({ ...formValues, [id]: e.target.value })
+            }
+            className="input"
+          />
+        </div>
+      );
+    case "textarea":
+      return (
+        <div key={id} className="input">
+          {label}
+          <textarea
+            id={id}
+            value={formValues[id] || ""}
+            required={required}
+            onChange={(e) =>
+              setFormValues({ ...formValues, [id]: e.target.value })
+            }
+            className="form-control"
+          />
+        </div>
+      );
+    case "file":
+      return (
+        <div key={id} className="input">
+          {label}
+          <input
+            id={id}
+            type="file"
+            required={required}
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setFormValues({ ...formValues, [id]: file });
+                setSelectedFile(file);
               }
-            />
-          )}
-          {field.fieldType === "dropdown" && (
-            <select
-              value={formValues[field.id] || ""}
-              onChange={(e) =>
-                setFormValues({ ...formValues, [field.id]: e.target.value })
-              }
-            >
-              <option value="">Select</option>
-              {(field.options || []).map((opt, idx) => (
-                <option key={idx} value={opt.value || opt}>
-                  {opt.value || opt}
-                </option>
-              ))}
-            </select>
-          )}
-          {field.fieldType === "file" && (
-            <input
-              type="file"
-              onChange={(e) =>
-                setFormValues({ ...formValues, [field.id]: e.target.files[0] })
-              }
-            />
+            }}
+            className="input"
+          />
+          {formValues[id] && typeof formValues[id] === "object" && (
+            <div style={{ fontSize: "0.9em", color: "#555" }}>
+              Selected: {formValues[id].name}
+            </div>
           )}
         </div>
       );
-    });
+    default:
+      return (
+        <div key={id} className="form-group">
+          <strong>Unknown field type: {fieldType}</strong>
+        </div>
+      );
+  }
+});
+
   };
+// useEffect(() => {
+//   console.log("Template Fields:", templateFields);
+// }, [templateFields]);
   useEffect(() => {
     handleUser();
     getJobs();
@@ -253,7 +312,8 @@ function Application() {
           </div>
 
           <div className="left-column">{renderFields("left")}</div>
-          <div className="right-column">{renderFields("right")}</div>
+
+          {/* <div className="right-column">{renderFields("right")}</div> */}
         </div>
       </div>
       <div className="w100 df jc g10 mb10 ">

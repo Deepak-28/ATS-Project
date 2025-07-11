@@ -174,39 +174,37 @@ h1 {
   transition: transform 0.4s ease-in-out;
 }
 
-.register-container.open {
+/* .register-container.open {
   transform: translateX(0);      
-}
+} */
 
 .register-header {
-  margin-right: 20px;
-  width: 30vw;
+  width: 27vw;
   height: 90%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 5px 0;
+ 
 }
 
 .input-box,
 .address-box {
-  /* position: relative; */
-  /* height: 5vh; */
   margin: 9px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* margin-top: 13px; */
 }
 .input-box input {
   width: 20vw;
-  height: 5vh;
+  height: 4.5vh;
   background: transparent;
   outline: none;
   border: none;
@@ -623,7 +621,8 @@ textarea::placeholder{
 .templates-list {
   background-color: #fff;
   width: 26vw;
-  height: 21vh;
+  min-height: 20vh;
+  max-height: 24vh;
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   margin-top: 10px;
@@ -632,12 +631,14 @@ textarea::placeholder{
   align-items: center;
   gap: 10px;
   font-size: 12px;
+  /* margin-bottom: 5px; */
   /* overflow-y: auto; */
 }
 .box-field{
   background-color: #fff;
   width: 26vw;
-  height: 15vh;
+  min-height: 20vh;
+  max-height: 30vh;
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   margin-top: 10px;
@@ -1019,6 +1020,9 @@ label {
 }
 .h85 {
   height: 85vh;
+}
+.h90{
+  height: 90%;
 }
 .h100 {
   height: 100%;

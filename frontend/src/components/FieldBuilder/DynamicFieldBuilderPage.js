@@ -151,6 +151,9 @@ const DynamicFieldBuilderPage = () => {
       setIsVisible(false);
       setIsEditing(false);
       setEditingFieldId(null);
+      setOptionCode("");
+      setOptionList([]);
+      setOptionInput("");
       getFields(); // Refresh
     } catch (err) {
       console.error("Error submitting field:", err);

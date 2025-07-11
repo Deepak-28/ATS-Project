@@ -21,13 +21,12 @@ function Login() {
     axios.post('/login/check', formData)
       .then(res => {
         const token = res.data.token;
-      localStorage.setItem("admin_token", token); // ✅ Save JWT
+      localStorage.setItem("admin_token", token); 
 
       const decoded = JSON.parse(atob(token.split('.')[1])); // Decode payload
       const { role, candidateId, cid } = decoded;
       localStorage.setItem('role',role);
         if(cid) localStorage.setItem('cid', cid);
-        // if (candidateId) localStorage.setItem('cadidateId', candidateId);
         if (role === 'SuperAdmin') {
           navigate('/dashboard');
         } else if (role === 'admin') {
@@ -35,13 +34,10 @@ function Login() {
         } else if (role === 'user') {
           navigate(`/User/${cid}`);
         }
-        // } else if (role === 'candidate') {
-        //   navigate(`/candidate/${candidateId}`);
-        // }
       })
       .catch(err => {
         console.log('Login failed:', err);
-        setError("Invalid email or password."); // ❗ Set error message
+        setError("Invalid email or password."); 
       });
   };
 
@@ -71,7 +67,7 @@ function Login() {
             />
           </div>
 
-          {/* ❗ Error message */}
+          {/*  Error message */}
           {error && <p className="error-text">{error}</p>}
 
           <div className="remember-forget">
@@ -87,11 +83,6 @@ function Login() {
           <button className="b btn mt20" type="submit">
             Login
           </button>
-          {/* <div className="register-link mt10">
-            <p>
-              Don't have an account? <Link to={"/register"}>Register</Link>
-            </p>
-          </div> */}
         </div>
       </div>
     </form>

@@ -68,7 +68,7 @@
   margin-top: 2rem;
 }
 .top-nav{
-  height: 12vh;
+  height: 10vh;
   width: 100%;
   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
   background-color: #ffffff;
@@ -130,23 +130,23 @@
   width: 95%;
   height: 50vh;
   margin: 20px auto;
-  /* overflow-y: auto; */
-  /* overflow-y: visible; */
+ 
 }
 .job-card {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 20px;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   background-color: white;
   transition: all 0.3s ease;
+  
 }
 .job-card:hover {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
-
 .job-info h3 {
   margin: 0;
   font-size: 18px;
