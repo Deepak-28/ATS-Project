@@ -208,7 +208,9 @@ Router.get("/applicantDetail/:id/:jid", async (req, res) => {
     });
 
     // Get specific job data for jid
-    const currentJob = jobDataList.find((job) => Number(job.id) === Number(jid));
+    const currentJob = jobDataList.find(
+      (job) => Number(job.id) === Number(jid)
+    );
     if (!currentJob)
       return res.status(404).json({ error: "Job not found for the applicant" });
 
@@ -325,20 +327,27 @@ Router.get("/job/:jobId", async (req, res) => {
   const { jobId } = req.params;
 
   try {
-    // 1. Get all applications for the job
     const applications = await application.findAll({
       where: { jobId },
     });
 
-    // if (!applications.length) {
-    //   return res.status(404).json({ message: "No applicants found for this job." });
-    // }
-
-    // 2. Fetch user and job details for each application manually
     const applicantData = await Promise.all(
       applications.map(async (app) => {
-        const userData = await user.findOne({ where: { id: app.candidateId } });
-        const jobData = await job.findOne({ where: { id: app.jobId } });
+        const userData = await user.findOne({
+          where: { id: app.candidateId },
+          raw: true,
+        });
+        const jobData = await job.findOne({
+          where: { id: app.jobId },
+          raw: true,
+        });
+        const dynamicFields = await fieldData.findAll({
+          where: {
+            candidateId: {
+              [Op.ne]: null,
+            },
+          },
+        });
 
         return {
           id: app.id,
@@ -347,11 +356,11 @@ Router.get("/job/:jobId", async (req, res) => {
           candidateId: app.candidateId,
           user: userData,
           job: jobData,
+          dynamicData: dynamicFields,
         };
       })
     );
 
-    // 3. Send collected data
     res.json(applicantData);
   } catch (err) {
     console.error("Error fetching applicants:", err);

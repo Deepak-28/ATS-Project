@@ -5,7 +5,7 @@ import axios from "axios";
 import { IoLocationOutline } from "react-icons/io5";
 import { MdOutlineAvTimer, MdDeleteForever } from "react-icons/md";
 import { IoArrowBackCircle } from "react-icons/io5";
-import { FaBriefcase, FaEdit } from "react-icons/fa";
+import { FaBriefcase, FaEdit, FaUser } from "react-icons/fa";
 import "./AdminJobDetails.css";
 import Navbar from "../admin/Navbar";
 
@@ -109,7 +109,7 @@ const AdminJobDetails = () => {
   const handleSubmit = () => {
     const jobVisibilityData = {
       jobId: selectedJobId,
-      formData
+      formData,
     };
     axios
       .post(`/job/visibility/${id}`, jobVisibilityData)
@@ -205,13 +205,15 @@ const AdminJobDetails = () => {
         <div className="h10 df al jcsb  ">
           <div className="df al g10">
             <IoArrowBackCircle
-            onClick={handleback}
-            size={24}
-            className="cursor-pointer ml10"
-          />
-          <span>Job ID:<strong>2X0{job.id}</strong></span>
+              onClick={handleback}
+              size={24}
+              className="cursor-pointer ml10"
+            />
+            <span>
+              Job ID:<strong>2X0{job.id}</strong>
+            </span>
           </div>
-          <div className=" w25  df mr10 jcsb al g10">
+          <div className=" w30 df mr10 jcsb al g10">
             <div className="status-dropdown w20  ">
               <label htmlFor="status">
                 <strong>Status:</strong>
@@ -230,26 +232,27 @@ const AdminJobDetails = () => {
                 ))}
               </select>
             </div>
-        <div className="w5 df jcsb">
+            <div className="w8  df jcsb">
+              <FaUser size={18} color="blue" className="cursor-pointer" onClick={()=>navigate(`/applicants/job/${id}`)} />
               <FaEdit
-              onClick={() => navigate(`/Job/${job.id}`)}
-              size={20}
-              color="blue"
-              className="cursor-pointer"
-            />
-            <MdDeleteForever
-              onClick={() => deleteJob(job.id)}
-              size={20}
-              color="red"
-              className="cursor-pointer"
-            />
-        </div>
+                onClick={() => navigate(`/Job/${job.id}`)}
+                size={20}
+                color="blue"
+                className="cursor-pointer"
+              />
+              <MdDeleteForever
+                onClick={() => deleteJob(job.id)}
+                size={20}
+                color="red"
+                className="cursor-pointer"
+              />
+            </div>
           </div>
         </div>
         <div className="h15 job-detail df al jcsb ml10 w99 mr10  ">
           <div className="ml10  h90  df fdc jcsa">
             <h2>{jobTitle}</h2>
-            
+
             <p>
               <span className="highlight">{companyName}</span>
             </p>
@@ -307,9 +310,9 @@ const AdminJobDetails = () => {
                       <span className="form-label">
                         <strong>{label}:</strong>
                       </span>
-                      <span className="form-value">
+                      <pre className="form-value">
                         {value || <em>Not provided</em>}
-                      </span>
+                      </pre>
                     </div>
                   ))}
               </div>
@@ -325,11 +328,9 @@ const AdminJobDetails = () => {
 
               <div className="df fdc w100 g10">
                 {" "}
-              
                 {formData.map((entry, index) => (
                   <div key={entry.id} className="df fdr w100 g10 al">
                     {" "}
-                    
                     <label className="input fdc mt10">
                       Post Date:
                       <input

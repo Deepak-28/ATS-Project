@@ -1,12 +1,13 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaRegUserCircle } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 function TopNav({ setAuthMode }) {
+  const {slug} = useParams();
   const [showPopup, setShowPopup] = useState(false);
   const email = localStorage.getItem("email");
   const candidateId = localStorage.getItem("candidateId");
-  const [popup, setPopup] = useState(false);
+  const name = localStorage.getItem("name");
   const popupRef = useRef(null);
   const navigate = useNavigate();
   const handleCandidateLogout = () => {
@@ -16,24 +17,36 @@ function TopNav({ setAuthMode }) {
     setShowPopup(false);
     navigate(-1);
   };
-  const submit = () => {};
-  const handleSignin = () => {
-    // setPopup(true)
-  };
-  const handleSignUp = () => {
-    // setPopup(false)
-  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShowPopup(false);
+      }
+    }
+
+    if (showPopup) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPopup]);
+console.log(slug);
+
   return (
     <div className="top-nav">
-      <img src="/logo.png" alt="logo" className="logo" />
+      <div className="df fdr al ">
+        <img src="/logo.png" alt="logo" className="logo cursor-pointer" onClick={()=>navigate(`/careers/${slug}`)} />
+        <p>Welcome! {name}</p>
+      </div>
       {candidateId ? (
         <div className="df al fdr g10">
-          <button
-            className="b s-btn"
-            onClick={() => navigate(`/profile/${candidateId}`)}
-          >
-            Applied Jobs
-          </button>
+          <a href={`/profile/${slug}/${candidateId}`}>Applied Jobs</a>
+
           <div className="nav-icon df al mr10 ">
             <FaRegUserCircle
               className="cursor-pointer"
@@ -58,82 +71,21 @@ function TopNav({ setAuthMode }) {
               <div className="h10 w5 df al jc ">
                 <label htmlFor="profile">
                   {" "}
-                  <Link to={`/profile/${candidateId}`}>
+                  <Link to={`/profile/${slug}/${candidateId}`}>
                     <FaRegUserCircle size={30} className="cursor-pointer" />
                   </Link>
                 </label>
-                {/* <input
-                  type="file"
-                  id="profile"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                /> */}
-                {/* onChange={handleImageUpload} */}
               </div>
               <div className=" ">
                 <p>{email || "Email not found"}</p>
               </div>
             </div>
           </div>
-          <div className="df al w100   jc">
+          <div className="df al w100 jc">
             <button className="s-btn r" onClick={handleCandidateLogout}>
               Logout
             </button>
           </div>
-        </div>
-      )}
-      {popup && (
-        <div>
-          <form onSubmit={submit}>
-            <div className="login-header">
-              <div className="logo-container">
-                <img src="/logo.png" alt="logo" className="logo" />
-              </div>
-              <div className="input-box">
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Email"
-                  // onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="input-box">
-                <input
-                  type="password"
-                  id="password"
-                  placeholder="Password"
-                  // onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Error message */}
-              {/* {error && <p className="error-text">{error}</p>} */}
-
-              <div className="remember-forget">
-                <div className="rem-box">
-                  <input type="checkbox" id="remember" className="remember" />
-                  <label>Remember me</label>
-                </div>
-                <div className="forgot-link">
-                  <Link to={"/forgetPassword"}>Forgot Password?</Link>
-                </div>
-              </div>
-
-              <button className="b btn mt20" type="submit">
-                Login
-              </button>
-              <div className="register-link mt10">
-                <p className="switch-form">
-                  Don’t have an account?{" "}
-                  {/* <span className="link" onClick={() => setIsRegister(false)}>
-                          Register
-                        </span> */}
-                </p>
-              </div>
-            </div>
-          </form>
         </div>
       )}
     </div>

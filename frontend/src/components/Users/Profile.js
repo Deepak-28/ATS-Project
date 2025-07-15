@@ -13,18 +13,16 @@ function Profile() {
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
- const getDynamicField = (fieldsArray, keywords) => {
-  return (
-    (fieldsArray || []).find(({ label }) => {
-      const normalizedLabel = label.toLowerCase().replace(/[^a-z]/g, "");
-      return keywords.some((keyword) =>
-        normalizedLabel.includes(keyword.toLowerCase().replace(/[^a-z]/g, ""))
-      );
-    })?.value || "Not provided"
-  );
-};
-
-
+  const getDynamicField = (fieldsArray, keywords) => {
+    return (
+      (fieldsArray || []).find(({ label }) => {
+        const normalizedLabel = label.toLowerCase().replace(/[^a-z]/g, "");
+        return keywords.some((keyword) =>
+          normalizedLabel.includes(keyword.toLowerCase().replace(/[^a-z]/g, ""))
+        );
+      })?.value || "Not provided"
+    );
+  };
 
   const fetchData = async () => {
     try {
@@ -94,7 +92,7 @@ function Profile() {
           ) : (
             filteredJobs.map((job, index) => {
               const formValues = job.fields || [];
-               console.log("formValues:", formValues);
+              console.log("formValues:", formValues);
               const companyName = job.companyName || "No Company";
               const experience = getDynamicField(formValues, [
                 "experience",
@@ -124,10 +122,7 @@ function Profile() {
                 "income",
                 "stipend",
               ]);
-              console.log("Job Title:", jobTitle);
-              console.log("Experience:", experience);
-              console.log("Location:", location);
-
+             
               return (
                 <div className="job-card" key={index}>
                   <div className="job-info">
@@ -151,7 +146,6 @@ function Profile() {
             })
           )}
         </div>
-        
       </div>
     </div>
   );

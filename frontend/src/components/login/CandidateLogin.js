@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import { Country, State, City } from "country-state-city";
 import axios from "axios";
-import "./login.css";
 
 function CandidateLogin() {
   const [searchParams] = useSearchParams();
@@ -27,7 +26,6 @@ function CandidateLogin() {
   const [selectedState, setSelectedState] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [isRegister, setIsRegister] = useState(true);
-  const [activeTab, setActiveTab] = useState("login");
   const [backgroundImage, setBackgroundImage] = useState(null);
 
   const fetchPortal = async () => {
@@ -79,24 +77,22 @@ function CandidateLogin() {
       localStorage.setItem("candidate_token", token);
       // Decode token
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      const { role, candidateId, cid, email } = decoded;
+      const { role, candidateId, cid, email, name } = decoded;
 
       if (cid) localStorage.setItem("cid", cid);
       if (candidateId) localStorage.setItem("candidateId", candidateId);
-      if (email) localStorage.setItem("email", email)
-      
-
+      if (email) localStorage.setItem("email", email);
+      if (name) localStorage.setItem("name", name);
       if (role === "candidate") {
         if (jid) {
-        
-        navigate(`/application/${slug}/${jid}/${candidateId}`);
+          navigate(`/application/${slug}/${jid}/${candidateId}`);
+        } else {
+          navigate(`/careers/${slug}`);
+        }
       } else {
-        navigate(`/careers/${slug}`);
+        // Not a candidate (fallback)
+        navigate("/unauthorized");
       }
-    } else {
-      // Not a candidate (fallback)
-      navigate("/unauthorized");
-    }
     } catch (err) {
       console.error("Login failed:", err);
       setError("Invalid email or password.");
@@ -126,13 +122,13 @@ function CandidateLogin() {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
   };
-  useEffect(() => {
-    if (mode === "register") {
-      setIsRegister(false);
-    } else {
-      setIsRegister(true); // default is login
-    }
-  }, [mode]);
+  // useEffect(() => {
+  //   if (mode === "register") {
+  //     setIsRegister(false);
+  //   } else {
+  //     setIsRegister(true); // default is login
+  //   }
+  // }, [mode]);
   useEffect(() => {
     fetchPortal();
   }, []);
@@ -190,6 +186,8 @@ function CandidateLogin() {
           </div>
         </form>
       ) : (
+       
+
         <div className={`register-container ${!isRegister ? "open" : ""}`}>
         <div className="register-header">
           <div className=" df fdc jcsb al">

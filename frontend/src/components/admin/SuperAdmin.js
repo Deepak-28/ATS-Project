@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./AdminPage.css";
+import "../login/companyform.css"
 import { FaEdit } from "react-icons/fa";
 import { MdDeleteForever, MdOutlineLibraryAdd } from "react-icons/md";
 import axios from "axios";

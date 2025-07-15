@@ -1,10 +1,9 @@
 body {
   margin: 0;
   padding: 0;
- font-family: "Inter", sans-serif;
+  font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
-  /* font-family:  "Poppins", sans-serif; */
   background-color: #f4f6f8;
 }
 
@@ -19,16 +18,39 @@ body {
 
 .form-container {
   width: 34vw;
-  /* max-width: 500px; */
   margin: 20px auto;
-  /* padding: 30px 25px; */
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   background: #fff;
   display: flex;
   align-items: center;
   flex-direction: column;
-  /* background-color: aqua; */
+}
+.form-input{
+  width: 20vw;
+  display: flex;
+  flex-direction: column;
+}
+.form-input input{
+   height: 4.5vh;
+  outline: none;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+.form-input select{
+  width: 20vw;
+  height: 4.5vh;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-size: 13px;
+}
+.form-input textarea{
+  height: 20vh;
+  font-size: 0.7rem;
+  outline: none;
+
 }
 .input {
   width: 18vw;
@@ -49,13 +71,10 @@ select{
   font-optical-sizing: auto;
   font-style: normal;
   outline: none;
-  border-radius: 4px;
-  border: 1px solid #ccc;
   font-size: 13px;
 }
 
 label {
-  /* margin-bottom: 6px; */
   font-weight: 600;
   color: #555;
 }
@@ -65,12 +84,10 @@ label {
   font-weight: 700;
 }
 .container1{
-  /* margin-left: 20px; */
   display: flex;
   justify-content: space-between;
   width: 90%;
   height: 20vh;
-  /* background-color: #3f51b5; */
 }
 .input-selection{
    width: 15vw;

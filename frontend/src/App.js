@@ -2,14 +2,10 @@ import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import { Toaster } from "react-hot-toast";
 import Login from './components/login/Login';
 import CandidateLogin from './components/login/CandidateLogin';
-import Register from './components/register/Register';
 import SuperAdmin from './components/admin/SuperAdmin';
 import CreateUser from './components/Users/CreateUser';
 import AddUser from './components/Users/AddUser';
 import EditUser from './components/Users/EditUser';
-import CompanyForm from './components/Company/CompanyForm';
-import CompanyList from './components/Company/CompanyList';
-import EditCompanyForm from './components/Company/CompanyEdit';
 import JobList from './components/Job/JobList';
 import JobCreate from './components/Job/JobCreate';
 import JobEdit from './components/Job/JobEdit';
@@ -41,7 +37,6 @@ function App() {
     <Route path='/' element={<Login/>}/>
     <Route path='/login/:slug' element={<CandidateLogin/>}/>
     <Route path='/login/:slug/:jid' element={<CandidateLogin/>}/>
-    <Route path='/register' element={<Register/>}/>
     <Route path='/company' element={<SuperAdmin/>}/>
     <Route path='/Users/:cid' element={<CreateUser/>}/>
     <Route path='/addUser/:userId' element={<AddUser/>}/>
@@ -52,15 +47,11 @@ function App() {
     <Route path='/User/:cid' element={<CompanyUser/>}/>
     <Route path='/Applicants' element={<Applicants/>}/>
     <Route path='/Candidates' element={<Applicants/>}/>
-    <Route path='/addcompany' element={<CompanyForm/>}/>
-    <Route path='/companyList' element={<CompanyList/>}/>
-    <Route path="/editCompany/:id" element={<EditCompanyForm />} />
     <Route path='/jobs/:id' element={<JobList/>}/>
     <Route path='/addJob/:cid' element={<JobCreate/>}/>
     <Route path='/Job/:id' element={<JobCreate/>}/>
     <Route path='/Job' element={<JobCreate/>}/>
     <Route path='/editJob' element={<JobEdit/>}/>
-    {/* <Route path='/job/:jid/:candidateId' element={<JobDetails/>}/> */}
     <Route path='/job/:slug/:jid' element={<JobDetails/>}/>
     <Route path='/job/jobdetail/:id' element={<AdminJobDetails/>}/>
     <Route path='/alljobs' element={<AllJobs/>}/>
@@ -78,7 +69,7 @@ function App() {
     <Route path='/portal' element={<Portal/>}/>
     <Route path='/candidate/:slug' element={<UserPage/>}/>
     <Route path="/careers/:slug" element={<PublicJobPage />} />
-    <Route path='/profile/:id' element={<Profile/>} />
+    <Route path='/profile/:slug/:id' element={<Profile/>} />
    </Routes>
     <Toaster position="top-right" />
    </BrowserRouter>

@@ -79,7 +79,6 @@ const AllJobs = () => {
     try {
       const res = await axios.get("/fields/job");
       setFields(res.data);
-      // console.log(res.data);
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
     }
@@ -206,7 +205,6 @@ const AllJobs = () => {
     setFormData(formatted);
     setIsVisibilty(true);
   };
-
   const filteredJobs = jobs.filter((job) =>
     [job.jobTitle, job.companyName, job.jobLocation]
       .join(" ")
@@ -304,7 +302,6 @@ const AllJobs = () => {
               <tr>
                 <th>S.No</th>
                 <th>Job Id</th>
-                {/* <th>Company Name</th> */}
                 {selectedHeaders.map((id) => {
                   const label =
                     extendedFields.find((h) => h.id === id)?.fieldLabel || id;
@@ -324,7 +321,6 @@ const AllJobs = () => {
                   >
                     <td>{index + 1}</td>
                     <td>2X0{job.id}</td>
-                    {/* <td>{job.companyName || "N/A"}</td> */}
                     {selectedHeaders.map((fieldId) => {
                       let value;
                       if (fieldId === "companyName") {

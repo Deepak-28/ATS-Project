@@ -3,7 +3,7 @@ import "./application.css";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaCloudUploadAlt } from "react-icons/fa";
+import TopNav from "../admin/TopNav";
 
 function Application() {
   const { slug, jid, candidateId } = useParams();
@@ -18,6 +18,7 @@ function Application() {
   const [fieldOptions, setFieldOptions] = useState([]);
   const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
+  const [jobReady, setJobReady] = useState(false);
   const navigate = useNavigate();
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   // console.log(templateFields);
@@ -42,15 +43,16 @@ function Application() {
     try {
       const res = await axios.get(`/job/${jid}`);
       const jobData = res.data;
-      // console.log(jobData);
-
       setJob(jobData);
       setSelectedTemplateId(jobData.templateId);
       await fetchTemplate(jobData.templateId);
+      setJobReady(true); // ✅ Job is ready
     } catch (err) {
       console.error("Error fetching job data:", err);
+      toast.error("Failed to load job.");
     }
   };
+
   const fetchTemplate = async (id) => {
     try {
       const res = await axios.get(`/template/fields/candidate/${id}`);
@@ -78,6 +80,11 @@ function Application() {
     setSelectedFile(file);
   };
   const handleResume = async () => {
+    if (!jobReady) {
+      toast.error("Job data not loaded yet. Please wait.");
+      return;
+    }
+
     setLoading(true);
     try {
       const fileEntry = Object.entries(formValues).find(
@@ -111,7 +118,6 @@ function Application() {
         }
       });
       console.log(formData);
-
 
       await axios.put(`/user/${candidateId}/${jid}`, formData);
 
@@ -178,137 +184,141 @@ function Application() {
   const renderFields = (position) => {
     if (!templateFields.length || !selectedTemplateId) return null;
 
-    const filtered = templateFields.filter(tf => tf.position?.toLowerCase() === "left");
+    const filtered = templateFields.filter(
+      (tf) => tf.position?.toLowerCase() === "left"
+    );
 
-//  const filtered = templateFields
-//   .filter(
-//     (tf) =>
-//       tf.templateId === selectedTemplateId &&
-//       tf.position?.toLowerCase() === position.toLowerCase()
-//   )
-//   .sort((a, b) => a.order - b.order);
+    //  const filtered = templateFields
+    //   .filter(
+    //     (tf) =>
+    //       tf.templateId === selectedTemplateId &&
+    //       tf.position?.toLowerCase() === position.toLowerCase()
+    //   )
+    //   .sort((a, b) => a.order - b.order);
 
-return filtered.map((tf) => {
-  const field = tf.field;
-  if (!field) {
-    console.warn("Missing field object:", tf); 
-    return null;
-  }
+    return filtered.map((tf) => {
+      const field = tf.field;
+      if (!field) {
+        console.warn("Missing field object:", tf);
+        return null;
+      }
 
-  const { id, fieldLabel, fieldType, isRequired } = field;
-  const required = !!isRequired;
-  const label = (
-    <label htmlFor={id}>
-      {fieldLabel}
-      {required && <span style={{ color: "red" }}> *</span>}
-    </label>
-  );
+      const { id, fieldLabel, fieldType, isRequired } = field;
+      const required = !!isRequired;
+      const label = (
+        <label htmlFor={id}>
+          {fieldLabel}
+          {required && <span style={{ color: "red" }}> *</span>}
+        </label>
+      );
 
-  switch (fieldType) {
-    case "header":
-      return (
-        <div key={id} className="input">
-          <h3>{fieldLabel}</h3>
-        </div>
-      );
-    case "text":
-      return (
-        <div key={id} className="input">
-          {label}
-          <input
-            id={id}
-            type="text"
-            value={formValues[id] || ""}
-            required={required}
-            onChange={(e) =>
-              setFormValues({ ...formValues, [id]: e.target.value })
-            }
-            className="input"
-          />
-        </div>
-      );
-    case "number":
-      return (
-        <div key={id} className="input">
-          {label}
-          <input
-            id={id}
-            type="number"
-            value={formValues[id] || ""}
-            required={required}
-            onChange={(e) =>
-              setFormValues({ ...formValues, [id]: e.target.value })
-            }
-            className="input"
-          />
-        </div>
-      );
-    case "textarea":
-      return (
-        <div key={id} className="input">
-          {label}
-          <textarea
-            id={id}
-            value={formValues[id] || ""}
-            required={required}
-            onChange={(e) =>
-              setFormValues({ ...formValues, [id]: e.target.value })
-            }
-            className="form-control"
-          />
-        </div>
-      );
-    case "file":
-      return (
-        <div key={id} className="input">
-          {label}
-          <input
-            id={id}
-            type="file"
-            required={required}
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                setFormValues({ ...formValues, [id]: file });
-                setSelectedFile(file);
-              }
-            }}
-            className="input"
-          />
-          {formValues[id] && typeof formValues[id] === "object" && (
-            <div style={{ fontSize: "0.9em", color: "#555" }}>
-              Selected: {formValues[id].name}
+      switch (fieldType) {
+        case "header":
+          return (
+            <div key={id} className="input">
+              <h3>{fieldLabel}</h3>
             </div>
-          )}
-        </div>
-      );
-    default:
-      return (
-        <div key={id} className="form-group">
-          <strong>Unknown field type: {fieldType}</strong>
-        </div>
-      );
-  }
-});
-
+          );
+        case "text":
+          return (
+            <div key={id} className="input">
+              {label}
+              <input
+                id={id}
+                type="text"
+                value={formValues[id] || ""}
+                required={required}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, [id]: e.target.value })
+                }
+                className="input"
+              />
+            </div>
+          );
+        case "number":
+          return (
+            <div key={id} className="input">
+              {label}
+              <input
+                id={id}
+                type="number"
+                value={formValues[id] || ""}
+                required={required}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, [id]: e.target.value })
+                }
+                className="input"
+              />
+            </div>
+          );
+        case "textarea":
+          return (
+            <div key={id} className="input">
+              {label}
+              <textarea
+                id={id}
+                value={formValues[id] || ""}
+                required={required}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, [id]: e.target.value })
+                }
+                className="input"
+              />
+            </div>
+          );
+        case "file":
+          return (
+            <div key={id} className="input">
+              {label}
+              <input
+                id={id}
+                type="file"
+                required={required}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFormValues({ ...formValues, [id]: file });
+                    setSelectedFile(file);
+                  }
+                }}
+                className="input"
+              />
+              {formValues[id] && typeof formValues[id] === "object" && (
+                <div style={{ fontSize: "0.9em", color: "#555" }}>
+                  Selected: {formValues[id].name}
+                </div>
+              )}
+            </div>
+          );
+        default:
+          return (
+            <div key={id} className="form-group">
+              <strong>Unknown field type: {fieldType}</strong>
+            </div>
+          );
+      }
+    });
   };
-// useEffect(() => {
-//   console.log("Template Fields:", templateFields);
-// }, [templateFields]);
+  // useEffect(() => {
+  //   console.log("Template Fields:", templateFields);
+  // }, [templateFields]);
   useEffect(() => {
     handleUser();
     getJobs();
   }, []);
   return (
-    <div className="application_container df jcsb fdc">
-      <div>
-        <div className="top-nav">
-          <img src="/logo.png" alt="logo" className="logo" />
-        </div>
-        <div className="application_content ml20">
+    <div className="application_container">
+      <TopNav />
+      <div className="df al jc">
+        <div className="application_content">
           <div className="a-job-header">
-            <h3>{jobTitle}</h3>
-            <p>{companyName}</p>
+            <div className="f13">
+              <p>Job ID: <span style={{color: "blue"}}>2X0{jid}</span></p>
+            </div>
+            <div>
+              <h4>{jobTitle}</h4>
+              <p>{companyName}</p>
+            </div>
           </div>
 
           <div className="left-column">{renderFields("left")}</div>
@@ -316,11 +326,15 @@ return filtered.map((tf) => {
           {/* <div className="right-column">{renderFields("right")}</div> */}
         </div>
       </div>
-      <div className="w100 df jc g10 mb10 ">
+      <div className="w100 df jc g10 mb10 h10 df al ">
         <button className="gray btn" onClick={handleCancel}>
           Cancel
         </button>
-        <button className="btn b" onClick={handleResume} disabled={loading}>
+        <button
+          className="btn b"
+          onClick={handleResume}
+          disabled={loading || !jobReady}
+        >
           {loading ? "Submitting..." : "Submit"}
         </button>
       </div>

@@ -83,10 +83,17 @@ router.get('/template/:formType', async (req, res)=>{
   }
 });
 router.get('/job', async (req, res)=>{
-  // const{formType} = req.params
   try{
     const fields = await field.findAll({where:{formType:"job"}})
-    // console.log(fields);
+    res.send(fields)
+    
+  }catch(error){
+    console.error("Error in Fetching Fields", error)
+  }
+});
+router.get('/candidate', async (req, res)=>{
+  try{
+    const fields = await field.findAll({where:{formType:"candidate"}})
     res.send(fields)
     
   }catch(error){

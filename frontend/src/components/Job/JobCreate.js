@@ -424,7 +424,7 @@ function JobCreate() {
 
                     {/* Left Column */}
                     <div className="left-column ">
-                      <div className="input mt5">
+                      <div className="form-input mt5">
                         <label>Company</label>
                         <select
                           id="companyId"
@@ -459,7 +459,7 @@ function JobCreate() {
                           return (
                             <div
                               key={field.id}
-                              className={`input mt5 ${
+                              className={`form-input mt5 ${
                                 ["label", "header"].includes(field.fieldType)
                                   ? "static-field"
                                   : ""

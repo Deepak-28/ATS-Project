@@ -13,22 +13,19 @@
 }
 .job-details{
     min-width: 60vw;
-    height: 90vh;
     width: 100vw;
     display: flex;
     flex-direction: column;
     gap:1rem;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
-    /* background-color: aqua; */
+    padding: 1rem;
 }
 .details{
-    /* margin-top: 4px; */
     font-size: 13px;
     color: rgb(95, 95, 95);
 }
 .job-details-header{
-    /* min-width: 50vw; */
     width: 95%;
     height: 15vh;
     border: 1px solid  #ddd;
@@ -41,10 +38,8 @@
     justify-content: space-evenly;
 }
 .job-details-body{
-    /* min-width: 50v; */
     width: 95%;
-    min-height: 60vh;
-    max-height: 100% ;
+    min-height: 55vh;
     border: 1px solid  #ddd;
     border-radius: 2px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
@@ -53,13 +48,11 @@
     text-align: justify;
     overflow-y: auto;
     background-color: white;
-    /* overflow: hidden; */
 }
 .job-details-body p + p{
 margin-top: 10px;
 }
 .highlight{
-    /* font-style: italic; */
     font-size: 15px;
     color:rgb(79, 79, 79);
 }
@@ -72,7 +65,6 @@ margin-top: 10px;
   align-items: center;
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  /* background-color: rgb(255, 255, 255); */
 }
 .jd-close-btn {
   height: 4vh;
@@ -80,7 +72,6 @@ margin-top: 10px;
   position: absolute;
   left: 21rem;
   top: 0.1rem;
-  /* right: 10px; */
   font-size: 18px;
   background: none;
   border: none;

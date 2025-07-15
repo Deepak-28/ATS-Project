@@ -380,11 +380,16 @@ const handleFieldSubmit = (e) => {
           <div className="template-card df  fdc">
             <div className="df jcsb  ">
               {edited ? <h3>Update Template</h3> : <h3>Create Template</h3>}
+              {edited ? <FaEdit
+                size={20}
+                className=" mr10 cursor-pointer blue"
+                onClick={() => setIsVisible(true)}
+              />:
               <MdOutlineLibraryAdd
                 size={24}
                 className="g mr10 cursor-pointer"
                 onClick={() => setIsVisible(true)}
-              />
+              />}
             </div>
             <div className="">
               <div>
@@ -936,7 +941,8 @@ const handleFieldSubmit = (e) => {
             )}
           </div>
           <div className="template-card2">
-            <h3>Existing Template</h3>
+            {formType === "job" ? (<h3>Job Template</h3>):(<h3>Candidate Form</h3>)}
+            
             <div className="templates ">
               {templateNames.map((template) => {
                 const relatedTemplateFields = templateFields.filter(

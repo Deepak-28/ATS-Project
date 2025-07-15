@@ -125,11 +125,12 @@ const PublicJobPage = () => {
       localStorage.setItem("candidate_token", token);
       // Decode token
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      const { candidateId, cid, email } = decoded;
-
+      const { candidateId, cid, email, name } = decoded;
+      
       if (cid) localStorage.setItem("cid", cid);
       if (candidateId) localStorage.setItem("candidateId", candidateId);
       if (email) localStorage.setItem("email", email);
+      if (name) localStorage.setItem("name", name);
       else {
         // Not a candidate (fallback)
         navigate("/unauthorized");
@@ -268,8 +269,8 @@ const PublicJobPage = () => {
                 ]);
 
                 return (
-                  <div className="job-card" key={index}>
-                    <div className="job-info">
+                  <div className="job-card " key={index}>
+                    <div className="job-info ">
                       <h4>{jobTitle}</h4>
                       <p>
                         <strong>{companyName}</strong>
@@ -284,7 +285,6 @@ const PublicJobPage = () => {
                       <Link to={`/job/${slug}/${job.id}`}>
                         <button className="s-btn b">Apply</button>
                       </Link>
-                      {/* onClick={navigate()} */}
                     </div>
                   </div>
                 );

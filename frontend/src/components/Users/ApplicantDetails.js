@@ -96,7 +96,7 @@ function ApplicantDetail() {
       <div className="admin-container h100">
         <div className="h8 df al ml10">
           <IoMdArrowRoundBack
-            onClick={() => navigate(backLink)}
+            onClick={() => navigate(-1)}
             size={18}
             className="cursor-pointer"
           />
@@ -111,27 +111,12 @@ function ApplicantDetail() {
             </div>
           )}
         </div>
-
         <div className="df jcsa">
           <div className="applicant-detail-container">
             <div className="applicant-card">
-              <div className="df jcsb al  h5  ">
-                <h3>Applicant Details</h3>
-                {/* <p>
-                  <strong>Resume:</strong>{" "}
-                  <button
-                    onClick={() =>
-                      window.open(
-                        `http://localhost:7000/uploads/${user.resume}`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    View
-                  </button>
-                </p> */}
+              <div className="df jcsb al  h4   ">
+                <h3>User Information</h3>
               </div>
-
               <p>
                 <strong>Name:</strong> {user.firstname} {user.lastname}
               </p>
@@ -171,7 +156,7 @@ function ApplicantDetail() {
               )}
             </div>
             <div className="b-card">
-              <h3>Candidate Form Fields</h3>
+              <h3>Candidate Information</h3>
               {candidateInput.length > 0 ? (
                 <div className="candidate-fields">
                   {candidateInput.map((field, idx) => (
@@ -181,7 +166,7 @@ function ApplicantDetail() {
                         <button
                           onClick={() =>
                             window.open(
-                              `http://localhost:7000/uploads/${field.value}`,
+                              `${process.env.REACT_APP_BASE_URL}/uploads/${field.value}`,
                               "_blank"
                             )
                           }

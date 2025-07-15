@@ -96,12 +96,12 @@ const JobDetails = () => {
       localStorage.setItem("candidate_token", token);
       // Decode token
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      const { role, candidateId, cid, email } = decoded;
+      const { role, candidateId, cid, email, name } = decoded;
 
       if (cid) localStorage.setItem("cid", cid);
       if (candidateId) localStorage.setItem("candidateId", candidateId);
       if (email) localStorage.setItem("email", email);
-
+      if (name) localStorage.setItem("name", name);
       if (role === "candidate") {
         if (jid) {
           navigate(`/application/${slug}/${jid}/${candidateId}`);
@@ -148,7 +148,7 @@ const JobDetails = () => {
   };
   useEffect(() => {
     fetchJobDetails();
-    // fetchApplicantStatus();
+    fetchApplicantStatus();
   }, []);
   if (loading) {
     return <div className="job-details-container">Loading...</div>;
@@ -240,9 +240,9 @@ const JobDetails = () => {
                       <span className="form-label">
                         <strong>{label}:</strong>
                       </span>
-                      <span className="form-value">
+                      <pre className="form-value">
                         {value || <em>Not provided</em>}
-                      </span>
+                      </pre>
                     </div>
                   ))}
               </div>

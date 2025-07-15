@@ -1,40 +1,54 @@
 const Router = require('express').Router();
-const {login} = require('../config/index');
+const {login, user} = require('../config/index');
 const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.JWT_SECRET
 
 Router.post('/check', async (req, res) => {
-    const { email, password } = req.body;
-  
-    try {
-      const user = await login.findOne({
-        where: { email, password },
-        raw: true
-      });
-    //   console.log(user);
-      if (!user) {
-        return res.status(404).send("Invalid email or password");
-      }
-  
-        const token = jwt.sign(
+  const { email, password } = req.body;
+
+  try {
+    const loginUser = await login.findOne({
+      where: { email, password },
+      raw: true
+    });
+
+    if (!loginUser) {
+      return res.status(404).send("Invalid email or password");
+    }
+ 
+    const userData = await user.findOne({
+      where: { id: loginUser.candidateId }, 
+      attributes: ['firstname', 'lastname'],
+      raw: true
+    });
+
+   
+    const fullName = userData
+      ? `${userData.firstname} ${userData.lastname}`
+      : '';
+
+   
+    const token = jwt.sign(
       {
-        email: user.email,
-        role: user.role,
-        candidateId: user.candidateId,
-        cid: user.cid,
+        email: loginUser.email,
+        role: loginUser.role,
+        candidateId: loginUser.candidateId,
+        cid: loginUser.cid,
+        name: fullName 
       },
       SECRET_KEY,
       { expiresIn: '1h' }
     );
-
+    
     res.send({ token });
 
-    } catch (err) {
-      console.error(err);
-      res.status(500).send("Server error");
-    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
 });
+
 Router.post('/admin/users', async (req, res) => {
     const { username, email, password, role, companyId } = req.body;
     try {
