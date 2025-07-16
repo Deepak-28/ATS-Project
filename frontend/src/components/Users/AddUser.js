@@ -17,7 +17,7 @@ const UserCreation = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const currentRole = localStorage.getItem("role");
-  console.log(cid, userId);
+  // console.log(cid, userId);
   
 
   const getCompanies = async () => {
@@ -53,7 +53,7 @@ const UserCreation = () => {
 
     try {
       const payload = { username, email, role, companyId };
-      console.log(username, email, role, companyId);
+      // console.log(username, email, role, companyId);
       
       if (!isEditMode) payload.password = password;
 

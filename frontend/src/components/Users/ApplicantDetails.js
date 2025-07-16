@@ -18,17 +18,27 @@ function ApplicantDetail() {
   const [user, setUser] = useState([]);
   const [job, setJobs] = useState([]);
   const [candidateInput, setCandidateInput] = useState([]);
+  const [candidateStatus, setCandidateStatus] = useState([]);
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`/application/applicantDetail/${id}/${jid}`);
-      const { user, jobs, applications, candidateFields } = res.data;
-      setUser(user);
-      setJobs(jobs);
-      // console.log(candidateFields);
-      setCandidateInput(candidateFields);
-      setApplicant(res.data);
-      setSelectedStatus(applications.status);
+      let res;
+      if (!jid) {
+        res = await axios.get(`application/applicantStatus/${id}`);
+        const { userData, status } = res.data;
+        setUser(userData);
+        setCandidateStatus(status);
+      } else {
+        res = await axios.get(`/application/applicantDetail/${id}/${jid}`);
+        const { user, jobs, applications, candidateFields } = res.data;
+        setUser(user);
+        setJobs(jobs);
+        setCandidateInput(candidateFields);
+        console.log(candidateFields);
+
+        setApplicant(res.data);
+        setSelectedStatus(applications.status);
+      }
     } catch (err) {
       console.error("Error loading applicant:", err);
     }
@@ -65,8 +75,10 @@ function ApplicantDetail() {
   };
   useEffect(() => {
     fetchData();
-    fetchWorkflow();
-    fetchJob();
+    if (jid) {
+      fetchJob();
+      fetchWorkflow();
+    }
   }, [id]);
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
@@ -114,7 +126,7 @@ function ApplicantDetail() {
         <div className="df jcsa">
           <div className="applicant-detail-container">
             <div className="applicant-card">
-              <div className="df jcsb al  h4   ">
+              <div className="df al jc h4 w100  ">
                 <h3>User Information</h3>
               </div>
               <p>
@@ -132,10 +144,10 @@ function ApplicantDetail() {
             </div>
 
             <div className="applicant-card">
-              {jid && (
-                <div>
+              {jid ? (
+                <div className="df fdc w100 jc al">
                   <h3>Update Status</h3>
-                  <div className="status-dropdown mt10">
+                  <div className="status-dropdown w100 mt10">
                     <label htmlFor="status">
                       <strong>Status:</strong>
                     </label>
@@ -153,38 +165,93 @@ function ApplicantDetail() {
                     </select>
                   </div>
                 </div>
+              ) : (
+                <div className="df fdc g5 al">
+                  <h3>Applied Job Status</h3>
+                  {candidateStatus.map((app, index) => (
+                    <div key={index} className="df fdr al g5 w100 ">
+                      <strong>{index + 1}.</strong>&nbsp;
+                      <strong>Job ID:</strong>{" "}
+                      {`2X${String(app.jobId).padStart(2, "0")}`} &nbsp;
+                      <strong>Status:</strong> {app.status}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             <div className="b-card">
-              <h3>Candidate Information</h3>
-              {candidateInput.length > 0 ? (
-                <div className="candidate-fields">
-                  {candidateInput.map((field, idx) => (
-                    <p key={idx}>
-                      <strong>{field.label}:</strong>{" "}
-                      {field.type === "file" && field.value ? (
-                        <button
-                          onClick={() =>
-                            window.open(
-                              `${process.env.REACT_APP_BASE_URL}/uploads/${field.value}`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          View File
-                        </button>
-                      ) : (
-                        field.value || "Not provided"
-                      )}
-                    </p>
-                  ))}
+              {jid && (
+                <div className="df al fdc g10 w100">
+                  <h3>Candidate Information</h3>
+
+                  {candidateInput.length > 0 ? (
+                    <div className="candidate-fields w100">
+                      {candidateInput.map((field, idx) => {
+                        if (field.type === "file") return null;
+
+                        if (field.type === "header") {
+                          return (
+                            <h3 key={idx} style={{ color: "blue" }}>
+                              {field.label}
+                            </h3>
+                          );
+                        }
+                        if (field.type === "label") {
+                          return (
+                            <p key={idx}>
+                              <strong>{field.label}</strong>
+                            </p>
+                          );
+                        }
+
+                        return (
+                          <p key={idx}>
+                            <strong>{field.label}:</strong>{" "}
+                            {field.value || "Not provided"}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p>No candidate fields found.</p>
+                  )}
                 </div>
-              ) : (
-                <p>No candidate fields found.</p>
               )}
             </div>
-
-            <div className="b-card"></div>
+            <div className="b-card ">
+              {jid && (
+                <div className="df al fdc g10 w100">
+                  <h3>Candidate Files</h3>
+                  {candidateInput.length > 0 ? (
+                    <div className="candidate-fields w100">
+                      {candidateInput
+                        .filter((field) => field.type === "file")
+                        .map((field, idx) => (
+                          <p key={idx}>
+                            <strong>{field.label}:</strong>{" "}
+                            {field.value ? (
+                              <button
+                                onClick={() =>
+                                  window.open(
+                                    `${process.env.REACT_APP_BASE_URL}/uploads/${field.value}`,
+                                    "_blank"
+                                  )
+                                }
+                              >
+                                View File
+                              </button>
+                            ) : (
+                              "Not provided"
+                            )}
+                          </p>
+                        ))}
+                    </div>
+                  ) : (
+                    <p>No candidate fields found.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

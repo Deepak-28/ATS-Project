@@ -142,7 +142,7 @@ const PublicJobPage = () => {
     }
   };
   const handleRegister = async () => {
-    console.log(data);
+    // console.log(data);
     try {
       const res = await axios.post("/user", data);
       // console.log(res.data);

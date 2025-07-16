@@ -14,8 +14,9 @@ function TopNav({ setAuthMode }) {
     localStorage.removeItem("candidate_token");
     localStorage.removeItem("candidateId");
     localStorage.removeItem("cid");
+    localStorage.removeItem("name")
     setShowPopup(false);
-    navigate(-1);
+    navigate(`/careers/${slug}`)
   };
 
   useEffect(() => {
@@ -35,13 +36,12 @@ function TopNav({ setAuthMode }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showPopup]);
-console.log(slug);
 
   return (
     <div className="top-nav">
       <div className="df fdr al ">
         <img src="/logo.png" alt="logo" className="logo cursor-pointer" onClick={()=>navigate(`/careers/${slug}`)} />
-        <p>Welcome! {name}</p>
+        {name && (<p>Welcome! {name}</p>)}
       </div>
       {candidateId ? (
         <div className="df al fdr g10">

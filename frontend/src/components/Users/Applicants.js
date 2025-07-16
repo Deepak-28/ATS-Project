@@ -63,7 +63,6 @@ function Applicants() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Skills</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -82,7 +81,6 @@ function Applicants() {
                     </td>
                     <td>{applicant.email}</td>
                     <td>{applicant.ph_no}</td>
-                    <td>{applicant.skills}</td>
                     <td data-no-nav>
                       <Link
                         to={`/applicants/${applicant.id}`}
@@ -95,7 +93,7 @@ function Applicants() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7">No applicants found</td>
+                  <td colSpan="6">No applicants found</td>
                 </tr>
               )}
             </tbody>

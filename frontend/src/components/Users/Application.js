@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Country, State, City } from "country-state-city";
 import "./application.css";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -52,7 +53,6 @@ function Application() {
       toast.error("Failed to load job.");
     }
   };
-
   const fetchTemplate = async (id) => {
     try {
       const res = await axios.get(`/template/fields/candidate/${id}`);
@@ -86,41 +86,52 @@ function Application() {
     }
 
     setLoading(true);
+
     try {
-      const fileEntry = Object.entries(formValues).find(
-        ([_, value]) => value instanceof File
-      );
-
-      if (!fileEntry) {
-        throw new Error("No file selected in dynamic fields.");
-      }
-
-      const [fileFieldId, file] = fileEntry;
-
-      // Rename file
-      const name = file.name.slice(0, file.name.lastIndexOf("."));
-      const extension = file.name.slice(file.name.lastIndexOf("."));
-      const newFileName = `${name}_${Date.now()}${extension}`;
-
-      const renamedFile = new File([file], newFileName, {
-        type: file.type,
-      });
-
       const formData = new FormData();
-      formData.append(fileFieldId, renamedFile);
+
+      // 1. Basic applicant data (name, email, etc.)
       formData.append("data", JSON.stringify(data));
 
+      // 2. Separate location fields and other fields
+      const locationFields = [];
+
       Object.entries(formValues).forEach(([key, value]) => {
-        if (value instanceof File && key !== fileFieldId) {
+        if (value instanceof File) {
           formData.append(key, value);
-        } else if (!(value instanceof File)) {
+        } else if (
+          key.endsWith("_country") ||
+          key.endsWith("_state") ||
+          key.endsWith("_city") ||
+          key.endsWith("_countryName") ||
+          key.endsWith("_stateName")
+        ) {
+          const baseFieldId = key.split("_")[0];
+          if (!locationFields.includes(baseFieldId)) {
+            locationFields.push(baseFieldId);
+          }
+          // Don't append these directly here — we'll group them below
+        } else {
           formData.append(key, value);
         }
       });
-      console.log(formData);
 
+      // 3. Group and send location fields in bulk
+      const locationData = locationFields.map((fieldId) => ({
+        fieldId: Number(fieldId),
+        countryCode: formValues[`${fieldId}_country`] || "",
+        countryName: formValues[`${fieldId}_countryName`] || "",
+        stateCode: formValues[`${fieldId}_state`] || "",
+        stateName: formValues[`${fieldId}_stateName`] || "",
+        cityName: formValues[`${fieldId}_city`] || "",
+      }));
+
+      formData.append("locationData", JSON.stringify(locationData));
+
+      // 4. Submit to backend
       await axios.put(`/user/${candidateId}/${jid}`, formData);
 
+      // 5. Update application status
       await axios.put(`/application/update`, {
         candidateId: Number(candidateId),
         jobId: Number(jid),
@@ -290,6 +301,81 @@ function Application() {
               )}
             </div>
           );
+        case "location": {
+          const country = formValues[`${id}_country`] || "";
+          const state = formValues[`${id}_state`] || "";
+          const city = formValues[`${id}_city`] || "";
+
+          return (
+            <div key={id} className="input df fdc g10">
+              {label}
+
+              <select
+                value={country}
+                onChange={(e) => {
+                  const selectedCode = e.target.value;
+                  const selected = Country.getCountryByCode(selectedCode);
+                  setFormValues((prev) => ({
+                    ...prev,
+                    [`${id}_country`]: selectedCode,
+                    [`${id}_countryName`]: selected?.name || "",
+                    [`${id}_state`]: "",
+                    [`${id}_city`]: "",
+                  }));
+                }}
+              >
+                <option value="">Select Country</option>
+                {Country.getAllCountries().map((c) => (
+                  <option key={c.isoCode} value={c.isoCode}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={state}
+                onChange={(e) => {
+                  const stateCode = e.target.value;
+                  const stateObj = State.getStateByCodeAndCountry(
+                    stateCode,
+                    country
+                  );
+                  setFormValues((prev) => ({
+                    ...prev,
+                    [`${id}_state`]: stateCode,
+                    [`${id}_stateName`]: stateObj?.name || "",
+                    [`${id}_city`]: "",
+                  }));
+                }}
+              >
+                <option value="">Select State</option>
+                {State.getStatesOfCountry(country).map((s) => (
+                  <option key={s.isoCode} value={s.isoCode}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={city}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    [`${id}_city`]: e.target.value,
+                  })
+                }
+              >
+                <option value="">Select City</option>
+                {City.getCitiesOfState(country, state).map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        }
+
         default:
           return (
             <div key={id} className="form-group">
@@ -313,7 +399,9 @@ function Application() {
         <div className="application_content">
           <div className="a-job-header">
             <div className="f13">
-              <p>Job ID: <span style={{color: "blue"}}>2X0{jid}</span></p>
+              <p>
+                Job ID: <span style={{ color: "blue" }}>2X0{jid}</span>
+              </p>
             </div>
             <div>
               <h4>{jobTitle}</h4>

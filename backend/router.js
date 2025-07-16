@@ -19,5 +19,6 @@ Router.use('/portal', require('./controls/portal'));
 Router.use('/template', require('./controls/template'));
 Router.use('/templateField', require('./controls/templateField'));
 Router.use('/postOption', require('./controls/postOptions'));
+Router.use('/locationData', require('./controls/locationData'));
 
 module.exports =Router;

@@ -91,7 +91,7 @@ function JobTemplate() {
     try {
       const res = await axios.get("/template/candidate");
       // console.log(res.data);
-      
+
       setCandidateForms(res.data);
     } catch (err) {
       console.error("Error in fetching the candidate form", err);
@@ -143,23 +143,23 @@ function JobTemplate() {
       [name]: parsedValue,
     }));
   };
-const handleFieldSubmit = (e) => {
-  e.preventDefault();
+  const handleFieldSubmit = (e) => {
+    e.preventDefault();
 
-  const updatedPositions = { ...fieldPositions };
-  selectedFieldIds.forEach((id) => {
-    if (!updatedPositions[id]) {
-      updatedPositions[id] = "left";
-    }
-  });
-  setFieldPositions(updatedPositions);
+    const updatedPositions = { ...fieldPositions };
+    selectedFieldIds.forEach((id) => {
+      if (!updatedPositions[id]) {
+        updatedPositions[id] = "left";
+      }
+    });
+    setFieldPositions(updatedPositions);
 
-  setFieldOrder((prevOrder) =>
-    prevOrder.filter((id) => selectedFieldIds.includes(id))
-  );
-  setFormValues(tempValues);
-  setIsVisible(false);
-};
+    setFieldOrder((prevOrder) =>
+      prevOrder.filter((id) => selectedFieldIds.includes(id))
+    );
+    setFormValues(tempValues);
+    setIsVisible(false);
+  };
 
   const handleSubmit = async () => {
     try {
@@ -380,16 +380,19 @@ const handleFieldSubmit = (e) => {
           <div className="template-card df  fdc">
             <div className="df jcsb  ">
               {edited ? <h3>Update Template</h3> : <h3>Create Template</h3>}
-              {edited ? <FaEdit
-                size={20}
-                className=" mr10 cursor-pointer blue"
-                onClick={() => setIsVisible(true)}
-              />:
-              <MdOutlineLibraryAdd
-                size={24}
-                className="g mr10 cursor-pointer"
-                onClick={() => setIsVisible(true)}
-              />}
+              {edited ? (
+                <FaEdit
+                  size={20}
+                  className=" mr10 cursor-pointer blue"
+                  onClick={() => setIsVisible(true)}
+                />
+              ) : (
+                <MdOutlineLibraryAdd
+                  size={24}
+                  className="g mr10 cursor-pointer"
+                  onClick={() => setIsVisible(true)}
+                />
+              )}
             </div>
             <div className="">
               <div>
@@ -581,6 +584,30 @@ const handleFieldSubmit = (e) => {
                                   {field.label || field.fieldLabel}
                                 </h3>
                               )}
+                              {field.fieldType === "location" && (
+                                <div className="location-group template-preview">
+                                  <div className="input">
+                                    <label>Country</label>
+                                    <select disabled className="h5">
+                                      <option>Select Country</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="input">
+                                    <label>State</label>
+                                    <select disabled className="h5">
+                                      <option>Select State</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="input">
+                                    <label>City</label>
+                                    <select disabled className="h5">
+                                      <option>Select City</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                       </div>
@@ -708,6 +735,30 @@ const handleFieldSubmit = (e) => {
                                 <h3 className="field-header header-with-line">
                                   {field.label || field.fieldLabel}
                                 </h3>
+                              )}
+                              {field.fieldType === "location" && (
+                                <div className="location-group template-preview">
+                                  <div className="input">
+                                    <label>Country</label>
+                                    <select disabled className="h5">
+                                      <option>Select Country</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="input">
+                                    <label>State</label>
+                                    <select disabled className="h5">
+                                      <option>Select State</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="input">
+                                    <label>City</label>
+                                    <select disabled className="h5">
+                                      <option>Select City</option>
+                                    </select>
+                                  </div>
+                                </div>
                               )}
                             </div>
                           ))}
@@ -941,8 +992,12 @@ const handleFieldSubmit = (e) => {
             )}
           </div>
           <div className="template-card2">
-            {formType === "job" ? (<h3>Job Template</h3>):(<h3>Candidate Form</h3>)}
-            
+            {formType === "job" ? (
+              <h3>Job Template</h3>
+            ) : (
+              <h3>Candidate Form</h3>
+            )}
+
             <div className="templates ">
               {templateNames.map((template) => {
                 const relatedTemplateFields = templateFields.filter(

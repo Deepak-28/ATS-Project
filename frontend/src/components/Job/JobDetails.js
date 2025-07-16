@@ -118,10 +118,8 @@ const JobDetails = () => {
     }
   };
   const handleRegister = async () => {
-    console.log(data);
     try {
       const res = await axios.post("/user", data);
-      console.log(res.data);
       navigate(-1);
     } catch (err) {
       console.log(err.response?.data || "Registration failed");

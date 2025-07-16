@@ -1,6 +1,6 @@
 const Router = require("express").Router();
 const { Op } = require('sequelize');
-const { job, application, fieldData, field } = require("../config/index");
+const { job, application, fieldData, field, locationData } = require("../config/index");
 const { postOption: PostOption } = require("../config/index");
 
 Router.post("/", async (req, res) => {
@@ -35,9 +35,8 @@ Router.post("/", async (req, res) => {
 Router.post("/create", async (req, res) => {
   try {
     const jobData = req.body;
-
-    const newJob = await job.create(jobData); // create job
-    res.send(newJob); // return jobId to frontend
+    const newJob = await job.create(jobData); 
+    res.send(newJob);
   } catch (err) {
     console.error("Job creation failed:", err);
     res.status(500).json({ error: "Job creation failed" });
@@ -264,7 +263,9 @@ Router.get("/company/:companyId", async (req, res) => {
     const jobs = await job.findAll({
       where: { companyId },
     });
-    res.status(200).send(jobs);
+    const dynamicFields = await fieldData.findAll();
+    const payload = {jobs, dynamicFields};
+    res.send(payload)
   } catch {
     console.error("Error fetching jobs for company:", err);
     res.status(500).send("Failed to fetch jobs for company", err);
@@ -273,46 +274,86 @@ Router.get("/company/:companyId", async (req, res) => {
 Router.get("/:id", async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Fetch the job
     const jobs = await job.findOne({ where: { id } });
     if (!jobs) {
       return res.status(404).send("Job not found");
     }
+
+    // 2. Fetch all dynamic fieldData rows for this job (no candidateId)
     const dynamicFields = await fieldData.findAll({
       where: {
         jobId: id,
-        candidateId: null, 
-      },
+         candidateId: null,
+      }, raw:true
     });
+    console.log(dynamicFields);
+    
 
+    // 3. If there are no dynamic fields, return the job as is
     if (dynamicFields.length === 0) {
       return res.send(jobs);
     }
-    // Step 1: Get all unique fieldIds
-    const fieldIds = dynamicFields.map((field) => field.fieldId);
-    // Step 2: Fetch field metadata (assuming you have a model called "field")
+
+    // 4. Build a map of fieldId → fieldLabel
+    const fieldIds = dynamicFields.map((f) => f.fieldId);
     const fieldsMeta = await field.findAll({
       where: { id: fieldIds },
+      raw: true,
     });
-    // Step 3: Create a map of fieldId => fieldLabel
     const fieldLabelMap = {};
     fieldsMeta.forEach((f) => {
-      fieldLabelMap[f.id] = f.fieldLabel;
+      fieldLabelMap[f.id] = f.fieldLabel.trim();
     });
-    // Step 4: Build formValues with fieldLabel instead of fieldId
+
+    // 5. Fetch any locationData rows for these fieldData entries
+    const fieldDataIds = dynamicFields.map((f) => f.id);
+    const locationEntries = await locationData.findAll({
+      where: {
+        jobId: id,
+         candidateId: { [Op.is]: null },
+        fieldDataId: fieldDataIds,
+      },
+      raw: true,
+    });
+    // build a quick lookup: fieldDataId → location record
+    const locByFieldDataId = {};
+    locationEntries.forEach((loc) => {
+      locByFieldDataId[loc.fieldDataId] = loc;
+    });
+
+    // 6. Assemble formValues, inserting location strings where appropriate
     const formValues = {};
-    dynamicFields.forEach((field) => {
-      const label = fieldLabelMap[field.fieldId];
-      if (label) {
-        formValues[label] = field.value;
+    dynamicFields.forEach((f) => {
+      const label = fieldLabelMap[f.fieldId];
+      if (!label) return;
+      
+      // if there is a location entry for this fieldData row
+      const loc = locByFieldDataId[f.id];
+      if (loc) {
+        // combine into a single display string (or expose raw object)
+        formValues[label] = {
+          countryCode: loc.countryCode,
+          countryName: loc.countryName,
+          stateCode: loc.stateCode,
+          stateName: loc.stateName,
+          cityName: loc.cityName,
+          // you can also add a display property:
+          display: [loc.countryName, loc.stateName, loc.cityName]
+            .filter(Boolean)
+            .join(", "),
+        };
+      } else {
+        // normal field
+        formValues[label] = f.value;
       }
     });
-    // Combine job + dynamic field values
+
+    // 7. Merge job + dynamic fields
     const jobWithFields = {
       ...jobs.toJSON(),
       formValues,
     };
-    // console.log(jobWithFields);
-    
     res.send(jobWithFields);
   } catch (err) {
     console.error("Error fetching job:", err);
@@ -344,7 +385,6 @@ Router.put("/:jobId", async (req, res) => {
   }));
   try {
     await job.update(jobValues, { where: { id: jobId } });
-    // Update or insert each dynamic field value
     for (const field of dynamicInserts) {
       await fieldData.update(
         {
@@ -414,7 +454,9 @@ Router.delete("/:id", async (req, res) => {
     await application.destroy({ where: { jobId: id } });
     // Then delete the job itself
     await job.destroy({ where: { id } });
-    await PostOption.destroy({where:{jobId:id}})
+    await PostOption.destroy({where:{jobId:id}});
+    await fieldData.destroy({where:{jobId:id}});
+    await locationData.destroy({where:{jobId:id}});
     res.send("Job and associated applications deleted");
   } catch (error) {
     console.error("Error deleting job or applications:", error);

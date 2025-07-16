@@ -348,6 +348,7 @@ const DynamicFieldBuilderPage = () => {
                         <option value="file">File</option>
                         <option value="label">Label</option>
                         <option value="header">Header</option>
+                        <option value="location">Location</option>
                       </select>
                     </div>
                     <div>
@@ -383,6 +384,7 @@ const DynamicFieldBuilderPage = () => {
                         <option value="file">File</option>
                         <option value="label">Label</option>
                         <option value="header">Header</option>
+                        <option value="location">Location</option>
                       </select>
                     </div>
                   </div>

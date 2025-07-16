@@ -14,11 +14,8 @@ const AllJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [JobId, setJobId] = useState("");
   const [popup, setPopup] = useState(false);
-  const [companies, setCompanies] = useState([]);
   const [fields, setFields] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
-  const [postDate, setPostDate] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
   const [postOption, setPostOption] = useState("");
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPosted, setIsPosted] = useState(false);
@@ -27,27 +24,20 @@ const AllJobs = () => {
   const [dynamicData, setDynamicData] = useState([]);
   const [isVisibility, setIsVisibilty] = useState(false);
   const [selectedHeaders, setSelectedHeaders] = useState(() => {
-    const stored = localStorage.getItem("selectedHeaders");
+    const stored = localStorage.getItem("JobselectedHeaders");
     return stored ? JSON.parse(stored) : [];
   });
   const [options, setOptions] = useState([]);
   const [formData, setFormData] = useState([]);
   const navigate = useNavigate();
-  // console.log(JobId);
 
-  const getCompanies = async () => {
-    try {
-      const res = await axios.get("/company/companies");
-      setCompanies(res.data);
-    } catch (err) {
-      console.error("Failed to fetch companies:", err);
-    }
-  };
   const fetchAllJobs = async () => {
     try {
       if (companyId) {
         const res = await axios.get(`/job/company/${companyId}`);
-        setJobs(res.data);
+        const {jobs, dynamicFields} = res.data;
+        setJobs(jobs);
+        setDynamicData(dynamicFields)
       } else {
         const res = await axios.get("/job");
         const { getjobs, dynamicFields } = res.data;
@@ -67,8 +57,6 @@ const AllJobs = () => {
       const formatDate = (dateString) => {
         return new Date(dateString).toISOString().slice(0, 10);
       };
-      setPostDate(job.postDate ? formatDate(job.postDate) : "");
-      setExpiryDate(job.expiryDate ? formatDate(job.expiryDate) : "");
       setPostOption(job.visibility || "");
       setIsPosted(!!job.visibility);
     } catch (error) {
@@ -123,7 +111,6 @@ const AllJobs = () => {
       console.error("failed to get portal", err);
     }
   };
-
   const getPostOption = async (id) => {
     try {
       const res = await axios.get(`/postOption/${id}`);
@@ -252,21 +239,18 @@ const AllJobs = () => {
     dynamicLookup[key] = entry.value;
   });
   const clearFunction = () => {
-    setIsVisibilty(false);
-    setExpiryDate("");
-    setPostDate("");
+    setIsVisibilty(false); 
     setPostOption("");
     setIsPosted(false);
   };
   useEffect(() => {
     fetchAllJobs();
-    getCompanies();
     fetchFields();
     fetchFieldsOption();
     getPortal();
   }, []);
   useEffect(() => {
-    localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
+    localStorage.setItem("JobselectedHeaders", JSON.stringify(selectedHeaders));
   }, [selectedHeaders]);
 
   return (

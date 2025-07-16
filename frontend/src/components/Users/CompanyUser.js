@@ -36,10 +36,10 @@ function CompanyUser() {
     const getJobsByCompany = async () => {
       try {
         const res = await axios.get(`/job/company/${cid}`);
-        console.log(res.data);
+        // console.log(res.data);
 
         setJobs(res.data);
-        console.log(jobs);
+        // console.log(jobs);
       } catch (error) {
         console.error("Error fetching jobs:", error);
       }

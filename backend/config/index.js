@@ -24,5 +24,6 @@ db.portal = require('../model/portal')(sequelize, Sequelize);
 db.template = require('../model/template')(sequelize, Sequelize);
 db.templateField = require('../model/templateFields')(sequelize, Sequelize);
 db.postOption = require('../model/postOptions')(sequelize, Sequelize);
+db.locationData = require('../model/locationData')(sequelize, Sequelize);
 
 module.exports = db;

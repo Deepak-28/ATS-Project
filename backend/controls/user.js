@@ -1,5 +1,5 @@
 const Router = require("express").Router();
-const { user, login, application, fieldData } = require("../config/index");
+const { user, login, application, fieldData, locationData } = require("../config/index");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -126,30 +126,26 @@ Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
   const { candidateId, jobId } = req.params;
 
   try {
-    // 1. Log form data
-    // console.log("Uploaded Files:", req.files);
-    // console.log("Text Fields:", req.body);
-
-    // 2. Parse static user data
+    // 1. Parse user data (static fields)
     const userData = JSON.parse(req.body.data || "{}");
-    // console.log("Parsed User Data:", userData);
 
-    // 3. Merge dynamic fields
+    // 2. Parse location fields array (if provided)
+    const locationDataArray = JSON.parse(req.body.locationData || "[]");
+
+    // 3. Merge dynamic fields (non-location)
     const formValues = Object.entries(req.body).reduce((acc, [key, value]) => {
-      if (key !== "data") acc[key] = value;
+      if (key !== "data" && key !== "locationData") acc[key] = value;
       return acc;
     }, {});
 
-    // 4. Include uploaded files
+    // 4. Add uploaded files into formValues
     if (req.files && req.files.length > 0) {
       req.files.forEach((file) => {
         formValues[file.fieldname] = file.filename;
       });
     }
 
-    console.log("Parsed formValues:", formValues);
-
-    // 5. Prepare dynamic inserts for fieldData table
+    // 5. Prepare inserts for basic dynamic fields
     const dynamicInserts = Object.entries(formValues)
       .map(([fieldId, value]) => ({
         candidateId: parseInt(candidateId),
@@ -159,7 +155,7 @@ Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
       }))
       .filter((f) => !isNaN(f.fieldId));
 
-    // 6. Upsert dynamic field data
+    // 6. Upsert basic dynamic fields
     for (const field of dynamicInserts) {
       const [record, created] = await fieldData.findOrCreate({
         where: {
@@ -177,6 +173,60 @@ Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
       }
     }
 
+    // 7. Handle location field inserts
+    for (const loc of locationDataArray) {
+      const { fieldId, countryCode, countryName, stateCode, stateName, cityName } = loc;
+
+      // Create or find the main fieldData row (as a placeholder for location)
+      const [fieldDataRecord, created] = await fieldData.findOrCreate({
+        where: {
+          candidateId: candidateId,
+          jobId: jobId,
+          fieldId: fieldId,
+        },
+        defaults: {
+          value: "location", // just a marker
+        },
+      });
+
+      if (!created) {
+        await fieldDataRecord.update({ value: "location" });
+      }
+
+      const fieldDataId = fieldDataRecord.id;
+
+      // Check if locationData already exists
+      const existing = await locationData.findOne({
+        where: {
+          fieldDataId,
+          jobId,
+          candidateId,
+        },
+      });
+
+      if (existing) {
+        await existing.update({
+          countryCode,
+          countryName,
+          stateCode,
+          stateName,
+          cityName,
+        });
+      } else {
+        await locationData.create({
+          jobId,
+          candidateId,
+          fieldDataId,
+          countryCode,
+          countryName,
+          stateCode,
+          stateName,
+          cityName,
+        });
+      }
+    }
+
+    // 8. Upsert application record
     const [record, created] = await application.findOrCreate({
       where: {
         candidateId: candidateId,
@@ -191,13 +241,12 @@ Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
       await record.update({ status: "applied" });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Application saved & status updated." });
+    res.status(200).json({ success: true, message: "Application saved & status updated." });
   } catch (err) {
     console.error("Error handling application submission:", err);
     res.status(500).json({ error: "Failed to process application." });
   }
 });
+
 
 module.exports = Router;

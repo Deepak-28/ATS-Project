@@ -99,10 +99,10 @@ function CandidateLogin() {
     }
   };
   const handleRegister = async () => {
-    console.log(data);
+    // console.log(data);
     try {
       const res = await axios.post("/user", data);
-      console.log(res.data);
+      // console.log(res.data);
       navigate(-1);
     } catch (err) {
       console.log(err.response?.data || "Registration failed");
@@ -244,7 +244,6 @@ function CandidateLogin() {
               </div>
               {/* Country Dropdown */}
               <div className="input-box">
-                {/* <label>Country</label> */}
                 <select
                   value={selectedCountry || ""}
                   onChange={handleCountryChange}
@@ -261,7 +260,6 @@ function CandidateLogin() {
               </div>
               {/* State Dropdown */}
               <div className="input-box">
-                {/* <label>State</label> */}
                 <select
                   value={selectedState || ""}
                   onChange={handleStateChange}
@@ -279,7 +277,6 @@ function CandidateLogin() {
               </div>
               {/* City Dropdown */}
               <div className="input-box">
-                {/* <label>City</label> */}
                 <select
                   value={selectedCity || ""}
                   onChange={handleCityChange}

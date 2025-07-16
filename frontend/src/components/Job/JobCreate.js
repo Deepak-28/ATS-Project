@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Country, State, City } from "country-state-city";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import { MdOutlineLibraryAdd } from "react-icons/md";
 import { FaEdit, FaWpforms } from "react-icons/fa";
 import { LiaProjectDiagramSolid } from "react-icons/lia";
 import { FiUsers } from "react-icons/fi";
@@ -71,20 +71,29 @@ function JobCreate() {
     }
   };
   const fetchJobForEdit = async (id) => {
-    // const id = 1;
     try {
       // 1. Fetch job details
       const jobRes = await axios.get(`/job/edit/${id}`);
       setJob(jobRes.data);
       setSelectedTemplateId(jobRes.data.templateId);
-      // console.log(jobRes.data.templateId);
 
-      // 2. Fetch dynamic field values
+      // 2. Fetch dynamic field values (includes location fields now)
       const fieldDataRes = await axios.get(`/fieldData/${id}`);
       const fieldValues = {};
+
       fieldDataRes.data.forEach((item) => {
-        fieldValues[item.fieldId] = item.value;
+        if (item.fieldType === "location") {
+          const fid = item.fieldId;
+          fieldValues[`${fid}_country`] = item.countryCode;
+          fieldValues[`${fid}_countryName`] = item.countryName;
+          fieldValues[`${fid}_state`] = item.stateCode;
+          fieldValues[`${fid}_stateName`] = item.stateName;
+          fieldValues[`${fid}_city`] = item.cityName;
+        } else {
+          fieldValues[item.fieldId] = item.value;
+        }
       });
+
       setFormValues(fieldValues);
     } catch (err) {
       console.error("Error fetching job and field data", err);
@@ -149,57 +158,64 @@ function JobCreate() {
     }
   };
   const handleSubmit = async () => {
-    // console.log(job);
-
     try {
-      // Merge form values into Fields
       const enrichedFields = Fields.map((field) => ({
         ...field,
-        value: formValues[field.fieldLabel] || "", 
+        value: formValues[field.fieldLabel] || "",
       }));
 
-      if (jobId) {
-        // UPDATE existing job
-        await axios.put(`/job/update/${jobId}`, job);
+      let newJobId = jobId;
 
-        if (activeTab === "fields") {
-          // Manual fields update
-          await axios.post("/job/manualFieldSubmit", {
-            jobId,
-            Fields: enrichedFields,
-          });
-        } else {
-          // Template-based update
-          await axios.put("/fieldData/bulkUpdate", buildFieldDataPayload());
-        }
-
-        toast.success("Job updated successfully");
-      } else {
-        // CREATE new job
+      if (!jobId) {
         const res = await axios.post("/job/create", job);
-        const newJobId = res.data.id;
-        // console.log("New Job ID:", newJobId);
-
-        if (activeTab === "fields") {
-          // Manual field creation
-          await axios.post("/job/manualFieldSubmit", {
-            jobId: newJobId,
-            Fields: enrichedFields,
-          });
-        } else {
-          // Template field creation
-          const payload = buildFieldDataPayload(newJobId);
-          await axios.post("/fieldData/bulkCreate", payload);
-        }
-
-        toast.success("Job created successfully");
+        newJobId = res.data.id;
+      } else {
+        await axios.put(`/job/update/${jobId}`, job);
       }
 
+      if (activeTab === "fields") {
+        await axios.post("/job/manualFieldSubmit", {
+          jobId: newJobId,
+          Fields: enrichedFields,
+        });
+      } else {
+        // Submit regular fields
+        const payload = buildFieldDataPayload(newJobId);
+        await axios.post("/fieldData/bulkCreate", payload);
+      }
+
+      // Handle location fields separately
+      const locationFields = allFields.filter(
+        (f) => f.fieldType === "location"
+      );
+
+      for (const field of locationFields) {
+        const locationPayload = {
+          jobId: newJobId,
+          fieldId: field.id,
+          countryCode: formValues[`${field.id}_country`] || "",
+          countryName: formValues[`${field.id}_countryName`] || "",
+          stateCode: formValues[`${field.id}_state`] || "",
+          stateName: formValues[`${field.id}_stateName`] || "",
+          cityName: formValues[`${field.id}_city`] || "",
+        };
+
+        if (
+          locationPayload.countryCode &&
+          locationPayload.stateCode &&
+          locationPayload.cityName
+        ) {
+          await axios.post("/fieldData/location", locationPayload);
+        }
+      }
+
+      toast.success("Job saved successfully");
       navigate("/alljobs");
     } catch (err) {
       toast.error("Error saving job");
       console.error(err);
     }
+
     clearFunction();
   };
   const buildFieldDataPayload = (id = jobId) => {
@@ -240,7 +256,6 @@ function JobCreate() {
     const updated = [...Fields];
     updated[index][key] = value;
     setFields(updated);
-    // console.log(updated);
   };
   const handleManualFieldChange = (id, value) => {
     setFormValues((prev) => ({
@@ -378,6 +393,192 @@ function JobCreate() {
         </div>
       );
     });
+  const renderColumnFields = (columnPosition) => {
+    return templateFields
+      .filter(
+        (tf) =>
+          tf.templateId === selectedTemplateId && tf.position === columnPosition
+      )
+      .map((tf) => {
+        const field = allFields.find((f) => f.id === tf.fieldId);
+        const options = fieldOptions.filter((opt) => opt.fieldId === field?.id);
+
+        if (!field) return null;
+
+        const fieldValue = formValues[field.id] || "";
+
+        const renderInput = () => {
+          switch (field.fieldType) {
+            case "text":
+            case "date":
+            case "number":
+              return (
+                <input
+                  type={field.fieldType}
+                  value={fieldValue}
+                  onChange={(e) =>
+                    setFormValues({ ...formValues, [field.id]: e.target.value })
+                  }
+                />
+              );
+            case "textarea":
+              return (
+                <textarea
+                  value={fieldValue}
+                  onChange={(e) =>
+                    setFormValues({ ...formValues, [field.id]: e.target.value })
+                  }
+                />
+              );
+            case "dropdown":
+              return (
+                <select
+                  value={fieldValue}
+                  onChange={(e) =>
+                    setFormValues({ ...formValues, [field.id]: e.target.value })
+                  }
+                >
+                  <option value="">Select</option>
+                  {options.map((opt) => (
+                    <option key={opt.id} value={opt.value}>
+                      {opt.value}
+                    </option>
+                  ))}
+                </select>
+              );
+            case "checkbox":
+              return (
+                <input
+                  type="checkbox"
+                  checked={!!fieldValue}
+                  onChange={(e) =>
+                    setFormValues({
+                      ...formValues,
+                      [field.id]: e.target.checked,
+                    })
+                  }
+                />
+              );
+            case "file":
+              return (
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    setFormValues({
+                      ...formValues,
+                      [field.id]: e.target.files[0],
+                    })
+                  }
+                />
+              );
+            case "location":
+              const country = formValues[`${field.id}_country`] || "";
+              const state = formValues[`${field.id}_state`] || "";
+              const city = formValues[`${field.id}_city`] || "";
+
+              return (
+                <div className="df fdc g10">
+                  <select
+                    value={country}
+                    onChange={(e) => {
+                      const selectedCountry = Country.getCountryByCode(
+                        e.target.value
+                      );
+                      setFormValues((prev) => ({
+                        ...prev,
+                        [`${field.id}_country`]: e.target.value,
+                        [`${field.id}_countryName`]:
+                          selectedCountry?.name || "",
+                        [`${field.id}_state`]: "",
+                        [`${field.id}_city`]: "",
+                      }));
+                    }}
+                  >
+                    <option value="">Select Country</option>
+                    {Country.getAllCountries().map((c) => (
+                      <option key={c.isoCode} value={c.isoCode}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={state}
+                    onChange={(e) => {
+                      const selectedState = State.getStateByCodeAndCountry(
+                        e.target.value,
+                        country
+                      );
+                      setFormValues((prev) => ({
+                        ...prev,
+                        [`${field.id}_state`]: e.target.value,
+                        [`${field.id}_stateName`]: selectedState?.name || "",
+                        [`${field.id}_city`]: "",
+                      }));
+                    }}
+                  >
+                    <option value="">Select State</option>
+                    {State.getStatesOfCountry(country).map((s) => (
+                      <option key={s.isoCode} value={s.isoCode}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={city}
+                    onChange={(e) =>
+                      setFormValues({
+                        ...formValues,
+                        [`${field.id}_city`]: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select City</option>
+                    {City.getCitiesOfState(country, state).map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <div
+            key={field.id}
+            className={`form-input mt5 ${
+              ["label", "header"].includes(field.fieldType)
+                ? "static-field"
+                : ""
+            }`}
+          >
+            {field.fieldType === "header" && (
+              <h3 className="field-header header-with-line">
+                {field.label || field.fieldLabel}
+              </h3>
+            )}
+
+            {field.fieldType === "label" && (
+              <div className="field-label">
+                {field.label || field.fieldLabel}
+              </div>
+            )}
+
+            {!["label", "header"].includes(field.fieldType) && (
+              <>
+                <label>{field.fieldLabel}</label>
+                {renderInput()}
+              </>
+            )}
+          </div>
+        );
+      });
+  };
   useEffect(() => {
     if (
       selectedTemplateId &&
@@ -420,8 +621,6 @@ function JobCreate() {
               <div className="job-form-wrapper ">
                 {activeTab === "templates" && selectedTemplateId && (
                   <div className="job-form  mt10 ">
-                    {/* <h4>Template Fields</h4> */}
-
                     {/* Left Column */}
                     <div className="left-column ">
                       <div className="form-input mt5">
@@ -440,293 +639,11 @@ function JobCreate() {
                           ))}
                         </select>
                       </div>
-
-                      {templateFields
-                        .filter(
-                          (tf) =>
-                            tf.templateId === selectedTemplateId &&
-                            tf.position === "left"
-                        )
-                        .map((tf) => {
-                          const field = allFields.find(
-                            (f) => f.id === tf.fieldId
-                          );
-                          const options = fieldOptions.filter(
-                            (opt) => opt.fieldId === field?.id
-                          );
-                          if (!field) return null;
-
-                          return (
-                            <div
-                              key={field.id}
-                              className={`form-input mt5 ${
-                                ["label", "header"].includes(field.fieldType)
-                                  ? "static-field"
-                                  : ""
-                              }`}
-                            >
-                              {field.fieldType === "header" && (
-                                <h3 className="field-header header-with-line">
-                                  {field.label || field.fieldLabel}
-                                </h3>
-                              )}
-
-                              {field.fieldType === "label" && (
-                                <div className="field-label">
-                                  {field.label || field.fieldLabel}
-                                </div>
-                              )}
-                              {!["label", "header"].includes(
-                                field.fieldType
-                              ) && (
-                                <>
-                                  <label>{field.fieldLabel}</label>
-
-                                  {field.fieldType === "text" && (
-                                    <input
-                                      type="text"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "textarea" && (
-                                    <textarea
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "dropdown" && (
-                                    <select
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    >
-                                      <option value="">Select</option>
-                                      {options
-                                        .filter(
-                                          (opt) => opt.fieldId === field.id
-                                        )
-                                        .map((opt) => (
-                                          <option
-                                            key={opt.id}
-                                            value={opt.value}
-                                          >
-                                            {opt.value}
-                                          </option>
-                                        ))}
-                                    </select>
-                                  )}
-                                  {field.fieldType === "checkbox" && (
-                                    <input
-                                      type="checkbox"
-                                      checked={formValues[field.id] || false}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.checked,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "file" && (
-                                    <input
-                                      type="file"
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.files[0],
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "date" && (
-                                    <input
-                                      type="date"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "number" && (
-                                    <input
-                                      type="number"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        })}
+                      {renderColumnFields("left")}
                     </div>
-
                     {/* Right Column */}
                     <div className="right-column">
-                      {templateFields
-                        .filter(
-                          (tf) =>
-                            tf.templateId === selectedTemplateId &&
-                            tf.position === "right"
-                        )
-                        .map((tf) => {
-                          const field = allFields.find(
-                            (f) => f.id === tf.fieldId
-                          );
-                          const options = fieldOptions.filter(
-                            (opt) => opt.fieldId === field?.id
-                          );
-                          if (!field) return null;
-
-                          return (
-                            <div
-                              key={field.id}
-                              className={`input mt5 ${
-                                ["label", "header"].includes(field.fieldType)
-                                  ? "static-field"
-                                  : ""
-                              }`}
-                            >
-                              {field.fieldType === "header" && (
-                                <h3 className="field-header">
-                                  {field.label || field.fieldLabel}
-                                </h3>
-                              )}
-
-                              {field.fieldType === "label" && (
-                                <div className="field-label">
-                                  {field.label || field.fieldLabel}
-                                </div>
-                              )}
-                              {!["label", "header"].includes(
-                                field.fieldType
-                              ) && (
-                                <>
-                                  <label>{field.fieldLabel}</label>
-
-                                  {field.fieldType === "text" && (
-                                    <input
-                                      type="text"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "textarea" && (
-                                    <textarea
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "dropdown" && (
-                                    <select
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    >
-                                      <option value="">Select</option>
-                                      {options
-                                        .filter(
-                                          (opt) => opt.fieldId === field.id
-                                        )
-                                        .map((opt) => (
-                                          <option
-                                            key={opt.id}
-                                            value={opt.value}
-                                          >
-                                            {opt.value}
-                                          </option>
-                                        ))}
-                                    </select>
-                                  )}
-                                  {field.fieldType === "checkbox" && (
-                                    <input
-                                      type="checkbox"
-                                      checked={formValues[field.id] || false}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.checked,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "file" && (
-                                    <input
-                                      type="file"
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.files[0],
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "date" && (
-                                    <input
-                                      type="date"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                  {field.fieldType === "number" && (
-                                    <input
-                                      type="number"
-                                      value={formValues[field.id] || ""}
-                                      onChange={(e) =>
-                                        setFormValues({
-                                          ...formValues,
-                                          [field.id]: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        })}
+                      {renderColumnFields("right")}
                     </div>
                   </div>
                 )}
@@ -740,7 +657,7 @@ function JobCreate() {
                 )}
               </div>
             </div>
-         <div className="h5 df al  jc mt10 ">
+            <div className="h5 df al  jc mt10 ">
               <div className="w15 df g10">
                 <button
                   type="button"

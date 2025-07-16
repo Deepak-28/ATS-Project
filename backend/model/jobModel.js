@@ -20,12 +20,6 @@ module.exports = (sequelize, Sequelize) => {
         status: {
             type: Sequelize.TEXT,
         },
-        postDate: {
-            type: Sequelize.DATE,
-        },
-        expiryDate: {
-            type: Sequelize.DATE
-        },
         visibility: {
             type: Sequelize.STRING
         }

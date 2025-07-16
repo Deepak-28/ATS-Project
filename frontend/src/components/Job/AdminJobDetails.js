@@ -13,7 +13,6 @@ const AdminJobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState({});
-  // const [formValues, setFormValues] = useState({});
   const [popup, setPopup] = useState(false);
   const [postDate, setPostDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -30,8 +29,6 @@ const AdminJobDetails = () => {
     try {
       const res = await axios.get(`/job/${id}`);
       const jobData = res.data;
-      // console.log(jobData);
-
       setJob(jobData);
       setWorkFlowId(jobData.workFlowId);
       fetchTemplate(jobData.templateId);
@@ -233,7 +230,12 @@ const AdminJobDetails = () => {
               </select>
             </div>
             <div className="w8  df jcsb">
-              <FaUser size={18} color="blue" className="cursor-pointer" onClick={()=>navigate(`/applicants/job/${id}`)} />
+              <FaUser
+                size={18}
+                color="blue"
+                className="cursor-pointer"
+                onClick={() => navigate(`/applicants/job/${id}`)}
+              />
               <FaEdit
                 onClick={() => navigate(`/Job/${job.id}`)}
                 size={20}
@@ -258,7 +260,10 @@ const AdminJobDetails = () => {
             </p>
             <p className="details">
               <FaBriefcase /> {experience} | <MdOutlineAvTimer />
-              {workMode} | <IoLocationOutline /> {location}
+              {workMode} | <IoLocationOutline />
+              {typeof location === "object" && location !== null
+                ? location.display || "N/A"
+                : location || "N/A"}
             </p>
           </div>
           <div className="w8 h100 df jcsa al">

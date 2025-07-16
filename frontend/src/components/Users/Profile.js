@@ -92,7 +92,7 @@ function Profile() {
           ) : (
             filteredJobs.map((job, index) => {
               const formValues = job.fields || [];
-              console.log("formValues:", formValues);
+              // console.log("formValues:", formValues);
               const companyName = job.companyName || "No Company";
               const experience = getDynamicField(formValues, [
                 "experience",
