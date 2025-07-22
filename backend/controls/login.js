@@ -30,9 +30,10 @@ Router.post('/check', async (req, res) => {
 
    
     const token = jwt.sign(
-      {
+      { userId : loginUser.id,
         email: loginUser.email,
         role: loginUser.role,
+        username:loginUser.username,
         candidateId: loginUser.candidateId,
         cid: loginUser.cid,
         name: fullName 
@@ -48,7 +49,6 @@ Router.post('/check', async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 Router.post('/admin/users', async (req, res) => {
     const { username, email, password, role, companyId } = req.body;
     try {
@@ -152,6 +152,28 @@ Router.put('/admin/user/:id', async (req,res)=>{
     }catch(err){
         res.status(500).send("Update Failed")
     }
+});
+Router.put('/updatePassword', async (req, res)=>{
+  const {userId, oldPassword, newPassword} = req.body;
+   if (!userId || !oldPassword || !newPassword) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+   try {
+    const user = await login.findOne({where:{id:userId}});
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    if (user.password !== oldPassword) {
+      return res.status(401).json({ message: "Old password is incorrect." });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.send( "Password updated successfully." );
+  } catch (err) {
+    console.error("Error updating password:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 

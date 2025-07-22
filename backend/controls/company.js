@@ -1,5 +1,5 @@
 const Router = require("express").Router();
-const { company, login, application, job, user } = require("../config/index");
+const { company, login, application, job, user, fieldData, locationData,postOption } = require("../config/index");
 const { Op } = require('sequelize');
 
 Router.post("/add", async (req, res) => {
@@ -99,25 +99,25 @@ Router.delete("/company/:id", async (req, res) => {
   const companyId = req.params.id;
 
   try {
-    // 1. Find all job IDs for the company
+
     const jobs = await job.findAll({ where: { companyId } });
     const jobIds = jobs.map((j) => j.id);
 
-    // 2. Delete all applications linked to those jobs
-    await application.destroy({ where: { jobId: jobIds } });
+    if (jobIds.length > 0) {
+      await application.destroy({ where: { jobId: { [Op.in]: jobIds } } });
+      await postOption.destroy({ where: { jobId: { [Op.in]: jobIds } } });
+      await locationData.destroy({ where: { jobId: { [Op.in]: jobIds } } });
+      await fieldData.destroy({ where: { jobId: { [Op.in]: jobIds } } });
+      await job.destroy({ where: { id: { [Op.in]: jobIds } } });
+    }
 
-    // 3. Delete all jobs linked to the company
-    await job.destroy({ where: { companyId } });
-    //  Delete all users of the company
-    await login.destroy({where:{cid:id}})
-
-    // 4. Delete the company
+    await login.destroy({ where: { cid: companyId } });
     await company.destroy({ where: { id: companyId } });
 
-    res.send("Company, jobs, and applications deleted successfully");
+    res.send("Company and all related data deleted successfully.");
   } catch (error) {
-    console.error("Error deleting company data:", error);
-    res.status(500).send("Failed to delete company and related data");
+    console.error("Error deleting company:", error);
+    res.status(500).send("Error deleting company data.");
   }
 });
 

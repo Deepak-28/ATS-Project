@@ -13,22 +13,26 @@ const UserCreation = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
-  const [companyId, setCompanyId] = useState(cid || "");
   const [isEditMode, setIsEditMode] = useState(false);
-
+  const comId = localStorage.getItem("cid");
   const currentRole = localStorage.getItem("role");
-  // console.log(cid, userId);
-  
+  const [companyId, setCompanyId] = useState("");
 
   const getCompanies = async () => {
     try {
-      const res = await axios.get("/company/companies");
-      setCompanies(res.data);
+      if (comId) {
+        const res = await axios.get(`/company/${comId}`);
+        console.log(res.data);
+        
+        setCompanies([res.data]);
+      } else {
+        const res = await axios.get("/company/companies");
+        setCompanies(res.data);
+      }
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     }
   };
-
   const fetchUserForEdit = async () => {
     try {
       const res = await axios.get(`/login/admin/user/${userId}`);
@@ -36,25 +40,20 @@ const UserCreation = () => {
       setUsername(user.username);
       setEmail(user.email);
       setRole(user.role);
-      setCompanyId(user.companyId);
+      setCompanyId(user.cid);
       setIsEditMode(true);
     } catch (err) {
       console.error("Error fetching user for edit", err);
       toast.error("Failed to load user data");
     }
   };
-
-  const handleBack = () => {
-    // navigate(`/Users/${cid}`);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const payload = { username, email, role, companyId };
       // console.log(username, email, role, companyId);
-      
+
       if (!isEditMode) payload.password = password;
 
       if (isEditMode) {
@@ -65,110 +64,125 @@ const UserCreation = () => {
         toast.success("User created successfully!");
       }
       // navigate(`/Users/${companyId}`);
-      navigate(-1)
+      navigate(-1);
     } catch (err) {
-      console.log("Failed to submit form:", err);
+      console.error("Failed to submit form:", err);
       toast.error("Failed to submit user");
     }
   };
+useEffect(() => {
 
-  useEffect(() => {
-    getCompanies();
-    if (userId) fetchUserForEdit();
-  }, []);
+  if (currentRole === "admin") {
+    setCompanyId(comId); 
+  } else if (currentRole === "SuperAdmin" && cid) {
+    setCompanyId(cid);
+  }
+  getCompanies();
+  if (userId) fetchUserForEdit();
+}, []);
+
 
   return (
     <div className="container">
       <Navbar />
       <div className="admin-container">
-        <div className="ml10">
+        <div className=" df fdc jcsa h100 al w20">
           <h3>{isEditMode ? "Edit User" : "Create New User"}</h3>
-          <form onSubmit={handleSubmit} className="h80 mt10 df fdc jcsb">
-           <div>
-             {(currentRole === "SuperAdmin" || currentRole === "admin") ? (
-              <div className="input mt10">
-                <label>Company</label>
-                <select
-                  id="companyId"
-                  value={companyId}
-                  onChange={(e) => setCompanyId(e.target.value)}
-                  className="h5"
-                  required
-                >
-                  <option value="">Select Company</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="input mt10">
-                <label>Company</label>
+          <form onSubmit={handleSubmit} className="h90  df fdc jcsb">
+            <div className=" df fdc g10">
+              {currentRole === "SuperAdmin" || currentRole === "admin" ? (
+                <div className="input ">
+                  <label>Company</label>
+                  <select
+                    id="companyId"
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
+                    className="h5"
+                    required
+                    disabled={
+                      // Disable if user is Admin
+                      currentRole === "admin"
+                    }
+                  >
+                    <option value="">Please Select</option>
+                    {companies.map((company) => (
+                      <option
+                        key={company.id}
+                        value={company.id}
+                        disabled={
+                          // Prevent selecting disabled companies (except current one)
+                          company.status === "disabled" &&
+                          company.id != companyId
+                        }
+                      >
+                        {company.name}
+                        {company.status === "disabled" ? " (Disabled)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="input">
+                  <label>Company</label>
+                  <input
+                    type="text"
+                    value={companies.find((c) => c.id == companyId)?.name || ""}
+                    disabled
+                    className="input"
+                  />
+                </div>
+              )}
+              <div className="input">
+                <label htmlFor="username">Username</label>
                 <input
                   type="text"
-                  value={companies.find((c) => c.id == companyId)?.name || ""}
-                  disabled
-                  className="form-control"
-                />
-              </div>
-            )}
-
-            <div className="input mt10">
-              <label htmlFor="username">Username:</label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="form-control"
-                required
-              />
-            </div>
-            <div className="input mt10">
-              <label htmlFor="email">Email:</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="form-control"
-                required
-              />
-            </div>
-            {!isEditMode && (
-              <div className="input mt10">
-                <label htmlFor="password">Password:</label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-control"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="input"
                   required
                 />
               </div>
-            )}
-            <div className="input mt10">
-              <label htmlFor="role">Role:</label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className=""
-                required
-              >
-                <option value="">Select</option>
-                <option value="recruiter">Recruiter</option>
-                <option value="admin">Admin</option>
-              </select>
+              <div className="input">
+                <label htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input"
+                  required
+                />
+              </div>
+              {!isEditMode && (
+                <div className="input">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input"
+                    required
+                  />
+                </div>
+              )}
+              <div className="input">
+                <label htmlFor="role">Role</label>
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="input"
+                  required
+                >
+                  <option value="">Please Select</option>
+                  <option value="recruiter">Recruiter</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </div>
-           </div>
             <div className=" h8  df al jc mr10">
-              <button type="button" className="gray btn mr10" onClick={()=>navigate(-1)}>
-                Cancel
-              </button>
               <button type="submit" className="b btn">
                 {isEditMode ? "Update" : "Submit"}
               </button>

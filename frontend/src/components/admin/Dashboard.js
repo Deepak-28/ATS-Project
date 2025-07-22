@@ -190,49 +190,51 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
       <div className="admin-container">
         <div className="dashboard-container">
           <div className="dashboard-heading df al jcsb  ">
-            {/* <button onClick={notify}>notify<Toaster/></button> */}
             <h2>Dashboard</h2>
             {/* <IoSettingsOutline size={20} /> */}
           </div>
           <div className="summary-cards">
             <div
-              className="card df jcsa al"
+              className="card df g10 al"
               onClick={() => navigate("/company")}
             >
-              <div>
-                Total Companies: <strong>{stats.companies}</strong>
-              </div>
+             
               <div>
                 <FaBuilding />
               </div>
-            </div>
-            <div className="card df jcsa al"
-            onClick={()=>navigate("/allUsers")}>
-              <div>
-                Total Users: <strong>{stats.users}</strong>
+               <div>
+               Companies: <strong>{stats.companies}</strong>
               </div>
+            </div>
+            <div className="card df g10 al"
+            onClick={()=>navigate("/allUsers")}>
+              
               <div>
                 <FaUsers />
               </div>
+              <div>
+              Users: <strong>{stats.users}</strong>
+              </div>
             </div>
             <div
-              className="card df al jcsa"
+              className="card df al g10"
               onClick={() => navigate("/alljobs")}
             >
-              <div>
-                Total Jobs: <strong>{stats.jobs}</strong>
-              </div>
+             
               <div>
                 <FaBriefcase />
               </div>
+               <div>
+                Jobs: <strong>{stats.jobs}</strong>
+              </div>
             </div>
-            <div className="card df jcsa al"
+            <div className="card df al g10"
             onClick={()=> navigate("/applicants")}>
               <div>
-                Total Candidates: <strong>{stats.candidates}</strong>
+                <FaUserTie />
               </div>
               <div>
-                <FaUserTie />
+                Candidates: <strong>{stats.candidates}</strong>
               </div>
             </div>
           </div>

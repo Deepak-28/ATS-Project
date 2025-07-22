@@ -122,7 +122,7 @@ const JobDetails = () => {
       const res = await axios.post("/user", data);
       navigate(-1);
     } catch (err) {
-      console.log(err.response?.data || "Registration failed");
+      console.error(err.response?.data || "Registration failed");
     }
   };
   const handleApply = () => {

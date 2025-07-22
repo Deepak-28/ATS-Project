@@ -287,7 +287,7 @@ Router.get("/:id", async (req, res) => {
          candidateId: null,
       }, raw:true
     });
-    console.log(dynamicFields);
+    // console.log(dynamicFields);
     
 
     // 3. If there are no dynamic fields, return the job as is

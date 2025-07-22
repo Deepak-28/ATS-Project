@@ -62,8 +62,8 @@ function Admin() {
       {/* Content Area */}
       <div className="admin-container">
         <nav className="navbar">
-          <div className="df jcsb al  w100">
-            <h2 className="job-heading mt15">{company.name}</h2>
+          <div className="df jcsb al w100">
+            <h2 className="ml10">{company.name}</h2>
             <div className="c-btn">
               <Link to={`/addJob/${cid}`}>
                 <MdOutlineLibraryAdd size={24} className="g mr10" />
@@ -72,7 +72,7 @@ function Admin() {
           </div>
         </nav>
 
-        <table className="job-table">
+        {/* <table className="job-table">
           <thead>
             <tr>
               <th>S.No</th>
@@ -123,7 +123,7 @@ function Admin() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table> */}
       </div>
     </div>
   );

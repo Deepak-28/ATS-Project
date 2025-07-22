@@ -18,7 +18,6 @@ function CreateUser() {
       console.error("Failed to fetch users", error);
     }
   };
-
   const deleteUser = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
@@ -31,7 +30,6 @@ function CreateUser() {
       }
     }
   };
-
   useEffect(() => {
     getUser();
   }, []);
@@ -43,7 +41,7 @@ function CreateUser() {
           <div className="df jcsb al w100">
             <h2 className="job-heading ml10 mt15">All Users</h2>
             <div className="c-btn">
-              <Link to={`/addUser/${cid}`}>
+              <Link to={`/addUser`}>
                 <MdOutlineLibraryAdd size={24} className="g mr10" />
               </Link>
           </div>
@@ -69,27 +67,14 @@ function CreateUser() {
                   <td>{user.role}</td>
                   <td>
                     <div className="job-actions">
-                      {/* <Link to="#" className="applied-link">
-                        <FaUser />
-                      </Link> */}
                       <Link
-                        to={`/editUser/${user.id}/${cid}`}
+                        to={`/addUser/${user.id}`}
                         className="applied-link blue"
                       >
                         <FaEdit />
                       </Link>
-                      <button
-                        className="applied-link"
-                        onClick={() => deleteUser(user.id)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <MdDeleteForever color="red" />
-                      </button>
+                        <MdDeleteForever color="red" 
+                        onClick={() => deleteUser(user.id)} size={18}/>
                     </div>
                   </td>
                 </tr>

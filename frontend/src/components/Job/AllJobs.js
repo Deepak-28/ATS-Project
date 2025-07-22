@@ -30,14 +30,19 @@ const AllJobs = () => {
   const [options, setOptions] = useState([]);
   const [formData, setFormData] = useState([]);
   const navigate = useNavigate();
-
+  const cid = localStorage.getItem("cid");
   const fetchAllJobs = async () => {
     try {
       if (companyId) {
         const res = await axios.get(`/job/company/${companyId}`);
-        const {jobs, dynamicFields} = res.data;
+        const { jobs, dynamicFields } = res.data;
         setJobs(jobs);
-        setDynamicData(dynamicFields)
+        setDynamicData(dynamicFields);
+      } else if (cid) {
+        const res = await axios.get(`/job/company/${cid}`);
+        const { jobs, dynamicFields } = res.data;
+        setJobs(jobs);
+        setDynamicData(dynamicFields);
       } else {
         const res = await axios.get("/job");
         const { getjobs, dynamicFields } = res.data;
@@ -160,7 +165,7 @@ const AllJobs = () => {
     }
   };
   const handlePopup = async (jobId) => {
-    console.log("Opening popup for jobId:", jobId);
+    // console.log("Opening popup for jobId:", jobId);
     setSelectedJobId(jobId);
 
     await fetchJob(jobId);
@@ -192,12 +197,13 @@ const AllJobs = () => {
     setFormData(formatted);
     setIsVisibilty(true);
   };
-  const filteredJobs = jobs.filter((job) =>
-    [job.jobTitle, job.companyName, job.jobLocation]
+  const filteredJobs = jobs.filter((job) => {
+    const customId = `2X${String(job.id).padStart(3, "0")}`;
+    return [job.jobTitle, job.companyName, job.jobLocation, customId]
       .join(" ")
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+      .includes(searchTerm.toLowerCase());
+  });
   const handleRowClick = (e, id) => {
     // If the clicked element (or its parent) has data-no-nav, don't navigate
     const isActionClick = e.target.closest("[data-no-nav]");
@@ -239,7 +245,7 @@ const AllJobs = () => {
     dynamicLookup[key] = entry.value;
   });
   const clearFunction = () => {
-    setIsVisibilty(false); 
+    setIsVisibilty(false);
     setPostOption("");
     setIsPosted(false);
   };
@@ -350,7 +356,7 @@ const AllJobs = () => {
           <div className="box df al fdc jcsb ">
             <div className="w100">
               <div className="df fdr jcsb w100  al h10 b-border">
-                <div className="df fdr g10 w30 h10 al jcsa">
+                <div className="df fdr g10 w35 h10 al ">
                   <h3 className="ml10">Select the Headers</h3>
                   <div>
                     <input
@@ -363,8 +369,8 @@ const AllJobs = () => {
                     />
                   </div>
                 </div>
-                <div className="w15 h10 al df jcsa ">
-                  <div className="">
+                <div className="w10 h10  df jcsb ">
+                  <div className="df al">
                     <label
                       style={{
                         display: "flex",
@@ -381,11 +387,13 @@ const AllJobs = () => {
                       Select All
                     </label>
                   </div>
-                  <RiCloseFill
-                    size={20}
-                    onClick={() => setPopup(false)}
-                    className="cursor-pointer"
-                  />
+                  <div className=" w3 df jcsa al  h5">
+                    <RiCloseFill
+                      size={20}
+                      onClick={() => setPopup(false)}
+                      className="cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
               <div className=" w100 mt10 ml20 g20 select-field">

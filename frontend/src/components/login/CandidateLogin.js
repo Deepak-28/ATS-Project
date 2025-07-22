@@ -105,7 +105,7 @@ function CandidateLogin() {
       // console.log(res.data);
       navigate(-1);
     } catch (err) {
-      console.log(err.response?.data || "Registration failed");
+      console.error(err.response?.data || "Registration failed");
     }
   };
   const baseUrl = process.env.REACT_APP_BASE_URL;

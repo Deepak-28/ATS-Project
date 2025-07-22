@@ -112,12 +112,3 @@ label {
   align-items: center;
   justify-content: center;
 }
-.input-checkbox{
-  width: 18vw;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-.input-checkbox{
-  transform: scale(0.95);
-}

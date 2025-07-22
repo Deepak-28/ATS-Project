@@ -41,7 +41,7 @@ router.post("/create", async (req, res) => {
           value: opt.value.trim(),
           order: opt.order || 0,
           status: opt.status || "Active",
-          code: opt.optionCode
+          optionCode: opt.optionCode
         }));
 
       if (optionsToCreate.length > 0) {
@@ -54,6 +54,17 @@ router.post("/create", async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
+});
+router.get('/options/:id', async (req, res)=>{
+  const {id} = req.params;
+  try{
+    const data = await fieldOption.findAll({where:{fieldId:id}, raw:true})
+    // console.log(data);
+    res.send(data)
+  }catch(err){
+    console.error("Error in getting data", err)
+  }
+  
 });
 router.get("/:companyId/:formType", async (req, res) => {
   const { companyId, formType } = req.params;
@@ -181,5 +192,4 @@ router.delete("/:id", async (req, res) => {
     res.status(500).send("field Not Deleted");
   }
 });
-
 module.exports = router;

@@ -29,7 +29,7 @@ const UserPage = () => {
       const res = await axios.get(`/user/${candidateId}`);
       setCandidate(res.data);
     } catch (err) {
-      console.log("Error in Fetching the user", err);
+      console.error("Error in Fetching the user", err);
     }
   };
   useEffect(() => {

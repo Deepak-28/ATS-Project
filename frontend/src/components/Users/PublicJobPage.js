@@ -148,7 +148,7 @@ const PublicJobPage = () => {
       // console.log(res.data);
       navigate(-1);
     } catch (err) {
-      console.log(err.response?.data || "Registration failed");
+      console.error(err.response?.data || "Registration failed");
     }
   };
 

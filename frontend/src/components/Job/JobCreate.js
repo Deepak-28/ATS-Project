@@ -29,12 +29,12 @@ function JobCreate() {
   const [jobWorkflows, setJobWorkFlows] = useState([]);
   const [candidateWorkflows, setCandidateWorkflows] = useState([]);
   const [candidateForms, setCandidateForms] = useState([]);
+  const cid = localStorage.getItem("cid" || 0);
 
   const getCompanies = async () => {
     try {
       const res = await axios.get("/company/companies");
       setCompanies(res.data);
-      // console.log(res.data);
     } catch (err) {
       console.error("Failed to fetch companies:", err);
     }
@@ -137,10 +137,12 @@ function JobCreate() {
     const { id, value } = e.target;
 
     if (id === "companyId") {
-      const selectedCompany = companies.find((c) => c.id == value);
+      const selectedCompanyId = cid ? Number(cid) : Number(value);
+      const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
+
       setJob((prev) => ({
         ...prev,
-        companyId: value,
+        companyId: selectedCompanyId,
         companyName: selectedCompany?.name || "",
       }));
     } else if (id === "workflowId") {
@@ -148,7 +150,6 @@ function JobCreate() {
       setJob((prev) => ({
         ...prev,
         workFlowId: value,
-        // workFlowName: selectedWorkflow?.name || "",
       }));
     } else {
       setJob((prev) => ({
@@ -478,69 +479,76 @@ function JobCreate() {
 
               return (
                 <div className="df fdc g10">
-                  <select
-                    value={country}
-                    onChange={(e) => {
-                      const selectedCountry = Country.getCountryByCode(
-                        e.target.value
-                      );
-                      setFormValues((prev) => ({
-                        ...prev,
-                        [`${field.id}_country`]: e.target.value,
-                        [`${field.id}_countryName`]:
-                          selectedCountry?.name || "",
-                        [`${field.id}_state`]: "",
-                        [`${field.id}_city`]: "",
-                      }));
-                    }}
-                  >
-                    <option value="">Select Country</option>
-                    {Country.getAllCountries().map((c) => (
-                      <option key={c.isoCode} value={c.isoCode}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={state}
-                    onChange={(e) => {
-                      const selectedState = State.getStateByCodeAndCountry(
-                        e.target.value,
-                        country
-                      );
-                      setFormValues((prev) => ({
-                        ...prev,
-                        [`${field.id}_state`]: e.target.value,
-                        [`${field.id}_stateName`]: selectedState?.name || "",
-                        [`${field.id}_city`]: "",
-                      }));
-                    }}
-                  >
-                    <option value="">Select State</option>
-                    {State.getStatesOfCountry(country).map((s) => (
-                      <option key={s.isoCode} value={s.isoCode}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={city}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        [`${field.id}_city`]: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select City</option>
-                    {City.getCitiesOfState(country, state).map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label>Country</label>
+                    <select
+                      value={country}
+                      onChange={(e) => {
+                        const selectedCountry = Country.getCountryByCode(
+                          e.target.value
+                        );
+                        setFormValues((prev) => ({
+                          ...prev,
+                          [`${field.id}_country`]: e.target.value,
+                          [`${field.id}_countryName`]:
+                            selectedCountry?.name || "",
+                          [`${field.id}_state`]: "",
+                          [`${field.id}_city`]: "",
+                        }));
+                      }}
+                    >
+                      <option value="">Select Country</option>
+                      {Country.getAllCountries().map((c) => (
+                        <option key={c.isoCode} value={c.isoCode}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>State</label>
+                    <select
+                      value={state}
+                      onChange={(e) => {
+                        const selectedState = State.getStateByCodeAndCountry(
+                          e.target.value,
+                          country
+                        );
+                        setFormValues((prev) => ({
+                          ...prev,
+                          [`${field.id}_state`]: e.target.value,
+                          [`${field.id}_stateName`]: selectedState?.name || "",
+                          [`${field.id}_city`]: "",
+                        }));
+                      }}
+                    >
+                      <option value="">Select State</option>
+                      {State.getStatesOfCountry(country).map((s) => (
+                        <option key={s.isoCode} value={s.isoCode}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>City</label>
+                    <select
+                      value={city}
+                      onChange={(e) =>
+                        setFormValues({
+                          ...formValues,
+                          [`${field.id}_city`]: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select City</option>
+                      {City.getCitiesOfState(country, state).map((c) => (
+                        <option key={c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               );
             default:
@@ -600,12 +608,24 @@ function JobCreate() {
     fetchCandidateForms();
     fetchCandidateWorkFlow();
     fetchJobWorkFlow();
-    // fetchTemplateFields();
-    // fetchAllJobs();
     if (jobId) {
       fetchJobForEdit(jobId); // only run in edit mode
     }
   }, []);
+  useEffect(() => {
+  if (cid && companies.length > 0) {
+    const selectedCompanyId = Number(cid);
+    const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
+    if (selectedCompany) {
+      setJob((prev) => ({
+        ...prev,
+        companyId: selectedCompanyId,
+        companyName: selectedCompany.name,
+      }));
+    }
+  }
+}, [cid, companies]);
+
 
   return (
     <div className="container">
@@ -623,22 +643,24 @@ function JobCreate() {
                   <div className="job-form  mt10 ">
                     {/* Left Column */}
                     <div className="left-column ">
-                      <div className="form-input mt5">
-                        <label>Company</label>
-                        <select
-                          id="companyId"
-                          value={job.companyId || ""}
-                          onChange={handleInputChange}
-                          className="h5"
-                        >
-                          <option value="">Select a company</option>
-                          {companies.map((company) => (
-                            <option key={company.id} value={company.id}>
-                              {company.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {!cid && (
+                        <div className="form-input mt5">
+                          <label>Company</label>
+                          <select
+                            id="companyId"
+                            value={job.companyId || ""}
+                            onChange={handleInputChange}
+                            className="h5"
+                          >
+                            <option value="">Select a company</option>
+                            {companies.map((company) => (
+                              <option key={company.id} value={company.id}>
+                                {company.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       {renderColumnFields("left")}
                     </div>
                     {/* Right Column */}
@@ -657,26 +679,28 @@ function JobCreate() {
                 )}
               </div>
             </div>
-            <div className="h5 df al  jc mt10 ">
-              <div className="w15 df g10">
-                <button
-                  type="button"
-                  className="gray btn"
-                  onClick={clearFunction}
-                >
-                  Cancel
-                </button>
-                {!jobId ? (
-                  <button onClick={handleSubmit} className="b btn">
-                    Submit
+            {selectedTemplateId && (
+              <div className="h5 df al  jc mt10 ">
+                <div className="w15 df g10">
+                  <button
+                    type="button"
+                    className="gray btn"
+                    onClick={clearFunction}
+                  >
+                    Cancel
                   </button>
-                ) : (
-                  <button onClick={handleSubmit} className="b btn">
-                    Update
-                  </button>
-                )}
+                  {!jobId ? (
+                    <button onClick={handleSubmit} className="b btn">
+                      Submit
+                    </button>
+                  ) : (
+                    <button onClick={handleSubmit} className="b btn">
+                      Update
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="template-card2 df al  jc fdc">
             <div className="tab">

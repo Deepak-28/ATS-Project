@@ -80,7 +80,7 @@ Router.get("/:postsegment", async (req, res) => {
     } else {
       return res.status(400).json({ message: "Invalid post segment" });
     }
-    console.log(users);
+    // console.log(users);
 
     res.json(users);
   } catch (err) {

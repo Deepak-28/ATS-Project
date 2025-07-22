@@ -10,12 +10,10 @@ function Login() {
     password: "",
   });
   const [error, setError] = useState(""); 
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
     setError(""); // Clear error when user types again
   };
-
   const submit = async (e) => {
     e.preventDefault();
     axios.post('/login/check', formData)
@@ -24,23 +22,25 @@ function Login() {
       localStorage.setItem("admin_token", token); 
 
       const decoded = JSON.parse(atob(token.split('.')[1])); // Decode payload
-      const { role, candidateId, cid } = decoded;
+      const {userId, role, candidateId, cid, email, username} = decoded;
+      localStorage.setItem("userId", userId)
+      localStorage.setItem("username", username)
+      localStorage.setItem("email", email);
       localStorage.setItem('role',role);
         if(cid) localStorage.setItem('cid', cid);
         if (role === 'SuperAdmin') {
           navigate('/dashboard');
         } else if (role === 'admin') {
           navigate(`/admin/${cid}`);
-        } else if (role === 'user') {
-          navigate(`/User/${cid}`);
+        } else if (role === 'recruiter') {
+          navigate(`/admin/${cid}`);
         }
       })
       .catch(err => {
-        console.log('Login failed:', err);
+        console.error('Login failed:', err);
         setError("Invalid email or password."); 
       });
   };
-
   return (
     <form onSubmit={submit}>
       <div className="login-container">

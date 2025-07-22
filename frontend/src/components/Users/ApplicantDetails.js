@@ -34,7 +34,7 @@ function ApplicantDetail() {
         setUser(user);
         setJobs(jobs);
         setCandidateInput(candidateFields);
-        console.log(candidateFields);
+        // console.log(candidateFields);
 
         setApplicant(res.data);
         setSelectedStatus(applications.status);
@@ -70,7 +70,7 @@ function ApplicantDetail() {
       const res = await axios.get(`/template/candidate/${jid}`);
       setWorkflowStages(res.data);
     } catch (err) {
-      console.log("Error in Fetching WorkFlow", err);
+      console.error("Error in Fetching WorkFlow", err);
     }
   };
   useEffect(() => {
@@ -95,7 +95,7 @@ function ApplicantDetail() {
       toast.error("Failed to update status");
     }
   };
-  if (!applicant) return <p>Loading...</p>;
+  // if (!applicant) return <p>Loading...</p>;
 
   const from = location?.state?.from || "";
   const jobId = location?.state?.jobId || applicant?.job?.id || "";

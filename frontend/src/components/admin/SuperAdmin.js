@@ -48,11 +48,9 @@ const SuperAdmin = () => {
     } ${company.country} ${company.state} ${company.industry}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
-
   const handleChange = (e) => {
     setCompany({ ...company, [e.target.name]: e.target.value });
   };
-
   const handleCountryChange = (e) => {
     const countryCode = e.target.value;
     setSelectedCountry(countryCode);
@@ -62,7 +60,6 @@ const SuperAdmin = () => {
     setSelectedState("");
     setSelectedCity("");
   };
-
   const handleStateChange = (e) => {
     const stateCode = e.target.value;
     setSelectedState(stateCode);
@@ -70,12 +67,10 @@ const SuperAdmin = () => {
     setCities(City.getCitiesOfState(selectedCountry, stateCode));
     setSelectedCity("");
   };
-
   const handleCityChange = (e) => {
     setSelectedCity(e.target.value);
     setCompany({ ...company, city: e.target.value });
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     axios
@@ -90,7 +85,6 @@ const SuperAdmin = () => {
       });
     clearFunction();
   };
-
   const handleEdit = (id) => {
     const data = companies.filter((item) => item.id === id);
     setCompany(data[0]);
@@ -151,7 +145,6 @@ const SuperAdmin = () => {
   const handleData = () => {
     setData(true);
   };
-
   useEffect(() => {
     getCompany();
   }, []);
