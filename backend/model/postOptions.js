@@ -8,6 +8,9 @@ module.exports = (sequelize, Sequelize) =>{
         jobId:{
             type: Sequelize.INTEGER
         },
+        jobStatus:{
+            type : Sequelize.STRING
+        },
         postOption:{
             type: Sequelize.STRING
         },

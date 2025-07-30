@@ -23,7 +23,6 @@ function Profile() {
       })?.value || "Not provided"
     );
   };
-
   const fetchData = async () => {
     try {
       const res = await axios.get(`/application/applicant/${id}`);
@@ -37,24 +36,26 @@ function Profile() {
       console.error("Error fetching job data", err);
     }
   };
-
   const filterJobs = () => {
     const lowerSearch = searchText.toLowerCase();
+
     const results = jobs.filter((job) => {
-      const title = getDynamicField(job.fields, [
-        "title",
-        "job title",
-        "position",
-      ]);
-      return !lowerSearch || title.toLowerCase().includes(lowerSearch);
+      const title =
+        getDynamicField(job.fields, ["title", "job title", "position"]) || "";
+
+      const company = job.companyName || "";
+      return (
+        !lowerSearch ||
+        title.toLowerCase().includes(lowerSearch) ||
+        company.toLowerCase().includes(lowerSearch)
+      );
     });
+
     setFilteredJobs(results);
   };
-
   useEffect(() => {
     fetchData();
   }, []);
-
   useEffect(() => {
     filterJobs();
   }, [searchText, jobs]);
@@ -86,13 +87,12 @@ function Profile() {
 
         <div className="job-listings">
           {loading ? (
-            <p>Loading jobs...</p>
+            <p>No jobs found...</p>
           ) : filteredJobs.length === 0 ? (
             <p>No jobs found matching your criteria.</p>
           ) : (
             filteredJobs.map((job, index) => {
               const formValues = job.fields || [];
-              // console.log("formValues:", formValues);
               const companyName = job.companyName || "No Company";
               const experience = getDynamicField(formValues, [
                 "experience",
@@ -116,13 +116,7 @@ function Profile() {
                 "hybrid",
                 "job Type",
               ]);
-              const salary = getDynamicField(formValues, [
-                "salary",
-                "pay",
-                "income",
-                "stipend",
-              ]);
-             
+
               return (
                 <div className="job-card" key={index}>
                   <div className="job-info">
@@ -133,7 +127,10 @@ function Profile() {
                     <p className="details">
                       <FaBriefcase /> {experience} &nbsp;|&nbsp;
                       <MdOutlineAvTimer /> {workMode} &nbsp;|&nbsp;
-                      <IoLocationOutline /> {location}
+                      <IoLocationOutline />{" "}
+                      {typeof location === "object" && location !== null
+                        ? location.display || "N/A"
+                        : location || "N/A"}
                     </p>
                   </div>
                   <div>

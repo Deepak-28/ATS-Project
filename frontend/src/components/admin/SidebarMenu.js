@@ -8,6 +8,8 @@ import {
   FaGlobe,
   FaBuilding,
   FaClipboardList,
+  FaChevronDown,
+   FaChevronUp 
 } from "react-icons/fa";
 import { BiLogOutCircle } from "react-icons/bi";
 import { GoWorkflow } from "react-icons/go";
@@ -29,9 +31,7 @@ const SidebarMenu = ({ isOpen }) => {
       setOpenNestedDropdown(null);
     }
   };
-  const toggleNestedDropdown = (name) => {
-    setOpenNestedDropdown(openNestedDropdown === name ? null : name);
-  };
+
   const closeDropdown = () => setOpenDropdown(null);
 
   return (
@@ -53,7 +53,7 @@ const SidebarMenu = ({ isOpen }) => {
         {/* Jobs Dropdown */}
         <li onClick={() => toggleDropdown("jobs")}>
           <span className="dropdown-toggle">
-            <FaBriefcase /> Jobs {openDropdown === "jobs" ? "⮝" : "⮟"}
+            <FaBriefcase /> Jobs {openDropdown === "jobs" ? <FaChevronUp/> : <FaChevronDown/>}
           </span>
         </li>
         {openDropdown === "jobs" && (
@@ -72,31 +72,38 @@ const SidebarMenu = ({ isOpen }) => {
             </li>
           </ul>
         )}
-
-        <li onClick={() => toggleDropdown("candidates")}>
-          <span className="dropdown-toggle">
-            <CgUserList /> Candidates{" "}
-            {openDropdown === "candidates" ? "⮝" : "⮟"}
-          </span>
-          {openDropdown === "candidates" && (
-            <ul className="submenu">
-              <li>
-                <Link to="/applicants" onClick={closeDropdown}>
-                  <FaUserTie />
-                  Applicants
-                </Link>
-              </li>
-              <li>
-                {role === "SuperAdmin" && (
+        {role !== "SuperAdmin" && (
+          <li>
+            <Link to="/applicants">
+              <FaUserTie />
+              Applicants
+            </Link>
+          </li>
+        )}
+        {role === "SuperAdmin" && (
+          <li onClick={() => toggleDropdown("candidates")}>
+            <span className="dropdown-toggle">
+              <CgUserList /> Candidates{" "}
+              {openDropdown === "candidates" ? <FaChevronUp/> : <FaChevronDown/>}
+            </span>
+            {openDropdown === "candidates" && (
+              <ul className="submenu">
+                <li>
+                  <Link to="/applicants" onClick={closeDropdown}>
+                    <FaUserTie />
+                    Applicants
+                  </Link>
+                </li>
+                <li>
                   <Link to="/candidates" onClick={closeDropdown}>
                     <LuUsers />
                     Candidates
                   </Link>
-                )}
-              </li>
-            </ul>
-          )}
-        </li>
+                </li>
+              </ul>
+            )}
+          </li>
+        )}
 
         {role === "SuperAdmin" && (
           <li>
@@ -124,7 +131,7 @@ const SidebarMenu = ({ isOpen }) => {
           <li onClick={() => toggleDropdown("settings")}>
             <span className="dropdown-toggle">
               <IoSettingsSharp />
-              Settings {openDropdown === "settings" ? "⮝" : "⮟"}
+              Settings {openDropdown === "settings" ? <FaChevronUp/> : <FaChevronDown/>}
             </span>
           </li>
         )}
@@ -136,33 +143,22 @@ const SidebarMenu = ({ isOpen }) => {
               </Link>
             </li>
             <li>
-              <Link
-                to="/fieldCreation"
-                onClick={() => {
-                  setOpenDropdown(null);
-                  setOpenNestedDropdown(null);
-                }}
-              >
+              <Link to="/fieldCreation">
                 <TbLayoutGridAdd /> Field
+              </Link>
+            </li>
+            <li>
+              <Link to="/workFlow">
+                <GoWorkflow /> Workflow
+              </Link>
+            </li>
+            <li>
+              <Link to="/portal">
+                <FaGlobe /> Portal
               </Link>
             </li>
           </ul>
         )}
-        {role === "SuperAdmin" && (
-          <li>
-            <Link to="/workFlow">
-              <GoWorkflow /> Workflow
-            </Link>
-          </li>
-        )}
-        {role === "SuperAdmin" && (
-          <li>
-            <Link to="/portal">
-              <FaGlobe /> Portal
-            </Link>
-          </li>
-        )}
-
         <li onClick={() => localStorage.clear()}>
           <Link to="/">
             <BiLogOutCircle /> Logout

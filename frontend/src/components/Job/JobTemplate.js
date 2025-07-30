@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../admin/Navbar";
-import { MdOutlineLibraryAdd, MdDeleteForever, MdCreate } from "react-icons/md";
+import { MdOutlineLibraryAdd, MdDeleteForever } from "react-icons/md";
 import { Country, State, City } from "country-state-city";
 import { FaEdit, FaWpforms } from "react-icons/fa";
 import { LiaProjectDiagramSolid } from "react-icons/lia";
+import { LuFileSpreadsheet} from "react-icons/lu";
 import { FiUsers } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 function JobTemplate() {
   const [formType, setFormType] = useState("job");
@@ -28,7 +28,6 @@ function JobTemplate() {
   const [candidateWorkflows, setCandidateWorkflows] = useState([]);
   const [candidateForms, setCandidateForms] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const navigate = useNavigate();
   const [jobTemplateData, setJobTemplateData] = useState({
     jobWorkFlowId: "",
     candidateWorkFlowId: "",
@@ -124,9 +123,6 @@ function JobTemplate() {
     } catch (err) {
       console.error("failed to fetch template fields", err);
     }
-  };
-  const handleChange = (name, value) => {
-    setTempValues((prev) => ({ ...prev, [name]: value }));
   };
   const handleTemplateChange = (e) => {
     const { name, value } = e.target;
@@ -346,201 +342,214 @@ function JobTemplate() {
     fetchCandidateForms();
   }, [formType]);
 
-  const renderColumnFields = (columnPosition) => {
-    return templateFields
-      .filter(
+ const renderColumnFields = (columnPosition) => {
+  const activeFields = edited
+    ? templateFields.filter(
         (tf) =>
           tf.templateId === editTemplateId && tf.position === columnPosition
       )
-      .map((tf) => {
-        const field = fields.find((f) => f.id === tf.fieldId);
-        if (!field) return null;
+    : selectedFieldIds
+        .filter((id) => fieldPositions[id] === columnPosition)
+        .map((id) => ({ fieldId: id, position: columnPosition }));
 
-        const options = fieldOptions.filter((opt) => opt.fieldId === field.id);
-        const fieldValue = formValues[field.id] || "";
+  return activeFields.map((tf) => {
+    const field = fields.find((f) => f.id === tf.fieldId);
+    if (!field) return null;
 
-        const renderInput = () => {
-          switch (field.fieldType) {
-            case "text":
-            case "date":
-            case "number":
-              return (
-                <input
-                  type={field.fieldType}
-                  value={fieldValue}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, [field.id]: e.target.value })
-                  }
-                />
-              );
-            case "textarea":
-              return (
-                <textarea
-                  value={fieldValue}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, [field.id]: e.target.value })
-                  }
-                />
-              );
-            case "dropdown":
-              return (
+    const options = fieldOptions.filter((opt) => opt.fieldId === field.id);
+    const fieldValue = formValues[field.id] || "";
+
+    const renderInput = () => {
+      switch (field.fieldType) {
+        case "text":
+        case "date":
+        case "number":
+          return (
+            <input
+              type={field.fieldType}
+              value={fieldValue}
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.value })
+              }
+            />
+          );
+        case "textarea":
+          return (
+            <textarea
+              value={fieldValue}
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.value })
+              }
+            />
+          );
+        case "dropdown":
+          return (
+            <select
+              value={fieldValue}
+              onChange={(e) =>
+                setFormValues({ ...formValues, [field.id]: e.target.value })
+              }
+            >
+              <option value="">Select</option>
+              {options
+                .filter((opt) => opt.status)
+                .sort((a, b) => a.order - b.order)
+                .map((opt) => (
+                  <option key={opt.id} value={opt.value}>
+                    {opt.value}
+                  </option>
+                ))}
+            </select>
+          );
+        case "checkbox":
+          return (
+            <input
+              type="checkbox"
+              checked={!!fieldValue}
+              onChange={(e) =>
+                setFormValues({
+                  ...formValues,
+                  [field.id]: e.target.checked,
+                })
+              }
+            />
+          );
+        case "file":
+          return (
+            <input
+              type="file"
+              onChange={(e) =>
+                setFormValues({
+                  ...formValues,
+                  [field.id]: e.target.files[0],
+                })
+              }
+            />
+          );
+        case "location":
+          const country = formValues[`${field.id}_country`] || "";
+          const state = formValues[`${field.id}_state`] || "";
+          const city = formValues[`${field.id}_city`] || "";
+
+          return (
+            <div className="df fdc g10">
+              <div>
+                <label>Country</label>
                 <select
-                  value={fieldValue}
+                  value={country}
+                  onChange={(e) => {
+                    const selectedCountry = Country.getCountryByCode(
+                      e.target.value
+                    );
+                    setFormValues((prev) => ({
+                      ...prev,
+                      [`${field.id}_country`]: e.target.value,
+                      [`${field.id}_countryName`]:
+                        selectedCountry?.name || "",
+                      [`${field.id}_state`]: "",
+                      [`${field.id}_city`]: "",
+                    }));
+                  }}
+                >
+                  <option value="">Select Country</option>
+                  {Country.getAllCountries().map((c) => (
+                    <option key={c.isoCode} value={c.isoCode}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>State</label>
+                <select
+                  value={state}
+                  onChange={(e) => {
+                    const selectedState = State.getStateByCodeAndCountry(
+                      e.target.value,
+                      country
+                    );
+                    setFormValues((prev) => ({
+                      ...prev,
+                      [`${field.id}_state`]: e.target.value,
+                      [`${field.id}_stateName`]: selectedState?.name || "",
+                      [`${field.id}_city`]: "",
+                    }));
+                  }}
+                >
+                  <option value="">Select State</option>
+                  {State.getStatesOfCountry(country).map((s) => (
+                    <option key={s.isoCode} value={s.isoCode}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>City</label>
+                <select
+                  value={city}
                   onChange={(e) =>
-                    setFormValues({ ...formValues, [field.id]: e.target.value })
+                    setFormValues({
+                      ...formValues,
+                      [`${field.id}_city`]: e.target.value,
+                    })
                   }
                 >
-                  <option value="">Select</option>
-                  {options
-                    .filter((opt) => opt.status)
-                    .sort((a, b) => a.order - b.order)
-                    .map((opt) => (
-                      <option key={opt.id} value={opt.value}>
-                        {opt.value}
-                      </option>
-                    ))}
+                  <option value="">Select City</option>
+                  {City.getCitiesOfState(country, state).map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
-              );
-            case "checkbox":
-              return (
-                <input
-                  type="checkbox"
-                  checked={!!fieldValue}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      [field.id]: e.target.checked,
-                    })
-                  }
-                />
-              );
-            case "file":
-              return (
-                <input
-                  type="file"
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      [field.id]: e.target.files[0],
-                    })
-                  }
-                />
-              );
-            case "location":
-              const country = formValues[`${field.id}_country`] || "";
-              const state = formValues[`${field.id}_state`] || "";
-              const city = formValues[`${field.id}_city`] || "";
-
-              return (
-                <div className="df fdc g10">
-                  <select
-                    value={country}
-                    onChange={(e) => {
-                      const selectedCountry = Country.getCountryByCode(
-                        e.target.value
-                      );
-                      setFormValues((prev) => ({
-                        ...prev,
-                        [`${field.id}_country`]: e.target.value,
-                        [`${field.id}_countryName`]:
-                          selectedCountry?.name || "",
-                        [`${field.id}_state`]: "",
-                        [`${field.id}_city`]: "",
-                      }));
-                    }}
-                  >
-                    <option value="">Select Country</option>
-                    {Country.getAllCountries().map((c) => (
-                      <option key={c.isoCode} value={c.isoCode}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={state}
-                    onChange={(e) => {
-                      const selectedState = State.getStateByCodeAndCountry(
-                        e.target.value,
-                        country
-                      );
-                      setFormValues((prev) => ({
-                        ...prev,
-                        [`${field.id}_state`]: e.target.value,
-                        [`${field.id}_stateName`]: selectedState?.name || "",
-                        [`${field.id}_city`]: "",
-                      }));
-                    }}
-                  >
-                    <option value="">Select State</option>
-                    {State.getStatesOfCountry(country).map((s) => (
-                      <option key={s.isoCode} value={s.isoCode}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={city}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        [`${field.id}_city`]: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select City</option>
-                    {City.getCitiesOfState(country, state).map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            default:
-              return null;
-          }
-        };
-
-        return (
-          <div
-            key={field.id}
-            className={`form-input mt5 ${
-              ["label", "header"].includes(field.fieldType)
-                ? "static-field"
-                : ""
-            }`}
-          >
-            {field.fieldType === "header" && (
-              <h3 className="field-header header-with-line">
-                {field.label || field.fieldLabel}
-              </h3>
-            )}
-
-            {field.fieldType === "label" && (
-              <div className="field-label">
-                {field.label || field.fieldLabel}
               </div>
-            )}
+            </div>
+          );
+        default:
+          return null;
+      }
+    };
 
-            {!["label", "header"].includes(field.fieldType) && (
-              <>
-                <label>{field.fieldLabel}</label>
-                {renderInput()}
-              </>
-            )}
+    return (
+      <div
+        key={field.id}
+        className={`form-input mt5 ${
+          ["label", "header"].includes(field.fieldType) ? "static-field" : ""
+        }`}
+      >
+        {field.fieldType === "header" && (
+          <h3 className="field-header header-with-line">
+            {field.label || field.fieldLabel}
+          </h3>
+        )}
+
+        {field.fieldType === "label" && (
+          <div className="field-label">
+            {field.label || field.fieldLabel}
           </div>
-        );
-      });
-  };
+        )}
+
+        {!["label", "header"].includes(field.fieldType) && (
+          <>
+            <label>{field.fieldLabel}</label>
+            {renderInput()}
+          </>
+        )}
+      </div>
+    );
+  });
+};
+
 
   return (
     <div className="container">
       <Navbar />
       <div className="admin-container">
         <nav className="h8 df al ml10 g10">
-          <h3>Template</h3>
+          <div className="df fdr al h100 g5 ">
+            <LuFileSpreadsheet size={18}/>
+            <h3>Template</h3>
+          </div>
           <label className={`toggle-btn ${formType === "job" ? "active" : ""}`}>
             <input
               type="radio"
@@ -694,7 +703,6 @@ function JobTemplate() {
                             <tr>
                               <th>S.No</th>
                               <th className="g3">
-                                Select All
                                 <input
                                   type="checkbox"
                                   checked={
@@ -711,114 +719,109 @@ function JobTemplate() {
                               <th>Field Label</th>
                               <th>Field Type</th>
                               <th>Position</th>
+                              {/* <th>Portal Visible</th> */}
                               <th>Order</th>
                             </tr>
                           </thead>
                           {fields.length > 0 ? (
                             <tbody>
-                              {[...new Set(fieldOrder)].map(
-                                (fieldId, index) => {
-                                  const field = mergedFields.find(
-                                    (f) => f.id === fieldId
-                                  );
-                                  if (!field) return null;
-
-                                  return (
-                                    <tr
-                                      key={`${field.id}-${index}`}
-                                      style={{ height: "10px" }}
-                                    >
-                                      <td>{index + 1}</td>
-                                      <td>
-                                        <input
-                                          type="checkbox"
-                                          checked={selectedFieldIds.includes(
-                                            field.id
-                                          )}
-                                          onChange={() =>
-                                            toggleFieldSelection(field.id)
-                                          }
-                                        />
-                                      </td>
-                                      <td>{field.fieldLabel}</td>
-                                      <td>{field.fieldType}</td>
-                                      <td>
-                                        <div className="df al jc">
-                                          <label className="df al g3">
-                                            <input
-                                              type="radio"
-                                              name={`position-${field.id}`}
-                                              value="left"
-                                              disabled={
-                                                !selectedFieldIds.includes(
-                                                  field.id
-                                                )
-                                              }
-                                              checked={
-                                                fieldPositions[field.id] ===
-                                                "left"
-                                              }
-                                              onChange={(e) =>
-                                                setFieldPositions({
-                                                  ...fieldPositions,
-                                                  [field.id]: e.target.value,
-                                                })
-                                              }
-                                            />
-                                            Left
-                                          </label>
-                                          <label
-                                            style={{ marginLeft: "10px" }}
-                                            className="df al g3"
-                                          >
-                                            <input
-                                              type="radio"
-                                              name={`position-${field.id}`}
-                                              value="right"
-                                              disabled={
-                                                !selectedFieldIds.includes(
-                                                  field.id
-                                                )
-                                              }
-                                              checked={
-                                                fieldPositions[field.id] ===
-                                                "right"
-                                              }
-                                              onChange={(e) =>
-                                                setFieldPositions({
-                                                  ...fieldPositions,
-                                                  [field.id]: e.target.value,
-                                                })
-                                              }
-                                            />
-                                            Right
-                                          </label>
-                                        </div>
-                                      </td>
-                                      <td style={{ textAlign: "center" }}>
-                                        <div className="df al jc g5">
-                                          <button
-                                            onClick={() => moveRow(index, -1)}
-                                            disabled={index === 0}
-                                            title="Move Up"
-                                          >
-                                            ⬆️
-                                          </button>
-                                          <button
-                                            onClick={() => moveRow(index, 1)}
+                              {mergedFields.map((field, index) => {
+                                if (!field) return null;
+                                return (
+                                  <tr
+                                    key={`${field.id}-${index}`}
+                                    style={{ height: "10px" }}
+                                  >
+                                    <td>{index + 1}</td>
+                                    <td>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedFieldIds.includes(
+                                          field.id
+                                        )}
+                                        onChange={() =>
+                                          toggleFieldSelection(field.id)
+                                        }
+                                      />
+                                    </td>
+                                    <td>{field.fieldLabel}</td>
+                                    <td>{field.fieldType}</td>
+                                    <td>
+                                      <div className="df al jc">
+                                        <label className="df al g3">
+                                          <input
+                                            type="radio"
+                                            name={`position-${field.id}`}
+                                            value="left"
                                             disabled={
-                                              index === fieldOrder.length - 1
+                                              !selectedFieldIds.includes(
+                                                field.id
+                                              )
                                             }
-                                            title="Move Down"
-                                          >
-                                            ⬇️
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                }
-                              )}
+                                            checked={
+                                              fieldPositions[field.id] ===
+                                              "left"
+                                            }
+                                            onChange={(e) =>
+                                              setFieldPositions({
+                                                ...fieldPositions,
+                                                [field.id]: e.target.value,
+                                              })
+                                            }
+                                          />
+                                          Left
+                                        </label>
+                                        <label
+                                          style={{ marginLeft: "10px" }}
+                                          className="df al g3"
+                                        >
+                                          <input
+                                            type="radio"
+                                            name={`position-${field.id}`}
+                                            value="right"
+                                            disabled={
+                                              !selectedFieldIds.includes(
+                                                field.id
+                                              )
+                                            }
+                                            checked={
+                                              fieldPositions[field.id] ===
+                                              "right"
+                                            }
+                                            onChange={(e) =>
+                                              setFieldPositions({
+                                                ...fieldPositions,
+                                                [field.id]: e.target.value,
+                                              })
+                                            }
+                                          />
+                                          Right
+                                        </label>
+                                      </div>
+                                    </td>
+                                    <td style={{ textAlign: "center" }}>
+                                      <div className="df al jc g5">
+                                        <button
+                                          onClick={() => moveRow(index, -1)}
+                                          disabled={index === 0}
+                                          title="Move Up"
+                                        >
+                                          ⬆️
+                                        </button>
+                                        <button
+                                          onClick={() => moveRow(index, 1)}
+                                          disabled={
+                                            index === fieldOrder.length - 1
+                                          }
+                                          title="Move Down"
+                                        >
+                                          ⬇️
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           ) : (
                             <tr>
@@ -910,11 +913,11 @@ function JobTemplate() {
                     {formType === "job" ? (
                       <div
                         key={template.id}
-                        className="templates-list  cursor-pointer"
+                        className="templates-list"
                         onClick={() => handleEditTemplate(template)}
                       >
                         <div className="ml10  w100">
-                          <div className="h5 df al jcsb fdr  w95">
+                          <div className="h3 df al jcsb fdr w95">
                             <h4>{template.name}</h4>
                             <div>
                               <MdDeleteForever

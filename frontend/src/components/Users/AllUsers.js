@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { MdOutlineLibraryAdd, MdDeleteForever } from "react-icons/md";
-import { toast } from 'react-hot-toast';
-import { FaEdit } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import { FaEdit, FaUsers } from "react-icons/fa";
 import axios from "axios";
 import "./AdminPage.css";
 import "../Job/JobList.css";
@@ -13,6 +13,7 @@ const AllUsers = () => {
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     try {
@@ -58,7 +59,7 @@ const AllUsers = () => {
 
   // 🔍 Filter users by search term
   const filteredUsers = users.filter((user) => {
-    const company = companies.find(c => Number(c.id) === Number(user.cid));
+    const company = companies.find((c) => Number(c.id) === Number(user.cid));
     const companyName = company?.name || "";
     return (
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +73,10 @@ const AllUsers = () => {
       <Navbar />
       <div className="admin-container">
         <nav className="df h10 al jcsb">
-          <h3 className="logo ml10">All Users</h3>
+          <div className="h100 w10 df fdr al ml10 ">
+            <FaUsers size={18} />
+            <h3 className="logo">All Users</h3>
+          </div>
           <div className="c-btn df aic gap10 mr10">
             <input
               type="text"
@@ -93,7 +97,7 @@ const AllUsers = () => {
             <thead>
               <tr>
                 <th>S.No</th>
-                <th>User ID</th>
+                {/* <th>User ID</th> */}
                 <th>Role</th>
                 <th>Email</th>
                 <th>Company</th>
@@ -109,20 +113,24 @@ const AllUsers = () => {
                   return (
                     <tr key={user.id}>
                       <td>{idx + 1}</td>
-                      <td>{user.id}</td>
+                      {/* <td>{user.id}</td> */}
                       <td>{user.role}</td>
                       <td>{user.email}</td>
                       <td>{company?.name || "-"}</td>
-                      <td className="df jcsa f14 w100">
-                        <Link to={`/addUser/${user.id}`}>
-                          <FaEdit size={16} />
-                        </Link>
+                      <td >
+                        <div className="job-actions">
+                          <FaEdit
+                          // size={16}
+                          className="blue cursor-pointer"
+                          onClick={() => navigate(`/addUser/${user.id}`)}
+                        />
                         <MdDeleteForever
-                          size={16}
+                          // size={16}
                           className="applied-link"
                           color="red"
                           onClick={() => deleteUser(user.id)}
                         />
+                        </div>
                       </td>
                     </tr>
                   );

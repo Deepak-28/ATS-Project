@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUser, FaEdit } from "react-icons/fa";
+import { FaUser, FaEdit, FaBriefcase } from "react-icons/fa";
 import { RiListSettingsLine, RiCloseFill } from "react-icons/ri";
 import { TbWorldUpload } from "react-icons/tb";
 import { useParams } from "react-router-dom";
@@ -15,7 +15,6 @@ const AllJobs = () => {
   const [JobId, setJobId] = useState("");
   const [popup, setPopup] = useState(false);
   const [fields, setFields] = useState([]);
-  const [fieldOptions, setFieldOptions] = useState([]);
   const [postOption, setPostOption] = useState("");
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPosted, setIsPosted] = useState(false);
@@ -31,6 +30,10 @@ const AllJobs = () => {
   const [formData, setFormData] = useState([]);
   const navigate = useNavigate();
   const cid = localStorage.getItem("cid");
+  const today = new Date().toISOString().split("T")[0];
+  const role = localStorage.getItem("role")
+
+  
   const fetchAllJobs = async () => {
     try {
       if (companyId) {
@@ -58,10 +61,6 @@ const AllJobs = () => {
       const res = await axios.get(`/job/${jobId}`);
       const job = res.data;
       setJobId(job.id);
-
-      const formatDate = (dateString) => {
-        return new Date(dateString).toISOString().slice(0, 10);
-      };
       setPostOption(job.visibility || "");
       setIsPosted(!!job.visibility);
     } catch (error) {
@@ -74,15 +73,6 @@ const AllJobs = () => {
       setFields(res.data);
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
-    }
-  };
-  const fetchFieldsOption = async () => {
-    try {
-      const res = await axios.get("/fieldOption/all");
-      setFieldOptions(res.data);
-      // console.log(res.data);
-    } catch (error) {
-      console.error("Error in Fetching Field Options");
     }
   };
   const deleteJob = async (id) => {
@@ -197,12 +187,37 @@ const AllJobs = () => {
     setFormData(formatted);
     setIsVisibilty(true);
   };
+  const dynamicLookup = {};
+  dynamicData.forEach((entry) => {
+    const key = `${entry.jobId}-${entry.fieldId}`;
+    dynamicLookup[key] = entry.value;
+  });
   const filteredJobs = jobs.filter((job) => {
-    const customId = `2X${String(job.id).padStart(3, "0")}`;
-    return [job.jobTitle, job.companyName, job.jobLocation, customId]
+    const jobIdStr = String(job.id);
+    const customId = `2X${jobIdStr.padStart(5, "0")}`;
+    const looseId = `2X0${job.id}`;
+    const staticParts = [
+      job.companyName ?? "",
+      job.jobLocation ?? "",
+      job.companyId ?? "",
+      customId,
+      jobIdStr,
+      looseId,
+    ];
+
+    const dynamicParts = selectedHeaders.map((fieldId) => {
+      if (fieldId === "companyName") return "";
+      const key = `${job.id}-${fieldId}`;
+      return dynamicLookup[key] ?? "";
+    });
+
+    const fullSearchString = [...staticParts, ...dynamicParts]
       .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    return fullSearchString.includes(searchTerm.toLowerCase());
   });
   const handleRowClick = (e, id) => {
     // If the clicked element (or its parent) has data-no-nav, don't navigate
@@ -239,11 +254,10 @@ const AllJobs = () => {
       setSelectedHeaders(newSelected);
     }
   };
-  const dynamicLookup = {};
-  dynamicData.forEach((entry) => {
-    const key = `${entry.jobId}-${entry.fieldId}`;
-    dynamicLookup[key] = entry.value;
-  });
+  const handleSaveField = () => {
+    localStorage.setItem("JobselectedHeaders", JSON.stringify(selectedHeaders));
+    setPopup(false);
+  };
   const clearFunction = () => {
     setIsVisibilty(false);
     setPostOption("");
@@ -252,19 +266,16 @@ const AllJobs = () => {
   useEffect(() => {
     fetchAllJobs();
     fetchFields();
-    fetchFieldsOption();
     getPortal();
   }, []);
-  useEffect(() => {
-    localStorage.setItem("JobselectedHeaders", JSON.stringify(selectedHeaders));
-  }, [selectedHeaders]);
-
   return (
     <div className="container">
       <Navbar />
       <div className="admin-container">
         <nav className="df h10 al jcsb">
-          <h3 className="logo ml10">All Jobs</h3>
+          <h3 className="logo w10 df jcsa">
+            <FaBriefcase /> All Jobs
+          </h3>
           <div className="c-btn df al">
             <input
               type="text"
@@ -298,7 +309,7 @@ const AllJobs = () => {
                   return <th key={id}>{label}</th>;
                 })}
                 <th>Status</th>
-                <th className="action-header">Actions</th>
+                <th className="w10 ">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -319,25 +330,36 @@ const AllJobs = () => {
                         const key = `${job.id}-${fieldId}`;
                         value = dynamicLookup[key] ?? "N/A";
                       }
-                      return <td key={fieldId}>{value}</td>;
+                      const shouldTruncate =
+                        typeof value === "string" && value.length > 50;
+                      return (
+                        <td key={fieldId}>
+                          <div
+                            className={shouldTruncate ? "truncate-cell" : ""}
+                            title={value}
+                          >
+                            {value}
+                          </div>
+                        </td>
+                      );
                     })}
                     <td>{job.status || "N/A"}</td>
                     <td className="f14" data-no-nav>
-                      <div className="df jcsa dk">
-                        <Link to={`/applicants/job/${job.id}`}>
-                          <FaUser size={15} />
-                        </Link>
-                        <Link>
-                          <TbWorldUpload onClick={() => handlePopup(job.id)} />
-                        </Link>
-                        <Link to={`/Job/${job.id}`}>
-                          <FaEdit />
-                        </Link>
-                        <MdDeleteForever
+                      <div className="job-actions">
+                        <FaUser
+                          color="blue"
+                          onClick={() => navigate(`/applicants/job/${job.id}`)}
+                        />
+                        <TbWorldUpload color="#6610f2" onClick={() => handlePopup(job.id)} />
+
+                        <FaEdit color="blue" onClick={() => navigate(`/Job/${job.id}`)} />
+                        {role !== "recruiter" && (
+                          <MdDeleteForever
                           className="applied-link"
                           color="red"
                           onClick={() => deleteJob(job.id)}
                         />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -418,7 +440,7 @@ const AllJobs = () => {
               </div>
             </div>
             <div className="box-border w100 df al jce">
-              <button className="s-btn b mr20" onClick={() => setPopup(false)}>
+              <button className="s-btn b mr20" onClick={handleSaveField}>
                 Save
               </button>
             </div>
@@ -440,6 +462,7 @@ const AllJobs = () => {
                       <input
                         type="date"
                         value={entry.postDate}
+                         min={today}
                         onChange={(e) =>
                           handleFormChange(index, "postDate", e.target.value)
                         }
@@ -450,6 +473,7 @@ const AllJobs = () => {
                       <input
                         type="date"
                         value={entry.expiryDate}
+                        min={new Date().toISOString().split("T")[0]}
                         onChange={(e) =>
                           handleFormChange(index, "expiryDate", e.target.value)
                         }

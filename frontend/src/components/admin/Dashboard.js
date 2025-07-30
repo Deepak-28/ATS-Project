@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Toaster, toast } from "react-hot-toast";
 import { Bar, Pie } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { FaUsers, FaBriefcase, FaUserTie, FaBuilding } from "react-icons/fa";
@@ -29,9 +28,6 @@ ChartJS.register(
 );
 
 function Dashboard() {
-const notify = () => toast.error("This is a success message!",{position:"top-right"}
-    
-  );
   const navigate = useNavigate();
   const [applicantsData, setApplicantsData] = useState([]);
   const [jobData, setJobData] = useState([]);
@@ -68,12 +64,12 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
       console.error("Failed to Fetch the Data", err);
     }
   };
-  const JobsCount = () => {
-    const uniqueJobs = new Set(
-      applicantsData.map((applicant) => applicant.jobId)
-    );
-    return uniqueJobs.size;
-  };
+  // const JobsCount = () => {
+  //   const uniqueJobs = new Set(
+  //     applicantsData.map((applicant) => applicant.jobId)
+  //   );
+  //   return uniqueJobs.size;
+  // };
   const offerSent = () => {
     const offerCount = applicantsData.filter(
       (item) => item.status.toLowerCase() === "offered"
@@ -92,12 +88,12 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
     );
     return applicantCount.length;
   };
-  const appliedStatus = () => {
-    const appliedCount = applicantsData.filter(
-      (item) => item.status.toLowerCase() === "applied"
-    );
-    return appliedCount.length;
-  };
+  // const appliedStatus = () => {
+  //   const appliedCount = applicantsData.filter(
+  //     (item) => item.status.toLowerCase() === "applied"
+  //   );
+  //   return appliedCount.length;
+  // };
   const rejectedStatus = () => {
     const rejectedCount = applicantsData.filter(
       (item) => item.status.toLowerCase() === "rejected"
@@ -106,12 +102,12 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
   };
   const totalCount = applicantsData.length;
   // Count jobs per company
-  const companyJobCounts = jobData.reduce((acc, job) => {
-    acc[job.companyName] = (acc[job.companyName] || 0) + 1;
-    return acc;
-  }, {});
+  // const companyJobCounts = jobData.reduce((acc, job) => {
+  //   acc[job.companyName] = (acc[job.companyName] || 0) + 1;
+  //   return acc;
+  // }, {});
   // Total jobs (optional for percentages)
-  const totalJobs = Object.values(companyJobCounts).reduce((a, b) => a + b, 0);
+  // const totalJobs = Object.values(companyJobCounts).reduce((a, b) => a + b, 0);
 
   const sourcePieData = {
     labels: ["Applied", "Shortlisted", "Interview", "Offered", "Rejected"],
@@ -162,7 +158,7 @@ const notify = () => toast.error("This is a success message!",{position:"top-rig
           interviewStatus(),
           offerSent(),
           rejectedStatus(),
-        ], // example data
+        ],
         backgroundColor: "#4a90e2",
         borderRadius: 4,
       },

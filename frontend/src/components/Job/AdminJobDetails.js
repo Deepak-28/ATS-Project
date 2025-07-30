@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
@@ -14,29 +14,25 @@ const AdminJobDetails = () => {
   const navigate = useNavigate();
   const [job, setJob] = useState({});
   const [popup, setPopup] = useState(false);
-  const [postDate, setPostDate] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [postOption, setPostOption] = useState("");
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isPosted, setIsPosted] = useState(false);
   const [workflowStages, setWorkflowStages] = useState([]);
-  const [workFlowId, setWorkFlowId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [options, setOptions] = useState([]);
   const [formData, setFormData] = useState([]);
+  const today = new Date().toISOString().split("T")[0];
+  const role = localStorage.getItem("role");
 
   const fetchJobDetails = async () => {
     try {
       const res = await axios.get(`/job/${id}`);
       const jobData = res.data;
       setJob(jobData);
-      setWorkFlowId(jobData.workFlowId);
       fetchTemplate(jobData.templateId);
       setSelectedStatus(jobData.status);
       if (jobData.workFlowId) {
         fetchWorkflow(jobData.workFlowId);
       }
-      setPostOption(jobData.visibility || "");
       setIsPosted(!!jobData.visibility);
     } catch (err) {
       console.error("Error fetching job details:", err);
@@ -53,14 +49,14 @@ const AdminJobDetails = () => {
     }
   };
   const fetchWorkflow = (id) => {
-    axios
-      .get(`/workFlow/job/${id}`)
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setWorkflowStages(res.data.map((stage) => stage.StageName));
-        }
-      })
-      .catch((err) => console.error("Error fetching workflow stages:", err));
+    // axios
+    //   .get(`/workFlow/job/${id}`)
+    //   .then((res) => {
+    //     if (Array.isArray(res.data)) {
+    //       setWorkflowStages(res.data.map((stage) => stage.StageName));
+    //     }
+    //   })
+    //   .catch((err) => console.error("Error fetching workflow stages:", err));
   };
   const getPortal = async () => {
     try {
@@ -101,8 +97,6 @@ const AdminJobDetails = () => {
       toast.error("Failed to update status");
     }
   };
-  const dateOnly = job.postDate?.slice(0, 10) || "N/A";
-  const expData = job.expiryDate?.slice(0, 10) || "";
   const handleSubmit = () => {
     const jobVisibilityData = {
       jobId: selectedJobId,
@@ -143,9 +137,6 @@ const AdminJobDetails = () => {
   };
   const clearFunction = () => {
     setPopup(false);
-    setExpiryDate("");
-    setPostDate("");
-    setPostOption("");
     fetchJobDetails();
   };
   const handleback = () => {
@@ -171,11 +162,6 @@ const AdminJobDetails = () => {
     "place",
     "job location",
   ]);
-  const jobType = getDynamicField(formValues, [
-    "work type",
-    "job type",
-    "employment type",
-  ]);
   const workMode = getDynamicField(formValues, [
     "mode",
     "work mode",
@@ -183,12 +169,6 @@ const AdminJobDetails = () => {
     "remote",
     "onsite",
     "hybrid",
-  ]);
-  const salary = getDynamicField(formValues, [
-    "salary",
-    "pay",
-    "income",
-    "stipend",
   ]);
   useEffect(() => {
     fetchJobDetails();
@@ -221,7 +201,7 @@ const AdminJobDetails = () => {
                 onChange={handleStatusChange}
                 className="w15 "
               >
-                <option value="">Update Status</option>
+                <option value="">Please Select</option>
                 {workflowStages.map((stage, idx) => (
                   <option key={idx} value={stage}>
                     {stage}
@@ -242,12 +222,14 @@ const AdminJobDetails = () => {
                 color="blue"
                 className="cursor-pointer"
               />
-              <MdDeleteForever
+              {role !== "recruiter" &&(
+                <MdDeleteForever
                 onClick={() => deleteJob(job.id)}
                 size={20}
                 color="red"
                 className="cursor-pointer"
               />
+              )}
             </div>
           </div>
         </div>
@@ -271,14 +253,12 @@ const AdminJobDetails = () => {
               title={job.visibility ? "Unpost this job" : "Post this job"}
             ></span>
             <div className="w8  df al fdc">
-              {/* <span className="date">Post: {dateOnly}</span> */}
               <button
                 className={`p-btn ${job.visibility ? "orange" : "green"}`}
                 onClick={() => setPopup(true)}
               >
                 {job.visibility ? "Unpost" : "Post"}
               </button>
-              {/* <span className="date">Exp: {expData}</span> */}
             </div>
           </div>
         </div>
@@ -341,6 +321,7 @@ const AdminJobDetails = () => {
                       <input
                         type="date"
                         value={entry.postDate}
+                        min={today}
                         onChange={(e) =>
                           handleFormChange(index, "postDate", e.target.value)
                         }
@@ -351,6 +332,7 @@ const AdminJobDetails = () => {
                       <input
                         type="date"
                         value={entry.expiryDate}
+                        min={today}
                         onChange={(e) =>
                           handleFormChange(index, "expiryDate", e.target.value)
                         }

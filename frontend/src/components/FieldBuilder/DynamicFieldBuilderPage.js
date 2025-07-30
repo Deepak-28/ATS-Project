@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "./DynamicFieldBuilder.css";
 import axios from "axios";
 import { MdOutlineLibraryAdd, MdDeleteForever } from "react-icons/md";
-import { LuFileSpreadsheet } from "react-icons/lu";
 import { FaEdit } from "react-icons/fa";
+import { TbLayoutGridAdd } from "react-icons/tb";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Navbar from "../admin/Navbar";
@@ -41,7 +41,7 @@ const DynamicFieldBuilderPage = () => {
   const fetchOptions = async (id) => {
     try {
       const res = await axios.get(`/fields/options/${id}`);
-      console.log(res.data);
+      // console.log(res.data);
       setOptionList(res.data);
     } catch (err) {
       console.error("Error fetching options:", err);
@@ -179,7 +179,7 @@ const DynamicFieldBuilderPage = () => {
   }, [formType]);
   useEffect(() => {
     if (editingFieldId != null) {
-      console.log(editingFieldId);
+      // console.log(editingFieldId);
       fetchOptions(editingFieldId);
     }
   }, [editingFieldId]);
@@ -190,7 +190,10 @@ const DynamicFieldBuilderPage = () => {
       <div className="admin-container">
         <nav className="df h10 al jcsb">
           <div className="df g10 al">
-            <h3 className="ml10 ">Field List</h3>
+            <div className="df fdr jcsa w7">
+              <TbLayoutGridAdd size={18}/>
+            <h3>Field List</h3>
+            </div>
             <label
               className={`toggle-btn ${formType === "job" ? "active" : ""}`}
             >

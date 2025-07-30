@@ -164,7 +164,7 @@ function Navbar() {
                 />
               </div>
               <div style={{color : "white"}}>
-                <span>{role ? role : username}</span>
+                <span>{(username && username !== 'null') ? username : role}</span>
 
                 <p>{email}</p>
               </div>

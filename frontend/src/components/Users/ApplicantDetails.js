@@ -34,10 +34,11 @@ function ApplicantDetail() {
         setUser(user);
         setJobs(jobs);
         setCandidateInput(candidateFields);
-        // console.log(candidateFields);
-
         setApplicant(res.data);
-        setSelectedStatus(applications.status);
+        const currentApp = applications.find(
+          (app) => String(app.jobId) === String(jid)
+        );
+        setSelectedStatus(currentApp?.status || "");
       }
     } catch (err) {
       console.error("Error loading applicant:", err);
@@ -89,14 +90,13 @@ function ApplicantDetail() {
         status: newStatus,
       });
       toast.success("Status updated successfully");
-      fetchData();
     } catch (err) {
       console.error("Failed to update status", err);
       toast.error("Failed to update status");
     }
+    fetchData();
   };
-  // if (!applicant) return <p>Loading...</p>;
-
+ 
   const from = location?.state?.from || "";
   const jobId = location?.state?.jobId || applicant?.job?.id || "";
   const backLink =
@@ -156,7 +156,7 @@ function ApplicantDetail() {
                       value={selectedStatus}
                       onChange={handleStatusChange}
                     >
-                      <option value="">Update Status</option>
+                      <option value="">Please Select</option>
                       {workflowStages.map((stage, idx) => (
                         <option key={idx} value={stage.StageName}>
                           {stage.StageName}

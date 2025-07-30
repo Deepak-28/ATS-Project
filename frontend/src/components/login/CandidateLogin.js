@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Country, State, City } from "country-state-city";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function CandidateLogin() {
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get("mode");
   const navigate = useNavigate();
   const { slug, jid } = useParams();
   const [formData, setFormData] = useState({
@@ -21,17 +15,31 @@ function CandidateLogin() {
   const countries = Country.getAllCountries();
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  const [data, setData] = useState({});
+  const [data, setData] = useState({
+    firstname: "",
+    lastname: "",
+    email: "",
+    ph_no: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
+    country: "",
+    state: "",
+    city: "",
+  });
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [isRegister, setIsRegister] = useState(true);
   const [backgroundImage, setBackgroundImage] = useState(null);
+  const [mail, setMail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [step, setStep] = useState(1);
 
   const fetchPortal = async () => {
     try {
       const res = await axios.get(`/portal/${slug}`);
-      // console.log(res.data);
       setBackgroundImage(res.data.backgroundImage);
     } catch (err) {
       console.error("Error in Fetching the Portal Details", err);
@@ -77,12 +85,13 @@ function CandidateLogin() {
       localStorage.setItem("candidate_token", token);
       // Decode token
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      const { role, candidateId, cid, email, name } = decoded;
+      const { role, candidateId, cid, email, name, userId } = decoded;
 
       if (cid) localStorage.setItem("cid", cid);
       if (candidateId) localStorage.setItem("candidateId", candidateId);
       if (email) localStorage.setItem("email", email);
       if (name) localStorage.setItem("name", name);
+      if (userId) localStorage.setItem("candidateUserId", userId);
       if (role === "candidate") {
         if (jid) {
           navigate(`/application/${slug}/${jid}/${candidateId}`);
@@ -99,13 +108,60 @@ function CandidateLogin() {
     }
   };
   const handleRegister = async () => {
-    // console.log(data);
+    const { firstname, lastname, email, password, confirmPassword } = data;
+    if (
+      !firstname?.trim() ||
+      !lastname?.trim() ||
+      !email?.trim() ||
+      !password?.trim()
+    ) {
+      toast.error("Fill the requied Fileds");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([_, val]) => val !== "")
+    );
+
     try {
-      const res = await axios.post("/user", data);
-      // console.log(res.data);
+      await axios.post("/user", payload);
+      setData("");
+      toast.success("Registration Successful");
       navigate(-1);
     } catch (err) {
       console.error(err.response?.data || "Registration failed");
+      toast.error(err.response?.data || "Registration failed");
+    }
+  };
+  const getOtp = async () => {
+    try {
+      await axios.post("/login/auth/send-otp", { email: mail });
+      toast.success("OTP sent");
+      setStep(3);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed");
+    }
+  };
+  const resetPassword = async () => {
+    try {
+      await axios.post("/login/auth/verify-otp", {
+        email: mail,
+        otp,
+        password: newPassword,
+      });
+      toast.success("Password reset successful");
+      setStep(1);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Verification failed");
     }
   };
   const baseUrl = process.env.REACT_APP_BASE_URL;
@@ -122,16 +178,9 @@ function CandidateLogin() {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
   };
-  // useEffect(() => {
-  //   if (mode === "register") {
-  //     setIsRegister(false);
-  //   } else {
-  //     setIsRegister(true); // default is login
-  //   }
-  // }, [mode]);
   useEffect(() => {
     fetchPortal();
-  }, []);
+  }, [slug]);
   return (
     <div style={pageStyle}>
       {isRegister ? (
@@ -140,196 +189,251 @@ function CandidateLogin() {
             <div className="logo-container">
               <img src="/logo.png" alt="logo" className="logo" />
             </div>
-            <div className="input-box">
-              <input
-                type="email"
-                id="email"
-                placeholder="Email"
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-box">
-              <input
-                type="password"
-                id="password"
-                placeholder="Password"
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* Error message */}
-            {error && <p className="error-text">{error}</p>}
-
-            <div className="remember-forget">
-              <div className="rem-box">
-                <input type="checkbox" id="remember" className="remember" />
-                <label>Remember me</label>
+            {step === 1 && (
+              <div className="w100 df al fdc">
+                <div className="input-box">
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="Email"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <input
+                    type="password"
+                    id="password"
+                    placeholder="Password"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                {error && <p className="error-text">{error}</p>}
+                <div className="remember-forget">
+                  <div className="rem-box">
+                    <input type="checkbox" id="remember" className="remember" />
+                    <label>Remember me</label>
+                  </div>
+                  <div className="forgot-link">
+                    <span onClick={() => setStep(2)} className="link">
+                      Forgot Password?
+                    </span>
+                  </div>
+                </div>
+                <button className="b btn mt20" type="submit">
+                  Login
+                </button>
+                <div className="register-link mt10">
+                  <p className="switch-form">
+                    Don’t have an account?{" "}
+                    <span className="link" onClick={() => setIsRegister(true)}>
+                      Register
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="forgot-link">
-                <Link to={"/forgetPassword"}>Forgot Password?</Link>
-              </div>
-            </div>
+            )}
+            {step === 2 && (
+              <div className="w100 ">
+                <div className="df al fdc ">
+                  <h3>Reset Password</h3>
+                  <p>Enter your email to receive OTP</p>
+                </div>
+                <div className="df fdc al w100 ">
+                  <div className="input-box">
+                    <input
+                      type="email"
+                      value={mail}
+                      placeholder="Enter your Email"
+                      onChange={(e) => setMail(e.target.value)}
+                      required
+                    />
+                  </div>
 
-            <button className="b btn mt20" type="submit">
-              Login
-            </button>
-            <div className="register-link mt10">
-              <p className="switch-form">
-                Don’t have an account?{" "}
-                <span className="link" onClick={() => setIsRegister(false)}>
-                  Register
-                </span>
-              </p>
-            </div>
+                  <button className="b s-btn" onClick={getOtp}>
+                    Send OTP
+                  </button>
+                </div>
+              </div>
+            )}
+            {step === 3 && (
+              <div className="df al fdc w100">
+                <div className="input-box">
+                  <input
+                    type="text"
+                    placeholder="Enter OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                </div>
+                <div className="input-box">
+                  <input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <button className="b s-btn" onClick={resetPassword}>
+                  Submit
+                </button>
+              </div>
+            )}
           </div>
         </form>
       ) : (
-       
-
         <div className={`register-container ${!isRegister ? "open" : ""}`}>
-        <div className="register-header">
-          <div className=" df fdc jcsb al">
-            <h3>Register Here</h3>
-            <div className="">
-              <div className="input-box">
-                {/* <label>First Name</label> */}
-                <input
-                  type="text"
-                  id="firstname"
-                  placeholder="First Name"
-                  onChange={handleInputChange}
-                  required
-                />
+          <div className="register-header">
+            <div className=" df fdc jcsb al">
+              <h3>Register Here</h3>
+              <div>
+                <div className="input-box">
+                  <input
+                    type="text"
+                    id="firstname"
+                    placeholder="First Name"
+                    value={data.firstname || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="required">*</span>
+                </div>
+
+                <div className="input-box">
+                  <input
+                    type="text"
+                    id="lastname"
+                    placeholder="Last Name"
+                    value={data.lastname || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="required">*</span>
+                </div>
+
+                <div className="input-box">
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="Email"
+                    value={data.email || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="required">*</span>
+                </div>
+
+                <div className="input-box">
+                  <input
+                    type="number"
+                    id="ph_no"
+                    placeholder="Phone Number"
+                    value={data.ph_no || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="address-box">
+                  <textarea
+                    id="address"
+                    placeholder="Address"
+                    value={data.address || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="input-box">
+                  <select
+                    value={selectedCountry || ""}
+                    onChange={handleCountryChange}
+                    className="job-type"
+                    id="country"
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map((country) => (
+                      <option key={country.isoCode} value={country.isoCode}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-box">
+                  <select
+                    value={selectedState || ""}
+                    onChange={handleStateChange}
+                    disabled={!selectedCountry}
+                    className="job-type"
+                    id="state"
+                  >
+                    <option value="">Select State</option>
+                    {states.map((state) => (
+                      <option key={state.isoCode} value={state.isoCode}>
+                        {state.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-box">
+                  <select
+                    value={selectedCity || ""}
+                    onChange={handleCityChange}
+                    disabled={!selectedState}
+                    className="job-type"
+                    id="city"
+                  >
+                    <option value="">Select City</option>
+                    {cities.map((city) => (
+                      <option key={city.name} value={city.name}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-box">
+                  <input
+                    type="password"
+                    id="password"
+                    placeholder="Password"
+                    value={data.password || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="required">*</span>
+                </div>
+
+                <div className="input-box">
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="Confirm Password"
+                    value={data.confirmPassword || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="required">*</span>
+                </div>
               </div>
-              <div className="input-box">
-                {/* <label>Last Name</label> */}
-                <input
-                  type="text"
-                  id="lastname"
-                  placeholder="Last Name"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="input-box">
-                {/* <label>Email</label> */}
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Email"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="input-box">
-                {/* <label>Ph. No</label> */}
-                <input
-                  type="number"
-                  id="ph_no"
-                  placeholder="Phone Number"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="address-box">
-                {/* <label>Address</label> */}
-                <textarea
-                  id="address"
-                  placeholder="Address"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              {/* Country Dropdown */}
-              <div className="input-box">
-                <select
-                  value={selectedCountry || ""}
-                  onChange={handleCountryChange}
-                  className="job-type"
-                  id="country"
+              <div className="df al fdc">
+                <button
+                  className="b btn mt20"
+                  type="button"
+                  onClick={handleRegister}
                 >
-                  <option value="">Select Country</option>
-                  {countries.map((country) => (
-                    <option key={country.isoCode} value={country.isoCode}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
+                  Submit
+                </button>
+                <p className="toggle-form">
+                  Already have an account?{" "}
+                  <span className="link" onClick={() => setIsRegister(true)}>
+                    Login
+                  </span>
+                </p>
               </div>
-              {/* State Dropdown */}
-              <div className="input-box">
-                <select
-                  value={selectedState || ""}
-                  onChange={handleStateChange}
-                  disabled={!selectedCountry}
-                  className="job-type"
-                  id="state"
-                >
-                  <option value="">Select State</option>
-                  {states.map((state) => (
-                    <option key={state.isoCode} value={state.isoCode}>
-                      {state.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* City Dropdown */}
-              <div className="input-box">
-                <select
-                  value={selectedCity || ""}
-                  onChange={handleCityChange}
-                  disabled={!selectedState}
-                  className="job-type"
-                  id="city"
-                >
-                  <option value="">Select City</option>
-                  {cities.map((city) => (
-                    <option key={city.name} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="input-box">
-                {/* <label>Password</label> */}
-                <input
-                  type="password"
-                  id="password"
-                  placeholder="Password"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="input-box">
-                {/* <label>Confirm Password</label> */}
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  placeholder="Confirm Password"
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="df al fdc">
-              <button
-                className="b btn mt20"
-                type="button"
-                onClick={handleRegister}
-              >
-                Submit
-              </button>
-              <p className="toggle-form">
-                Already have an account?{" "}
-                <span className="link" onClick={() => setIsRegister(true)}>
-                  Login
-                </span>
-              </p>
             </div>
           </div>
-        </div>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const db = require('./config/index');
 const Router = require('./router');
 const path = require('path');
+const cron = require('./cronJobs');
 
 dotenv.config();
 

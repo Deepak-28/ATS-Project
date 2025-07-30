@@ -1,6 +1,7 @@
 const express = require("express");
+const { Op } = require('sequelize');
 const router = express.Router();
-const { field, fieldOption } = require("../config/index");
+const { field, fieldOption, fieldData, locationData } = require("../config/index");
 
 router.post("/create", async (req, res) => {
   const {
@@ -41,7 +42,7 @@ router.post("/create", async (req, res) => {
           value: opt.value.trim(),
           order: opt.order || 0,
           status: opt.status || "Active",
-          optionCode: opt.optionCode
+          optionCode: opt.optionCode,
         }));
 
       if (optionsToCreate.length > 0) {
@@ -55,16 +56,18 @@ router.post("/create", async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-router.get('/options/:id', async (req, res)=>{
-  const {id} = req.params;
-  try{
-    const data = await fieldOption.findAll({where:{fieldId:id}, raw:true})
+router.get("/options/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await fieldOption.findAll({
+      where: { fieldId: id },
+      raw: true,
+    });
     // console.log(data);
-    res.send(data)
-  }catch(err){
-    console.error("Error in getting data", err)
+    res.send(data);
+  } catch (err) {
+    console.error("Error in getting data", err);
   }
-  
 });
 router.get("/:companyId/:formType", async (req, res) => {
   const { companyId, formType } = req.params;
@@ -82,33 +85,48 @@ router.get("/:companyId/:formType", async (req, res) => {
     res.status(500).send("Error fetching fields");
   }
 });
-router.get('/template/:formType', async (req, res)=>{
-  const{formType} = req.params
-  try{
-    const fields = await field.findAll({where:{formType}})
+router.get("/template/:formType", async (req, res) => {
+  const { formType } = req.params;
+  try {
+    const fields = await field.findAll({ where: { formType } });
     // console.log(fields);
-    res.send(fields)
-    
-  }catch(error){
-    console.error("Error in Fetching Fields", error)
+    res.send(fields);
+  } catch (error) {
+    console.error("Error in Fetching Fields", error);
   }
 });
-router.get('/job', async (req, res)=>{
-  try{
-    const fields = await field.findAll({where:{formType:"job"}})
-    res.send(fields)
-    
-  }catch(error){
-    console.error("Error in Fetching Fields", error)
+router.get("/job", async (req, res) => {
+  try {
+    const fields = await field.findAll({ where: { formType: "job" } });
+    res.send(fields);
+  } catch (error) {
+    console.error("Error in Fetching Fields", error);
   }
 });
-router.get('/candidate', async (req, res)=>{
+router.get("/candidate", async (req, res) => {
+  try {
+    const fields = await field.findAll();
+    const dynamicData = await fieldData.findAll();
+    const location = await locationData.findAll();
+
+    res.status(200).send({
+      fields,
+      dynamicData,
+      location
+    });
+  } catch (error) {
+    console.error("Error in Fetching Fields", error);
+    res.status(500).json({ error: "Failed to fetch candidate data" });
+  }
+});
+router.get("/all", async (req, res)=>{
   try{
-    const fields = await field.findAll({where:{formType:"candidate"}})
-    res.send(fields)
+    const fields = await field.findAll({where:{formType:"candidate"}});
+    // console.log(fields);
     
-  }catch(error){
-    console.error("Error in Fetching Fields", error)
+    res.send(fields)
+  }catch(err){
+    console.error("Error in fetching fields", err)
   }
 });
 router.put("/update/:id", async (req, res) => {
@@ -128,7 +146,16 @@ router.put("/update/:id", async (req, res) => {
   try {
     // 1. Update the field itself
     const [updatedCount] = await field.update(
-      { companyId, formType, fieldCode, fieldLabel, fieldType, isRequired, isActive, isDuplicate },
+      {
+        companyId,
+        formType,
+        fieldCode,
+        fieldLabel,
+        fieldType,
+        isRequired,
+        isActive,
+        isDuplicate,
+      },
       { where: { id } }
     );
 
@@ -137,9 +164,14 @@ router.put("/update/:id", async (req, res) => {
     }
 
     // 2. Update dropdown/checkbox options smartly
-    if ((fieldType === "dropdown" || fieldType === "checkbox") && Array.isArray(options)) {
-      const existingOptions = await fieldOption.findAll({ where: { fieldId: id } });
-      const existingOptionIds = existingOptions.map(opt => opt.id);
+    if (
+      (fieldType === "dropdown" || fieldType === "checkbox") &&
+      Array.isArray(options)
+    ) {
+      const existingOptions = await fieldOption.findAll({
+        where: { fieldId: id },
+      });
+      const existingOptionIds = existingOptions.map((opt) => opt.id);
 
       const incomingOptionIds = [];
 
@@ -168,7 +200,9 @@ router.put("/update/:id", async (req, res) => {
       }
 
       // 3. Delete removed options
-      const toDelete = existingOptionIds.filter(existingId => !incomingOptionIds.includes(existingId));
+      const toDelete = existingOptionIds.filter(
+        (existingId) => !incomingOptionIds.includes(existingId)
+      );
       if (toDelete.length > 0) {
         await fieldOption.destroy({ where: { id: toDelete } });
       }

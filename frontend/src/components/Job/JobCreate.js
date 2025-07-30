@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 import { FaEdit, FaWpforms } from "react-icons/fa";
 import { LiaProjectDiagramSolid } from "react-icons/lia";
+import { MdOutlineLibraryAdd } from "react-icons/md";
 import { FiUsers } from "react-icons/fi";
 import Navbar from "../admin/Navbar";
 
@@ -146,7 +147,6 @@ function JobCreate() {
         companyName: selectedCompany?.name || "",
       }));
     } else if (id === "workflowId") {
-      const selectedWorkflow = workFlow.find((w) => w.id == value);
       setJob((prev) => ({
         ...prev,
         workFlowId: value,
@@ -633,7 +633,7 @@ function JobCreate() {
 
       <div className="admin-container">
         <nav className="h8 df al ml10">
-          {!jobId ? <h3>Create Job</h3> : <h3>Update Job</h3>}
+          {!jobId ? <h3> Create Job</h3> : <h3> Update Job</h3>}
         </nav>
         <div className="df jcsa">
           <div className="template-card df  jcsb fdc ">

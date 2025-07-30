@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ApplicantsByJob.css";
 import Navbar from "../admin/Navbar";
@@ -18,14 +18,17 @@ function ApplicantsByJob() {
     return stored ? JSON.parse(stored) : [];
   });
   const [dynamicData, setDynamicData] = useState([]);
+  const [locationData, setLocationData] = useState([]);
+
   const navigate = useNavigate();
 
   const fetchApplicants = async () => {
     try {
       const res = await axios.get(`/application/job/${jobId}`);
-      const [{dynamicData}] = res.data;
+      const [{ dynamicData, locationData }] = res.data;
       setApplicants(res.data);
       setDynamicData(dynamicData);
+      setLocationData(locationData || []);
     } catch (err) {
       console.error("Failed to fetch applicants:", err);
     }
@@ -42,8 +45,10 @@ function ApplicantsByJob() {
   };
   const fetchFields = async () => {
     try {
-      const res = await axios.get("/fields/candidate");
-      setFields(res.data);
+      const res = await axios.get(`/fields/all/`);
+      console.log(res.data);
+
+      setFields(res.data || []);
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
     }
@@ -98,19 +103,27 @@ function ApplicantsByJob() {
     const key = `${entry.candidateId}-${entry.fieldId}`;
     dynamicLookup[key] = entry.value;
   });
+  const locationLookup = {};
+  (locationData || []).forEach((loc) => {
+    if (loc.fieldDataId) {
+      locationLookup[loc.fieldDataId] = loc;
+    }
+  });
+
   const jobTitle = getDynamicField(formValues, [
     "title",
     "job title",
     "position",
   ]);
+  const handleSaveField = ()=>{
+    localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
+    setPopup(false);
+  }
   useEffect(() => {
     fetchApplicants();
     fetchJob();
     fetchFields();
   }, []);
-  useEffect(() => {
-    localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
-  }, [selectedHeaders]);
 
   return (
     <div className="container">
@@ -144,7 +157,8 @@ function ApplicantsByJob() {
             onClick={() => setPopup(true)}
           />
         </nav>
-        <table className="job-table">
+       <div className="data-table">
+         <table className="job-table">
           <thead>
             <tr>
               <th>S.No</th>
@@ -157,13 +171,12 @@ function ApplicantsByJob() {
                 const field = fields.find((f) => f.id === id);
                 return <th key={id}>{field?.fieldLabel || id}</th>;
               })}
-              <th>Action</th>
+              {/* <th>Action</th> */}
             </tr>
           </thead>
           <tbody>
             {filteredApplicants.length > 0 ? (
               filteredApplicants.map((app, index) => (
-                
                 <tr
                   key={app.id}
                   onClick={(e) => handleRowClick(e, app.candidateId)}
@@ -184,17 +197,35 @@ function ApplicantsByJob() {
                   {selectedHeaders.map((id) => {
                     const key = `${app.candidateId}-${id}`;
                     const value = dynamicLookup[key];
-                    return <td key={id}>{value || "Not provided"}</td>;
+                    const field = dynamicData.find(
+                      (d) =>
+                        d.candidateId === app.candidateId && d.fieldId === id
+                    );
+
+                    let displayValue = value || "Not provided";
+
+                    if (field && locationLookup[field.id]) {
+                      const loc = locationLookup[field.id];
+                      displayValue = [
+                        loc.countryName,
+                        loc.stateName,
+                        loc.cityName,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+                    }
+
+                    return <td key={id}>{displayValue}</td>;
                   })}
 
-                  <td data-no-nav>
+                  {/* <td data-no-nav>
                     <Link
                       to={`/applicants/${jobId}/${app.candidateId}`}
                       state={{ from: "job", jobId }}
                     >
                       View
                     </Link>
-                  </td>
+                  </td> */}
                 </tr>
               ))
             ) : (
@@ -206,6 +237,7 @@ function ApplicantsByJob() {
             )}
           </tbody>
         </table>
+       </div>
       </div>
       {popup && (
         <div className="test df al jc">
@@ -272,7 +304,7 @@ function ApplicantsByJob() {
               </div>
             </div>
             <div className="box-border w100 df al jce">
-              <button className="s-btn b mr20" onClick={() => setPopup(false)}>
+              <button className="s-btn b mr20" onClick={handleSaveField}>
                 Save
               </button>
             </div>

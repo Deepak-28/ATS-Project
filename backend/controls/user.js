@@ -1,5 +1,5 @@
 const Router = require("express").Router();
-const { user, login, application, fieldData, locationData } = require("../config/index");
+const { user, login, application, fieldData, locationData,job } = require("../config/index");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -11,7 +11,6 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage: storage });
-
 Router.post("/", async (req, res) => {
   const {
     firstname,
@@ -24,8 +23,13 @@ Router.post("/", async (req, res) => {
     email,
     password,
   } = req.body;
-  // console.log(req.body)
+
   try {
+    const existingUser = await user.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json("Email is already registered");
+    }
+
     const candidate = await user.create({
       firstname,
       lastname,
@@ -57,34 +61,155 @@ Router.get("/:postsegment", async (req, res) => {
   const { postsegment } = req.params;
 
   try {
-    let users;
+    let result;
 
     if (postsegment === "candidates") {
-      users = await user.findAll(); // return all users
+      result = await user.findAll(); // Return all users
     } else if (postsegment === "applicants") {
-      // Get all candidateIds from applications
-      const applications = await application.findAll({
-        attributes: ["candidateId"],
-        raw: true,
+      const applicationData = await application.findAll({ raw: true });
+
+      if (!applicationData.length) {
+        return res.status(404).json({ error: "No applicants found" });
+      }
+
+      const candidateIds = [...new Set(applicationData.map(a => a.candidateId))];
+      const jobIds = [...new Set(applicationData.map(a => a.jobId))];
+
+      const users = await user.findAll({
+        where: { id: candidateIds },
+        raw: true
       });
 
-      const candidateIds = applications.map((app) => app.candidateId);
+      const jobs = await job.findAll({
+        where: { id: jobIds },
+        raw: true
+      });
 
-      // Get users matching those candidateIds
-      users = await user.findAll({
+      const fieldDataRows = await fieldData.findAll({
         where: {
-          id: candidateIds,
+          candidateId: candidateIds,
+          jobId: jobIds
         },
-        raw: true,
+        raw: true
+      });
+
+      const userMap = {};
+      users.forEach(u => { userMap[u.id] = u; });
+
+      const jobMap = {};
+      jobs.forEach(j => { jobMap[j.id] = j; });
+
+      result = applicationData.map(app => {
+        const candidate = userMap[app.candidateId] || {};
+        const job = jobMap[app.jobId] || {};
+
+        return {
+          applicationId: app.id,
+          candidateId: app.candidateId,
+          jobId: app.jobId,
+          status: app.status,
+          firstname: candidate.firstname,
+          lastname: candidate.lastname,
+          email: candidate.email,
+          ph_no: candidate.ph_no,
+          jobTitle: job.title,
+          companyName: job.companyName,
+          fieldData: fieldDataRows
+            .filter(fd => fd.candidateId === app.candidateId && fd.jobId === app.jobId)
+            .map(fd => ({
+              fieldId: fd.fieldId,
+              value: fd.value
+            }))
+        };
       });
     } else {
       return res.status(400).json({ message: "Invalid post segment" });
     }
-    // console.log(users);
 
-    res.json(users);
+    res.json(result);
   } catch (err) {
     res.status(500).send(err.message);
+  }
+});
+Router.get("/applicants/:companyId", async (req, res) => {
+  const { companyId } = req.params;
+
+  try {
+    // 1. Get all jobs for this company
+    const companyJobs = await job.findAll({
+      where: { companyId },
+      raw: true
+    });
+
+    if (!companyJobs.length) {
+      return res.status(404).json({ error: "No jobs found for this company" });
+    }
+
+    const jobIds = companyJobs.map(j => j.id);
+
+    // 2. Get applications for these jobs
+    const applications = await application.findAll({
+      where: { jobId: jobIds },
+      raw: true
+    });
+
+    if (!applications.length) {
+      return res.status(404).json({ error: "No applicants found for this company" });
+    }
+
+    const candidateIds = [...new Set(applications.map(app => app.candidateId))];
+
+    // 3. Get candidate data
+    const users = await user.findAll({
+      where: { id: candidateIds },
+      raw: true
+    });
+
+    // 4. Get dynamic field data for those candidates and jobs
+    const fieldDataRows = await fieldData.findAll({
+      where: {
+        candidateId: candidateIds,
+        jobId: jobIds
+      },
+      raw: true
+    });
+
+    // 5. Prepare mapping for fast lookup
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u; });
+
+    const jobMap = {};
+    companyJobs.forEach(j => { jobMap[j.id] = j; });
+
+    // 6. Build result
+    const result = applications.map(app => {
+      const candidate = userMap[app.candidateId] || {};
+      const jobItem = jobMap[app.jobId] || {};
+
+      return {
+        applicationId: app.id,
+        candidateId: app.candidateId,
+        jobId: app.jobId,
+        status: app.status,
+        firstname: candidate.firstname,
+        lastname: candidate.lastname,
+        email: candidate.email,
+        ph_no: candidate.ph_no,
+        jobTitle: jobItem.title,
+        companyName: jobItem.companyName,
+        fieldData: fieldDataRows
+          .filter(fd => fd.candidateId === app.candidateId && fd.jobId === app.jobId)
+          .map(fd => ({
+            fieldId: fd.fieldId,
+            value: fd.value
+          }))
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching company applicants:", err);
+    res.status(500).send("Server error");
   }
 });
 Router.get("/:id", async (req, res) => {
@@ -233,12 +358,12 @@ Router.put("/:candidateId/:jobId", upload.any(), async (req, res) => {
         jobId: jobId,
       },
       defaults: {
-        status: "applied",
+        status: "Submited",
       },
     });
 
     if (!created) {
-      await record.update({ status: "applied" });
+      await record.update({ status: "Submited" });
     }
 
     res.status(200).json({ success: true, message: "Application saved & status updated." });

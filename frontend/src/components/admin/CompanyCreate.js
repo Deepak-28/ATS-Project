@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import "./AdminPage.css";
-import "../login/companyform.css"
-import { FaEdit } from "react-icons/fa";
+import "../login/companyform.css";
+import { FaEdit, FaBuilding } from "react-icons/fa";
 import { MdDeleteForever, MdOutlineLibraryAdd } from "react-icons/md";
 import axios from "axios";
 import { RiOrganizationChart } from "react-icons/ri";
 import { Country, State, City } from "country-state-city";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Navbar from "./Navbar";
 
@@ -28,7 +28,7 @@ const industryTypes = [
   "Agriculture",
 ];
 
-const SuperAdmin = () => {
+const CompanyCreate = () => {
   const [companies, setCompanies] = useState([]);
   const [data, setData] = useState(false);
   const countries = Country.getAllCountries();
@@ -41,6 +41,7 @@ const SuperAdmin = () => {
   const [editId, setEditId] = useState(null);
   const [edited, setEdited] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const filteredCompanies = companies.filter((company, index) => {
     const searchString = `${company.code || `C${100 + index}`} ${
@@ -153,22 +154,25 @@ const SuperAdmin = () => {
     <div className="container">
       <Navbar />
       <div className="admin-container">
-        <nav className="navbar">
-          <div className="c-btn df w100 jcsb al ml10">
-            <h3>Companies</h3>
-           <div>
-             <input
-              type="text"
-              placeholder="Search companies..."
-              value={searchTerm}
-              className="mr20"
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ padding: "6px", width: "250px" }}
-            />
-            <Link onClick={handleData}>
-              <MdOutlineLibraryAdd size={24} className="g mr10" />
-            </Link>
-           </div>
+        <nav className="navbar ">
+          <div className=" df w100 jcsb al ml10">
+            <div className="df fdr w10 g10">
+              <FaBuilding size={16} />
+              <h3>Companies</h3>
+            </div>
+            <div className="df al">
+              <input
+                type="text"
+                placeholder="Search companies..."
+                value={searchTerm}
+                className="mr20"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: "6px", width: "250px" }}
+              />
+              <Link onClick={handleData}>
+                <MdOutlineLibraryAdd size={24} className="g mr10" />
+              </Link>
+            </div>
           </div>
         </nav>
         {/* Jobs Section */}
@@ -196,23 +200,22 @@ const SuperAdmin = () => {
                     </td>
                     <td>{company.industry}</td>
                     <td>
-                      <div className="job-actions df jcsb w100">
-                        <Link
-                          to={`/company/${company.id}/jobs`}
-                          className="applied-link"
-                        >
-                          <RiOrganizationChart />
-                        </Link>
+                      <div className="job-actions ">
+                        <RiOrganizationChart
+                        className="blue cursor-pointer"
+                          onClick={() =>
+                            navigate(`/company/${company.id}/jobs`)
+                          }
+                        />
                         <FaEdit
-                          className="blue"
+                          className="blue cursor-pointer"
                           onClick={() => handleEdit(company.id)}
                         />
-                        <Link to="#" className="applied-link">
-                          <MdDeleteForever
-                            color="red"
-                            onClick={() => deleteCompany(company.id)}
-                          />
-                        </Link>
+                        <MdDeleteForever
+                          color="red"
+                          className="cursor-pointer"
+                          onClick={() => deleteCompany(company.id)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -381,4 +384,4 @@ const SuperAdmin = () => {
   );
 };
 
-export default SuperAdmin;
+export default CompanyCreate;

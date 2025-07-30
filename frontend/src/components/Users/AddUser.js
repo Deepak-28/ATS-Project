@@ -91,7 +91,8 @@ useEffect(() => {
           <form onSubmit={handleSubmit} className="h90  df fdc jcsb">
             <div className=" df fdc g10">
               {currentRole === "SuperAdmin" || currentRole === "admin" ? (
-                <div className="input ">
+                <div>
+                  {currentRole !== "admin" && (<div className="input ">
                   <label>Company</label>
                   <select
                     id="companyId"
@@ -110,7 +111,6 @@ useEffect(() => {
                         key={company.id}
                         value={company.id}
                         disabled={
-                          // Prevent selecting disabled companies (except current one)
                           company.status === "disabled" &&
                           company.id != companyId
                         }
@@ -120,6 +120,7 @@ useEffect(() => {
                       </option>
                     ))}
                   </select>
+                </div>)}
                 </div>
               ) : (
                 <div className="input">

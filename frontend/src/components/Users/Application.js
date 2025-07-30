@@ -9,36 +9,28 @@ import TopNav from "../admin/TopNav";
 function Application() {
   const { slug, jid, candidateId } = useParams();
   const [data, setData] = useState({});
-  const [jobs, setJobs] = useState({});
   const [job, setJob] = useState({});
-  const [applied, setApplied] = useState(false);
-  const [resume, setResume] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [templateFields, setTemplateFields] = useState([]);
-  const [fieldOptions, setFieldOptions] = useState([]);
   const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
   const [jobReady, setJobReady] = useState(false);
   const navigate = useNavigate();
+  const name = localStorage.getItem("name");
+  const email = localStorage.getItem("email");
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  // console.log(templateFields);
-  // console.log(selectedTemplateId);
 
   const handleUser = async () => {
     try {
       const res = await axios.get(`/user/applicant/${candidateId}`);
       const udata = res.data;
-      const originalName = await extractOriginalName(udata.resume);
+      const originalName = extractOriginalName(udata.resume);
       udata.resume = originalName;
       setData(udata);
     } catch (err) {
       console.error("Error fetching user data:", err);
     }
-  };
-  const handleInput = (e) => {
-    const { id, value } = e.target;
-    setData({ ...data, [id]: value });
   };
   const getJobs = async () => {
     try {
@@ -66,33 +58,16 @@ function Application() {
   const handleCancel = () => {
     navigate(-1);
   };
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      toast.error("No file selected.");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("File size is too large.");
-      return;
-    }
-    setResume(file);
-    setSelectedFile(file);
-  };
   const handleResume = async () => {
     if (!jobReady) {
       toast.error("Job data not loaded yet. Please wait.");
       return;
     }
-
     setLoading(true);
-
     try {
       const formData = new FormData();
-
       // 1. Basic applicant data (name, email, etc.)
       formData.append("data", JSON.stringify(data));
-
       // 2. Separate location fields and other fields
       const locationFields = [];
 
@@ -110,12 +85,10 @@ function Application() {
           if (!locationFields.includes(baseFieldId)) {
             locationFields.push(baseFieldId);
           }
-          // Don't append these directly here — we'll group them below
         } else {
           formData.append(key, value);
         }
       });
-
       // 3. Group and send location fields in bulk
       const locationData = locationFields.map((fieldId) => ({
         fieldId: Number(fieldId),
@@ -125,20 +98,8 @@ function Application() {
         stateName: formValues[`${fieldId}_stateName`] || "",
         cityName: formValues[`${fieldId}_city`] || "",
       }));
-
       formData.append("locationData", JSON.stringify(locationData));
-
-      // 4. Submit to backend
       await axios.put(`/user/${candidateId}/${jid}`, formData);
-
-      // 5. Update application status
-      await axios.put(`/application/update`, {
-        candidateId: Number(candidateId),
-        jobId: Number(jid),
-        status: "applied",
-      });
-
-      setApplied(true);
       toast.success("Applied Successfully");
       navigate(`/careers/${slug}`);
     } catch (err) {
@@ -160,16 +121,6 @@ function Application() {
     }
     return "No File Selected";
   };
-  const resumename = (name) => {
-    if (selectedFile && selectedFile.name) {
-      return selectedFile.name;
-    }
-    return name || "No file selected";
-  };
-  const getUpdatedAppliedList = () => {
-    const appliedUsers = jobs.applied ? JSON.parse(jobs.applied) : [];
-    return JSON.stringify([...appliedUsers, Number(candidateId)]);
-  };
   const handleError = (err) => {
     if (err.response?.status === 404) {
       toast.error("Job not found!");
@@ -186,7 +137,6 @@ function Application() {
     );
   };
   const companyName = job.companyName || "No Company";
-  const experience = formValues["Experience"] || "N/A";
   const jobTitle = getDynamicField(job.formValues, [
     "title",
     "job title",
@@ -307,71 +257,80 @@ function Application() {
           const city = formValues[`${id}_city`] || "";
 
           return (
-            <div key={id} className="input df fdc g10">
-              {label}
+            <div key={id} className="input df fdc g5">
+              <div> {label}</div>
 
-              <select
-                value={country}
-                onChange={(e) => {
-                  const selectedCode = e.target.value;
-                  const selected = Country.getCountryByCode(selectedCode);
-                  setFormValues((prev) => ({
-                    ...prev,
-                    [`${id}_country`]: selectedCode,
-                    [`${id}_countryName`]: selected?.name || "",
-                    [`${id}_state`]: "",
-                    [`${id}_city`]: "",
-                  }));
-                }}
-              >
-                <option value="">Select Country</option>
-                {Country.getAllCountries().map((c) => (
-                  <option key={c.isoCode} value={c.isoCode}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label>Country</label>
+                <select
+                  value={country}
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+                    const selected = Country.getCountryByCode(selectedCode);
+                    setFormValues((prev) => ({
+                      ...prev,
+                      [`${id}_country`]: selectedCode,
+                      [`${id}_countryName`]: selected?.name || "",
+                      [`${id}_state`]: "",
+                      [`${id}_city`]: "",
+                    }));
+                  }}
+                >
+                  <option value="">Select Country</option>
+                  {Country.getAllCountries().map((c) => (
+                    <option key={c.isoCode} value={c.isoCode}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={state}
-                onChange={(e) => {
-                  const stateCode = e.target.value;
-                  const stateObj = State.getStateByCodeAndCountry(
-                    stateCode,
-                    country
-                  );
-                  setFormValues((prev) => ({
-                    ...prev,
-                    [`${id}_state`]: stateCode,
-                    [`${id}_stateName`]: stateObj?.name || "",
-                    [`${id}_city`]: "",
-                  }));
-                }}
-              >
-                <option value="">Select State</option>
-                {State.getStatesOfCountry(country).map((s) => (
-                  <option key={s.isoCode} value={s.isoCode}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label>State</label>
+                <select
+                  value={state}
+                  onChange={(e) => {
+                    const stateCode = e.target.value;
+                    const stateObj = State.getStateByCodeAndCountry(
+                      stateCode,
+                      country
+                    );
+                    setFormValues((prev) => ({
+                      ...prev,
+                      [`${id}_state`]: stateCode,
+                      [`${id}_stateName`]: stateObj?.name || "",
+                      [`${id}_city`]: "",
+                    }));
+                  }}
+                >
+                  <option value="">Select State</option>
+                  {State.getStatesOfCountry(country).map((s) => (
+                    <option key={s.isoCode} value={s.isoCode}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={city}
-                onChange={(e) =>
-                  setFormValues({
-                    ...formValues,
-                    [`${id}_city`]: e.target.value,
-                  })
-                }
-              >
-                <option value="">Select City</option>
-                {City.getCitiesOfState(country, state).map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label>City</label>
+                <select
+                  value={city}
+                  onChange={(e) =>
+                    setFormValues({
+                      ...formValues,
+                      [`${id}_city`]: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select City</option>
+                  {City.getCitiesOfState(country, state).map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           );
         }
@@ -392,6 +351,45 @@ function Application() {
     handleUser();
     getJobs();
   }, []);
+
+  useEffect(() => {
+    if (!templateFields.length || !data) return;
+
+    const [firstName, lastName] = name?.split(" ") || ["", ""];
+    const labelToValueMap = {
+      "first name": firstName,
+      "last name": lastName,
+      email: email,
+    };
+
+    const updatedFormValues = { ...formValues };
+
+    templateFields.forEach((tf) => {
+      const field = tf.field;
+      if (!field) return;
+
+      const label = field.fieldLabel?.toLowerCase().trim();
+      const id = field.id;
+
+      // Fill text fields like name/email
+      const value = labelToValueMap[label];
+      if (value !== undefined) {
+        updatedFormValues[id] = value;
+      }
+
+      //  Handle location fields from `data`
+      if (field.fieldType === "location") {
+        updatedFormValues[`${id}_country`] = data.country || "";
+        updatedFormValues[`${id}_state`] = data.state || "";
+        updatedFormValues[`${id}_city`] = data.city || "";
+        updatedFormValues[`${id}_countryName`] = "";
+        updatedFormValues[`${id}_stateName`] = "";
+      }
+    });
+
+    setFormValues(updatedFormValues);
+  }, [templateFields, data]);
+
   return (
     <div className="application_container">
       <TopNav />

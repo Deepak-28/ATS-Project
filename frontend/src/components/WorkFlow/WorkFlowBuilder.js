@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaEdit } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { GoWorkflow } from "react-icons/go";
 import "./WorkFlowBuilder.css";
 import axios from "axios";
 import Navbar from "../admin/Navbar";
@@ -13,6 +14,7 @@ const WorkflowBuilder = () => {
   const [workflowType, setWorkflowType] = useState("job");
   const [workFlowData, setWorkFlowData] = useState([]);
   const [editingWorkflowId, setEditingWorkflowId] = useState(null);
+  const [selectedStageIndex, setSelectedStageIndex] = useState(null);
 
   const fetchWorkflow = async () => {
     try {
@@ -23,10 +25,18 @@ const WorkflowBuilder = () => {
     }
   };
   const handleAddStage = () => {
-    if (stageName.trim()) {
-      setStages([...stages, { name: stageName.trim() }]);
-      setStageName("");
+    if (!stageName.trim()) return;
+    if (selectedStageIndex !== null && selectedStageIndex >= 0) {
+      //  Update existing stage
+      const updated = [...stages];
+      updated[selectedStageIndex].name = stageName.trim();
+      setStages(updated);
+    } else {
+      //  Add new stage
+      setStages([...stages, { name: stageName.trim(), isEditing: false }]);
     }
+    setStageName("");
+    setSelectedStageIndex(null);
   };
   const handleDeleteStage = (index) => {
     setStages(stages.filter((_, i) => i !== index));
@@ -43,51 +53,52 @@ const WorkflowBuilder = () => {
     [updated[index + 1], updated[index]] = [updated[index], updated[index + 1]];
     setStages(updated);
   };
-const handleSaveWorkflow = async () => {
-  if (!workFlowName.trim() || stages.length === 0) {
-    toast.error("Please add a workflow name and at least one stage.");
-    return;
-  }
-
-  const payload = {
-    workFlowName,
-    stages: stages.map((stage, index) => ({
-      stageName: stage.name,
-      order: index + 1,
-    })),
-  };
-
-  try {
-    if (editingWorkflowId) {
-      
-      const res = await axios.put(`/workFlow/update/${editingWorkflowId}`, payload);
-      if (res.status === 200) {
-        toast.success("Workflow updated successfully!");
-      } else {
-        toast.error("Failed to update workflow.");
-      }
-    } else {
-     
-      const res = await axios.post("/workFlow/create", {
-        workflowType,
-        workFlowName,
-        stages: payload.stages,
-      });
-
-      if (res.status === 200) {
-        toast.success("Workflow created successfully!");
-      } else {
-        toast.error("Failed to create workflow.");
-      }
+  const handleSaveWorkflow = async () => {
+    if (!workFlowName.trim() || stages.length === 0) {
+      toast.error("Please add a workflow name and at least one stage.");
+      return;
     }
 
-    clearForm();
-    fetchWorkflow();
-  } catch (err) {
-    console.error("Error saving/updating workflow:", err);
-    toast.error("Server error occurred.");
-  }
-};
+    const payload = {
+      workFlowName,
+      stages: stages.map((stage, index) => ({
+        stageName: stage.name,
+        order: index + 1,
+      })),
+    };
+
+    try {
+      if (editingWorkflowId) {
+        const res = await axios.put(
+          `/workFlow/update/${editingWorkflowId}`,
+          payload
+        );
+        if (res.status === 200) {
+          toast.success("Workflow updated successfully!");
+        } else {
+          toast.error("Failed to update workflow.");
+        }
+      } else {
+        const res = await axios.post("/workFlow/create", {
+          workflowType,
+          workFlowName,
+          stages: payload.stages,
+        });
+
+        if (res.status === 200) {
+          toast.success("Workflow created successfully!");
+        } else {
+          toast.error("Failed to create workflow.");
+        }
+      }
+
+      clearForm();
+      fetchWorkflow();
+    } catch (err) {
+      console.error("Error saving/updating workflow:", err);
+      toast.error("Server error occurred.");
+    }
+  };
   const handleDeleteWorkflow = async (id) => {
     try {
       const res = await axios.delete(`/workFlow/delete/workflow/${id}`);
@@ -102,16 +113,16 @@ const handleSaveWorkflow = async () => {
       toast.error("Server error during delete.");
     }
   };
- const handleEditWorkflow = (workflow) => {
-  setWorkFlowName(workflow.workFlowName);
-  setStages(
-    workflow.stages.map((s) => ({
-      name: s.StageName,
-      order: s.Order,
-    }))
-  );
-  setEditingWorkflowId(workflow.id); // Track for update
-};
+  const handleEditWorkflow = (workflow) => {
+    setWorkFlowName(workflow.workFlowName);
+    setStages(
+      workflow.stages.map((s) => ({
+        name: s.StageName,
+        order: s.Order,
+      }))
+    );
+    setEditingWorkflowId(workflow.id); // Track for update
+  };
   const clearForm = () => {
     setWorkFlowName("");
     setStageName("");
@@ -131,7 +142,10 @@ const handleSaveWorkflow = async () => {
       <Navbar />
       <div className="admin-container h100 df jcsb">
         <div className="wb-container">
-          <h2 className="wb-heading">Workflow Builder</h2>
+          <div className="df fdr g10">
+            <GoWorkflow size={20} />
+            <h2 className="wb-heading">Workflow Builder</h2>
+          </div>
 
           <div className="wb-toggle-group">
             <button
@@ -173,17 +187,27 @@ const handleSaveWorkflow = async () => {
 
             <div className="df al jc ">
               <button className="b btn" onClick={handleAddStage}>
-                Add
+                {selectedStageIndex !== null ? "Save" : "Add"}
               </button>
             </div>
           </div>
           <div className="wb-scroll df jcsb fdc">
             <ul className="wb-stage-list">
               {stages.map((stage, index) => (
-                <li key={index} className="wb-stage-item">
-                  <span>
+                <li
+                  key={index}
+                  className="wb-stage-item"
+                  title={editingWorkflowId ? "Click to edit this stage" : ""}
+                  onClick={() => {
+                    if (editingWorkflowId) {
+                      setStageName(stage.name);
+                      setSelectedStageIndex(index);
+                    }
+                  }}
+                >
+                  <div>
                     {index + 1}. {stage.name}
-                  </span>
+                  </div>
                   <div>
                     <button onClick={() => handleMoveUp(index)}>⬆️</button>
                     <button onClick={() => handleMoveDown(index)}>⬇️</button>
@@ -192,17 +216,17 @@ const handleSaveWorkflow = async () => {
                 </li>
               ))}
             </ul>
+
             <div className="df ae  jc mt5">
-              <button className="green btn" onClick={handleSaveWorkflow}>
-                {editingWorkflowId ? "Update" : "Save"}
-              </button>
-              <button className="btn gray ml5" onClick={clearForm}>
+              <button className="btn gray " onClick={clearForm}>
                 Clear
+              </button>
+              <button className="green btn ml15" onClick={handleSaveWorkflow}>
+                {editingWorkflowId ? "Update" : "Save"}
               </button>
             </div>
           </div>
         </div>
-
         <div className="wb-container2 df al fdc">
           <h3>Existing Workflows</h3>
           <div className="templates df fdc ">
@@ -210,30 +234,30 @@ const handleSaveWorkflow = async () => {
               <div key={workflow.id} className="box-field df al jcsb g10 ">
                 <div className="ml10">
                   <h4>{workflow.workFlowName}</h4>
-                   <p className="mt5">
+                  <p className="mt5">
                     <strong>Stages:</strong>{" "}
-                  {workflow.stages
-                    .sort((a, b) => a.Order - b.Order)
-                    .map((stage) => stage.StageName)
-                    .join(", ")}
-                   </p>
+                    {workflow.stages
+                      .sort((a, b) => a.Order - b.Order)
+                      .map((stage) => stage.StageName)
+                      .join(", ")}
+                  </p>
                 </div>
                 <div className="df al g5 mr10">
-                    <FaEdit
-                      size={16}
-                      color="blue"
-                      className="cursor-pointer"
-                      onClick={() => handleEditWorkflow(workflow)}
-                      title="Edit WorkFlow"
-                    />
-                    <MdDeleteForever
-                      size={20}
-                      color="red"
-                      className="cursor-pointer"
-                      onClick={() => handleDeleteWorkflow(workflow.id)}
-                      title="Delete WorkFlow"
-                    />
-                  </div>
+                  <FaEdit
+                    size={16}
+                    color="blue"
+                    className="cursor-pointer"
+                    onClick={() => handleEditWorkflow(workflow)}
+                    title="Edit WorkFlow"
+                  />
+                  <MdDeleteForever
+                    size={20}
+                    color="red"
+                    className="cursor-pointer"
+                    onClick={() => handleDeleteWorkflow(workflow.id)}
+                    title="Delete WorkFlow"
+                  />
+                </div>
               </div>
             ))}
           </div>

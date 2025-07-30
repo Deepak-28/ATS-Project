@@ -23,6 +23,7 @@ Router.post("/add", async (req, res) => {
     // console.log(123,data);
 
     const data2 = await login.create({
+      username:name,
       email: e_id,
       password: password,
       role: "admin",

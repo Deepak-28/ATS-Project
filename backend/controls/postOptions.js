@@ -6,12 +6,16 @@ Router.get('/:id', async (req, res) => {
   try {
     const data = await postOption.findAll({ where: { jobId: id }, raw: true });
 
-    // Slice postDate and expiryDate to only 'YYYY-MM-DD'
-    const formattedData = data.map(item => ({
-      ...item,
-      postDate: item.postDate?.toISOString().slice(0, 10),
-      expiryDate: item.expiryDate?.toISOString().slice(0, 10)
-    }));
+    const formattedData = data.map(item => {
+      const postDate = new Date(item.postDate);
+      const expiryDate = new Date(item.expiryDate);
+
+      return {
+        ...item,
+        postDate: isValidDate(postDate) ? postDate.toISOString().slice(0, 10) : null,
+        expiryDate: isValidDate(expiryDate) ? expiryDate.toISOString().slice(0, 10) : null,
+      };
+    });
 
     res.send(formattedData);
   } catch (err) {
@@ -19,5 +23,10 @@ Router.get('/:id', async (req, res) => {
     res.status(500).send("Error fetching post options");
   }
 });
+
+function isValidDate(d) {
+  return d instanceof Date && !isNaN(d);
+}
+
 
 module.exports = Router;

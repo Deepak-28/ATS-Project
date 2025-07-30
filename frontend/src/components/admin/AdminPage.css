@@ -126,9 +126,10 @@
 }
 .job-actions{
   display: flex;
-  justify-content: space-evenly;
+  justify-content: center;
   align-items: center;
   font-size: medium;
+  gap: 1rem;
 }
 .applied-link{
 cursor: pointer;
@@ -188,6 +189,13 @@ cursor: pointer;
   cursor: pointer;
   /* width: 100%; */
 }
+.dropdown-toggle{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;     
+  /* gap: 8px;  */
+}
 .sidebar ul li a svg,
 .dropdown-toggle svg {
   margin-right: 10px;
@@ -208,9 +216,11 @@ cursor: pointer;
   font-size: 11px;
   color: #dcdde1;
   text-decoration: none;
-  /* margin-left: 1.5rem; */
 }
 
 .submenu li a:hover {
   background-color: 		#3c4f65;
+}
+.submenu li{
+  padding-left: 1rem;
 }

@@ -1,6 +1,6 @@
 const Router = require("express").Router();
 const { Op } = require('sequelize');
-const { job, application, fieldData, field, locationData } = require("../config/index");
+const { job, application, fieldData, field, locationData, user } = require("../config/index");
 const { postOption: PostOption } = require("../config/index");
 
 Router.post("/", async (req, res) => {
@@ -56,11 +56,11 @@ Router.post("/visibility/:id", async (req, res) => {
       }));
       await PostOption.destroy({where:{jobId}})
       await PostOption.bulkCreate(entries);
-      await job.update({visibility:"posted"},{where:{id:jobId}})
+      await job.update({visibility:"scheduled"},{where:{id:jobId}});
     } else {
       const { postDate, expiryDate, postOption } = formData;
       await PostOption.create({ jobId, postDate, expiryDate, postOption });
-      await job.update({visibility:"posted"},{where:{id:jobId}})
+      await job.update({visibility:"scheduled"},{where:{id:jobId}});
     }
 
     res.send("Job Posted");
@@ -117,6 +117,81 @@ Router.get("/", async (req, res) => {
     res.send(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+Router.get("/applicants/all", async (req, res) => {
+  try {
+    // Step 1: Get all applications
+    const applicationData = await application.findAll({ raw: true });
+
+    if (!applicationData.length) {
+      return res.status(404).json({ error: "No applicants found" });
+    }
+
+    // Step 2: Get all involved candidate IDs and job IDs
+    const candidateIds = [...new Set(applicationData.map(a => a.candidateId))];
+    const jobIds = [...new Set(applicationData.map(a => a.jobId))];
+
+    // Step 3: Get candidate info
+    const users = await user.findAll({
+      where: { id: candidateIds },
+      raw: true
+    });
+
+    // Step 4: Get job info
+    const jobs = await job.findAll({
+      where: { id: jobIds },
+      raw: true
+    });
+
+    // Step 5: Get dynamic field values
+    const fieldDataRows = await fieldData.findAll({
+      where: { candidateId: candidateIds },
+      raw: true
+    });
+
+    // Step 6: Build lookup tables
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u; });
+
+    const jobMap = {};
+    jobs.forEach(j => { jobMap[j.id] = j; });
+
+    const fieldMap = {}; // candidateId + fieldId => value
+    fieldDataRows.forEach(fd => {
+      const key = `${fd.candidateId}-${fd.fieldId}`;
+      fieldMap[key] = fd.value;
+    });
+
+    // Step 7: Assemble final result
+    const result = applicationData.map(app => {
+      const candidate = userMap[app.candidateId] || {};
+      const job = jobMap[app.jobId] || {};
+
+      return {
+        applicationId: app.id,
+        candidateId: app.candidateId,
+        jobId: app.jobId,
+        status: app.status,
+        firstname: candidate.firstname,
+        lastname: candidate.lastname,
+        email: candidate.email,
+        ph_no: candidate.ph_no,
+        jobTitle: job.title,
+        companyName: job.companyName,
+        fieldData: fieldDataRows
+          .filter(fd => fd.candidateId === app.candidateId)
+          .map(fd => ({
+            fieldId: fd.fieldId,
+            value: fd.value
+          }))
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error fetching applicants:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 Router.get("/all", async (req, res) => {
@@ -198,7 +273,7 @@ Router.get("/slug/:slug", async (req, res) => {
       visibilityFilter = { [Op.in]: ["External", "Internal-External"] };
     } else if (slug.includes("&")) {
       visibilityFilter = {
-        [Op.in]: slug.split("&").map(capitalize), // Capitalize each part
+        [Op.in]: slug.split("&").map(capitalize),
       };
     } else {
       visibilityFilter = capitalize(slug);
@@ -206,7 +281,7 @@ Router.get("/slug/:slug", async (req, res) => {
 
     // Step 1: Get jobIds from PostOption table
     const matchedOptions = await PostOption.findAll({
-      where: { postOption: visibilityFilter },
+      where: { postOption: visibilityFilter, jobStatus: 'active' },
       attributes: ["jobId"],
       raw: true,
     });
@@ -220,32 +295,71 @@ Router.get("/slug/:slug", async (req, res) => {
     // Step 2: Get jobs
     const jobs = await job.findAll({ where: { id: jobIds } });
 
-    // Step 3: Field Data
+    // Step 3: Get all field data
     const allFieldData = await fieldData.findAll({
-      where: { jobId: jobIds },
+      where: {
+        jobId: jobIds,
+        candidateId: null,
+      },
+      raw: true,
     });
 
     const fieldIds = [...new Set(allFieldData.map((fd) => fd.fieldId))];
     const fieldDefs = await field.findAll({
       where: { id: fieldIds },
+      raw: true,
     });
 
     const fieldLabelMap = {};
     fieldDefs.forEach((f) => {
-      fieldLabelMap[f.id] = f.fieldLabel;
+      fieldLabelMap[f.id] = f.fieldLabel.trim();
     });
 
+    // Step 4: Get location data
+    const fieldDataIds = allFieldData.map((fd) => fd.id);
+    const locationEntries = await locationData.findAll({
+      where: {
+        jobId: jobIds,
+        candidateId: { [Op.is]: null },
+        fieldDataId: fieldDataIds,
+      },
+      raw: true,
+    });
+
+    const locByFieldDataId = {};
+    locationEntries.forEach((loc) => {
+      locByFieldDataId[loc.fieldDataId] = loc;
+    });
+
+    // Step 5: Build jobFieldMap
     const jobFieldMap = {};
     allFieldData.forEach((fd) => {
-      if (!jobFieldMap[fd.jobId]) {
-        jobFieldMap[fd.jobId] = {};
+      const jobId = fd.jobId;
+      if (!jobFieldMap[jobId]) {
+        jobFieldMap[jobId] = {};
       }
+
       const label = fieldLabelMap[fd.fieldId];
-      if (label) {
-        jobFieldMap[fd.jobId][label] = fd.value;
+      if (!label) return;
+
+      const loc = locByFieldDataId[fd.id];
+      if (loc) {
+        jobFieldMap[jobId][label] = {
+          countryCode: loc.countryCode,
+          countryName: loc.countryName,
+          stateCode: loc.stateCode,
+          stateName: loc.stateName,
+          cityName: loc.cityName,
+          display: [loc.countryName, loc.stateName, loc.cityName]
+            .filter(Boolean)
+            .join(", "),
+        };
+      } else {
+        jobFieldMap[jobId][label] = fd.value;
       }
     });
 
+    // Step 6: Combine jobs with their fields
     const jobsWithFields = jobs.map((j) => ({
       ...j.toJSON(),
       formValues: jobFieldMap[j.id] || {},
@@ -253,7 +367,7 @@ Router.get("/slug/:slug", async (req, res) => {
 
     res.send(jobsWithFields);
   } catch (err) {
-    console.error("Error fetching jobs with related fields:", err);
+    console.error("Error fetching jobs with related fields and location:", err);
     res.status(500).send("Internal server error");
   }
 });
@@ -416,12 +530,14 @@ Router.put("/update/:id", async (req, res) => {
 });
 Router.put("/unpost/:id", async (req, res) => {
   const { id } = req.params;
+  // console.log(id);
+  
   try {
     await job.update(
       { visibility: null },
       { where: { id } }
     );
-    await PostOption.destroy({where:{id}});
+    await PostOption.destroy({where:{jobId:id}});
     res.send("Job unposted");
   } catch (err) {
     res.status(500).send("Error unposting job");

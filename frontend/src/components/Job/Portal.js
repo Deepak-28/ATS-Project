@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Navbar from "../admin/Navbar";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaGlobe } from "react-icons/fa";
 import { MdOutlineLibraryAdd, MdDeleteForever } from "react-icons/md";
 import axios from "axios";
 
@@ -61,7 +61,14 @@ function Portal() {
     setIsEditing(false);
     setEditId(null);
   };
-
+  const handlePost = () => {
+    setIsEditing(true);
+    setEditId(portal.id);
+    setName(portal.Name);
+    setMaskId(portal.maskId);
+    setBgImage(null);
+    setPopup(true);
+  };
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) {
@@ -74,17 +81,16 @@ function Portal() {
     }
     setBgImage(file);
   };
-  const handleDelete = async (id) =>{
-    try{
+  const handleDelete = async (id) => {
+    try {
       const res = await axios.delete(`/portal/${id}`);
       toast.success("Portal Deleted");
       getPortal();
-
-    }catch(err){
+    } catch (err) {
       console.error("Error in deleting portal", err);
-      toast.error("Error in Deleting")
+      toast.error("Error in Deleting");
     }
-  } 
+  };
 
   useEffect(() => {
     getPortal();
@@ -94,7 +100,10 @@ function Portal() {
       <Navbar />
       <div className="admin-container">
         <nav className="df h10 al jcsb">
-          <h2 className="logo ml10">Portal</h2>
+          <div className="df fdr  al w7 jcsa">
+            <FaGlobe size={18} />
+            <h2 className="logo">Portal</h2>
+          </div>
           <div className="c-btn">
             <Link onClick={() => setPopup(true)}>
               <MdOutlineLibraryAdd size={24} className="g mr10" />
@@ -109,7 +118,7 @@ function Portal() {
                 <th>Name</th>
                 <th>Mask Id</th>
                 <th>URL</th>
-                <th>Actions</th>
+                <th className="w10">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -132,21 +141,20 @@ function Portal() {
                         {`http://localhost:3000/careers/${portal.maskId}`}
                       </a>
                     </td>
-                    <td className="df jcsa f14  w100" data-no-nav>
-                      <Link
-                        onClick={() => {
-                          setIsEditing(true);
-                          setEditId(portal.id);
-                          setName(portal.Name);
-                          setMaskId(portal.maskId);
-                          setBgImage(null);
-                          setPopup(true);
-                        }}
-                      >
-                        <FaEdit />
-                      </Link>
+                    <td className="  w10" data-no-nav>
+                      <div className="job-actions">
+                        <FaEdit
+                          onClick={handlePost}
+                          color="blue"
+                          className="cursor-pointer"
+                        />
 
-                      <MdDeleteForever className="applied-link" color="red" onClick={()=>handleDelete(portal.id)}/>
+                        <MdDeleteForever
+                          className="applied-link"
+                          color="red"
+                          onClick={() => handleDelete(portal.id)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))

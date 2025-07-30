@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import {  FaEdit } from "react-icons/fa";
-import { MdDeleteForever, MdOutlineLibraryAdd} from "react-icons/md";
+import React, { useEffect, useState } from "react";
+import { FaEdit , FaUsers} from "react-icons/fa";
+import { MdDeleteForever, MdOutlineLibraryAdd } from "react-icons/md";
 import { toast } from "react-hot-toast";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
-import "../Job/JobList.css"; // reuse your existing styling
+import "../Job/JobList.css";
 import Navbar from "../admin/Navbar";
 
 function CreateUser() {
   const { cid } = useParams();
   const [Users, setUsers] = useState([]);
+  const loggedInUserId = localStorage.getItem("userId");
+
   const getUser = async () => {
     try {
       const res = await axios.get(`/login/user/company/${cid}`);
@@ -35,58 +37,75 @@ function CreateUser() {
   }, []);
 
   return (
-    <div className="container"> 
-    <Navbar/>{/* Content */}
+    <div className="container">
+      <Navbar />
+      {/* Content */}
       <div className="admin-container">
-          <div className="df jcsb al w100">
-            <h2 className="job-heading ml10 mt15">All Users</h2>
-            <div className="c-btn">
-              <Link to={`/addUser`}>
-                <MdOutlineLibraryAdd size={24} className="g mr10" />
-              </Link>
+        <div className="df jcsb al w100 h10">
+          <div className="df fdr al h100 jcsa w8">
+            <FaUsers size={18}/>
+          <h3 >All Users</h3>
+          </div>
+          <div className="c-btn">
+            <Link to={`/addUser`}>
+              <MdOutlineLibraryAdd size={24} className="g mr10" />
+            </Link>
           </div>
         </div>
 
         {/* Table View */}
-       <div className="data-table">
-         <table className="job-table">
-          <thead>
-            <tr>
-              <th>S.No</th>
-              <th>Username</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Users.length > 0 ? (
-              Users.map((user, index) => (
-                <tr key={user.id}>
-                  <td>{index + 1}</td>
-                  <td>{user.username}</td>
-                  <td>{user.role}</td>
-                  <td>
-                    <div className="job-actions">
-                      <Link
-                        to={`/addUser/${user.id}`}
-                        className="applied-link blue"
-                      >
-                        <FaEdit />
-                      </Link>
-                        <MdDeleteForever color="red" 
-                        onClick={() => deleteUser(user.id)} size={18}/>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
+        <div className="data-table">
+          <table className="job-table">
+            <thead>
               <tr>
-                <td colSpan="4">No users found.</td>
+                <th>S.No</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-       </div>
+            </thead>
+            <tbody>
+              {Users.length > 0 ? (
+                Users.map((user, index) => {
+                  const isSelfAdmin =
+                    user.role === "admin" &&
+                    String(user.id) === String(loggedInUserId);
+                  if (isSelfAdmin) return null; 
+
+                  return (
+                    <tr key={user.id}>
+                      <td>{index }</td>
+                      <td>{user.username}</td>
+                      <td>{user.role}</td>
+                      <td>{user.email}</td>
+                      <td>
+                        <div className="job-actions">
+                          <Link
+                            to={`/addUser/${user.id}`}
+                            className="applied-link blue"
+                          >
+                            <FaEdit />
+                          </Link>
+                          <MdDeleteForever
+                            color="red"
+                            className="cursor-pointer"
+                            onClick={() => deleteUser(user.id)}
+                            size={18}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="4">No users found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -7,16 +7,20 @@ const {
   templateField,
   template,
   fieldData,
-  locationData
+  locationData,
 } = require("../config/index");
 const { Op } = require("sequelize");
 
 Router.get("/status/:candidateId/:jobId", async (req, res) => {
   const { candidateId, jobId } = req.params;
-  const existing = await application.findOne({
+  try{
+    const existing = await application.findOne({
     where: { candidateId: Number(candidateId), jobId: Number(jobId) },
   });
   res.send(!!existing);
+  }catch(err){
+    console.error("Error in getting data", err)
+  }
 });
 Router.post("/", async (req, res) => {
   const { candidateId, jobId } = req.body;
@@ -147,7 +151,7 @@ Router.get("/applicant/:id", async (req, res) => {
       if (templateId) {
         const templateFields = await templateField.findAll({
           where: { templateId },
-          order: [["order", "ASC"]], // Respect field order
+          order: [["order", "ASC"]],
           raw: true,
         });
 
@@ -161,9 +165,25 @@ Router.get("/applicant/:id", async (req, res) => {
         const fieldValues = await fieldData.findAll({
           where: {
             jobId: job.id,
-            candidateId: null, // job-level fields
+            candidateId: null,
           },
           raw: true,
+        });
+
+        const fieldDataIds = fieldValues.map((fd) => fd.id);
+
+        const locationEntries = await locationData.findAll({
+          where: {
+            jobId: job.id,
+            candidateId: null,
+            fieldDataId: fieldDataIds,
+          },
+          raw: true,
+        });
+
+        const locByFieldDataId = {};
+        locationEntries.forEach((loc) => {
+          locByFieldDataId[loc.fieldDataId] = loc;
         });
 
         for (const tf of templateFields) {
@@ -171,9 +191,27 @@ Router.get("/applicant/:id", async (req, res) => {
           const val = fieldValues.find((fv) => fv.fieldId === tf.fieldId);
 
           if (def) {
+            const loc = val ? locByFieldDataId[val.id] : null;
+
+            let value;
+            if (loc) {
+              value = {
+                countryCode: loc.countryCode,
+                countryName: loc.countryName,
+                stateCode: loc.stateCode,
+                stateName: loc.stateName,
+                cityName: loc.cityName,
+                display: [loc.countryName, loc.stateName, loc.cityName]
+                  .filter(Boolean)
+                  .join(", "),
+              };
+            } else {
+              value = val?.value || null;
+            }
+
             dynamicFields.push({
               label: def.fieldLabel.trim(),
-              value: val?.value || null,
+              value,
             });
           }
         }
@@ -381,17 +419,44 @@ Router.get("/job/:jobId", async (req, res) => {
           where: { id: app.candidateId },
           raw: true,
         });
+
         const jobData = await job.findOne({
           where: { id: app.jobId },
           raw: true,
         });
+
         const dynamicFields = await fieldData.findAll({
           where: {
             candidateId: {
               [Op.ne]: null,
             },
+            jobId: app.jobId,
+            candidateId: app.candidateId,
           },
+          raw: true,
         });
+
+        const fieldDataIds = dynamicFields.map((fd) => fd.id);
+
+        const locationEntries = await locationData.findAll({
+          where: {
+            fieldDataId: fieldDataIds,
+            candidateId: app.candidateId,
+            jobId: app.jobId,
+          },
+          raw: true,
+        });
+
+        // Attach matching location data to each dynamic field
+        const locationMap = {};
+        locationEntries.forEach((loc) => {
+          locationMap[loc.fieldDataId] = loc;
+        });
+
+        const dynamicWithLocation = dynamicFields.map((field) => ({
+          ...field,
+          location: locationMap[field.id] || null,
+        }));
 
         return {
           id: app.id,
@@ -400,7 +465,7 @@ Router.get("/job/:jobId", async (req, res) => {
           candidateId: app.candidateId,
           user: userData,
           job: jobData,
-          dynamicData: dynamicFields,
+          dynamicData: dynamicWithLocation,
         };
       })
     );

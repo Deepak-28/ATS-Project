@@ -86,7 +86,9 @@
     border-radius: 6px;
     height: 100%;
   }
-  
+  .wb-stage-item:hover{
+     background-color: #e0e0e0;
+  }
   .wb-stage-item button {
     margin-left: 6px;
     background: none;
@@ -143,6 +145,20 @@
 
 .wb-suggestions li:hover {
   background-color: #f0f0f0;
+}
+.clickable-stage {
+  width: 85%;
+  height: 100%;
+  cursor: pointer;
+  /* padding: 4px 6px; */
+  /* display: inline-block; */
+  background-color: #7b4040;
+  /* border-radius: 4px; */
+  transition: background-color 0.2s;
+}
+
+.clickable-stage:hover {
+  background-color: #e0e0e0;
 }
 
   

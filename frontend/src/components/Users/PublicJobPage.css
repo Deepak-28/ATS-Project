@@ -1,6 +1,6 @@
 .public-page-container {
  width: 100%;
- height: 100vh;
+ height: 100%;
   background-color: #f2fafe;
   font-family: "Segoe UI", sans-serif;
 }
@@ -100,6 +100,7 @@
   color: #8a8a8a;
   font-size: 16px;
   pointer-events: none; /* allow clicks to go to the input */
+  z-index: 1;
 }
 
 .search-input input {
@@ -157,3 +158,6 @@
   font-size: 14px;
 }
 
+.required {
+  color: red;
+}
