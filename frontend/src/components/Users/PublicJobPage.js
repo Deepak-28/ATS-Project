@@ -197,6 +197,7 @@ const PublicJobPage = () => {
       await axios.post("/user", payload);
       setAuthMode(null);
       setData("");
+      toast.success("SignIn with Your Email and Password");
       toast.success("Registration Successful");
     } catch (err) {
       console.error(err.response?.data || "Registration failed");
@@ -205,8 +206,14 @@ const PublicJobPage = () => {
   };
   const getOtp = async () => {
     try {
-      await axios.post("/login/auth/send-otp", { email: mail });
-      toast.success("OTP sent");
+      const data = await toast.promise(
+        axios.post("/login/auth/send-otp", { email: mail }),
+        {
+          loading: "Sending OTP...",
+          success: "OTP sent successfully!",
+          error: "Failed to send OTP.",
+        }
+      );
       setStep(3);
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed");
@@ -369,7 +376,7 @@ const PublicJobPage = () => {
         </div>
 
         {authMode && (
-          <div className="auth-card slide-in" ref={modalRef}>
+          <div className="auth-card " ref={modalRef}>
             {authMode === "signin" && !isRegister ? (
               <form onSubmit={submit}>
                 <div className="login-header">
@@ -444,10 +451,17 @@ const PublicJobPage = () => {
                             required
                           />
                         </div>
-
-                        <button className="b s-btn" onClick={getOtp}>
-                          Send OTP
-                        </button>
+                        <div className="df g10">
+                          <button type="button"
+                            className="gray s-btn"
+                            onClick={() => setStep(1)}
+                          >
+                            Back
+                          </button>
+                          <button type="button" className="b s-btn" onClick={getOtp}>
+                            Send OTP
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -469,9 +483,17 @@ const PublicJobPage = () => {
                           onChange={(e) => setNewPassword(e.target.value)}
                         />
                       </div>
-                      <button className="b s-btn" onClick={resetPassword}>
-                        Submit
-                      </button>
+                      <div className="df g10">
+                        <button type="button"
+                          className="gray s-btn"
+                          onClick={() => setStep(2)}
+                        >
+                          Back
+                        </button>
+                        <button type="button" className="b s-btn" onClick={resetPassword}>
+                          Submit
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

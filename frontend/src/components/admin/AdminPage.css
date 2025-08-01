@@ -191,18 +191,19 @@ cursor: pointer;
 }
 .dropdown-toggle{
   display: flex;
+  /* gap: 1rem; */
   justify-content: space-between;
-  align-items: center;
-  width: 100%;     
+  /* align-items: center; */
+  /* width: 100%;      */
   /* gap: 8px;  */
 }
 .sidebar ul li a svg,
 .dropdown-toggle svg {
-  margin-right: 10px;
+  margin-right: 0.5rem;
 }
 .sidebar ul li a:hover,
 .dropdown-toggle:hover {
-  background-color: 			#3c4f65;
+  background-color: 	#3c4f65;
 }
 
 .submenu {

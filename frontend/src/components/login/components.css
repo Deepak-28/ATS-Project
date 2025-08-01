@@ -56,7 +56,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 1);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
@@ -492,7 +492,7 @@ textarea::placeholder{
 .post-box{
   min-height: 73vh;
   max-height: 85vh;
-   width: 45vw;
+   width: 55vw;
    background-color: #fff;
   border-radius: 4px;
 }
@@ -799,11 +799,11 @@ textarea::placeholder{
   cursor: pointer;
 }
 .p-btn{
-  width: 7vw;
+  width: 5vw;
   height: 5vh;
   color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 1rem;
   cursor: pointer; 
 }
 .date{

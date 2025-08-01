@@ -30,7 +30,7 @@ function Login() {
         localStorage.setItem("admin_token", token);
 
         const decoded = JSON.parse(atob(token.split(".")[1])); // Decode payload
-        const { userId, role, candidateId, cid, email, username } = decoded;
+        const { userId, role, cid, email, username } = decoded;
         localStorage.setItem("userId", userId);
         localStorage.setItem("username", username);
         localStorage.setItem("email", email);

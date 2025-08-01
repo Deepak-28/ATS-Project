@@ -8,6 +8,7 @@ const {
   template,
   fieldData,
   locationData,
+  workFlowStage
 } = require("../config/index");
 const { Op } = require("sequelize");
 
@@ -235,6 +236,95 @@ Router.get("/applicant/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+Router.get("/application-status/:companyId", async (req, res) => {
+  const { companyId } = req.params;
+
+  try {
+    // Step 1: Get all jobs for the company
+    const jobs = await job.findAll({
+      where: { companyId },
+      attributes: ['id', 'templateId'],
+      raw: true,
+    });
+    
+    
+    const jobMap = {}; // jobId => templateId
+    const jobIds = jobs.map((j) => {
+      jobMap[j.id] = j.templateId;
+      return j.id;
+    });
+// console.log(jobIds);
+    if (!jobIds.length) {
+      return res.status(404).json({ message: "No jobs found for this company" });
+    }
+
+    // Step 2: Get applications for those job IDs
+    const applications = await application.findAll({
+      where: { jobId: jobIds },
+      attributes: ['jobId', 'status'],
+      raw: true,
+    });
+// console.log(applications);
+
+    if (!applications.length) {
+      return res.json({ statusSummary: [] });
+    }
+
+    // Step 3: Get templates and workflow mapping
+    const templateIds = [...new Set(jobs.map(j => j.templateId).filter(Boolean))];
+    const templates = await template.findAll({
+      where: { id: templateIds },
+      attributes: ['id', 'candidateWorkFlowId'],
+      raw: true,
+    });
+// console.log(templateIds);
+
+    const templateToWorkflowMap = {};
+    templates.forEach(t => {
+      templateToWorkflowMap[t.id] = t.workFlowId;
+    });
+
+    // Step 4: Get all workflow stages
+    const workflowIds = [...new Set(templates.map(t => t.workflowId))];
+    const stages = await workFlowStage.findAll({
+      where: { workFlowId: workflowIds },
+      attributes: ['workFlowId', 'StageName', 'order'],
+      order: [['order', 'ASC']],
+      raw: true,
+    });
+
+    // Step 5: Group by jobId and status
+    const grouped = {};
+
+    applications.forEach(app => {
+      const { jobId, status } = app;
+
+      if (!grouped[jobId]) grouped[jobId] = {};
+
+      if (!grouped[jobId][status]) {
+        grouped[jobId][status] = 1;
+      } else {
+        grouped[jobId][status]++;
+      }
+    });
+
+    // Step 6: Format result into an array grouped by jobId
+    const statusSummary = Object.entries(grouped).map(([jobId, stageCounts]) => ({
+      jobId: parseInt(jobId),
+      stages: Object.entries(stageCounts).map(([stage, count]) => ({
+        stage,
+        count,
+      })),
+    }));
+
+    res.json({ statusSummary });
+    // res.send("wait")
+
+  } catch (err) {
+    console.error("Error fetching application workflow status summary:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 Router.get("/applicantDetail/:id/:jid", async (req, res) => {
   const { id, jid } = req.params;
 
@@ -457,7 +547,8 @@ Router.get("/job/:jobId", async (req, res) => {
           ...field,
           location: locationMap[field.id] || null,
         }));
-
+        // console.log(dynamicWithLocation);
+        
         return {
           id: app.id,
           status: app.status,
@@ -470,7 +561,11 @@ Router.get("/job/:jobId", async (req, res) => {
       })
     );
 
-    res.json(applicantData);
+   res.json({
+  applicants: applicantData.map(({ dynamicData, ...rest }) => rest),
+  dynamicData: applicantData.flatMap((a) => a.dynamicData),
+});
+
   } catch (err) {
     console.error("Error fetching applicants:", err);
     res.status(500).send("Server error");

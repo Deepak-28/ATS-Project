@@ -13,7 +13,15 @@ const sendOTPEmail = async (to, otp) => {
     from: process.env.EMAIL_USER,
     to,
     subject: "Your OTP for Password Reset",
-    html: `<p>Your OTP is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`,
+    html: ` <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+    <p>Hi,</p>
+    <p>Your One-Time Password (OTP) for resetting your password is:</p>
+    <p style="font-size: 20px; font-weight: bold; color: #2c3e50;">${otp}</p>
+    <p>This code is valid for <strong>5 minutes</strong>.</p>
+    <p>If you didn’t request a password reset, please ignore this message or contact support.</p>
+    <br/>
+    <p>Thanks,<br/>The 2xsmart  Team</p>
+  </div>`,
   });
 };
 

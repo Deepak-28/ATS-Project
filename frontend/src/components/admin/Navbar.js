@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaRegUserCircle, FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import SidebarMenu from "./SidebarMenu";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
@@ -20,7 +20,7 @@ function Navbar() {
   const userId = localStorage.getItem("userId");
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
+  // const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const navigate = useNavigate();
@@ -28,14 +28,14 @@ function Navbar() {
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
-  const getDetails = async () => {
-    try {
-      const res = await axios.get("/login/user");
-      setData(res.data);
-    } catch (err) {
-      console.error("failed to fetch data", err);
-    }
-  };
+  // const getDetails = async () => {
+  //   try {
+  //     const res = await axios.get("/login/user");
+  //     setData(res.data);
+  //   } catch (err) {
+  //     console.error("failed to fetch data", err);
+  //   }
+  // };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -44,26 +44,26 @@ function Navbar() {
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
-  const handleSave = async () => {
-    if (!imageFile) return;
+  // const handleSave = async () => {
+  //   if (!imageFile) return;
 
-    const userId = localStorage.getItem("userId");
-    const formData = new FormData();
-    formData.append("profileImage", imageFile);
-    formData.append("userId", userId);
+  //   const userId = localStorage.getItem("userId");
+  //   const formData = new FormData();
+  //   formData.append("profileImage", imageFile);
+  //   formData.append("userId", userId);
 
-    try {
-      const res = await axios.post("login/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+  //   try {
+  //     const res = await axios.post("login/upload", formData, {
+  //       headers: { "Content-Type": "multipart/form-data" },
+  //     });
 
-      setUploadedImageUrl(res.data.imageUrl);
-      alert("Upload successful!");
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Upload failed");
-    }
-  };
+  //     setUploadedImageUrl(res.data.imageUrl);
+  //     alert("Upload successful!");
+  //   } catch (error) {
+  //     console.error("Upload failed:", error);
+  //     alert("Upload failed");
+  //   }
+  // };
 
   const handlePasswordUpdate = async () => {
     if (!oldPassword.trim() || !newPassword.trim()) {
@@ -113,9 +113,7 @@ function Navbar() {
     localStorage.clear();
     navigate("/");
   }
-  useEffect(() => {
-    getDetails();
-  }, []);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (popupRef.current && !popupRef.current.contains(event.target)) {

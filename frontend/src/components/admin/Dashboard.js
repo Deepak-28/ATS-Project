@@ -30,7 +30,6 @@ ChartJS.register(
 function Dashboard() {
   const navigate = useNavigate();
   const [applicantsData, setApplicantsData] = useState([]);
-  const [jobData, setJobData] = useState([]);
   const [stats, setStats] = useState({
     companies: 0,
     jobs: 0,
@@ -38,15 +37,7 @@ function Dashboard() {
     candidates: 0,
     users: 0,
   });
-  const getJobs = async () => {
-    try {
-      const res = await axios.get("/job/all"); // Adjust this endpoint to your API
-      setJobData(res.data);
-      // console.log(res.data);
-    } catch (err) {
-      console.error("Failed to fetch jobs", err);
-    }
-  };
+
   const getDetails = async () => {
     try {
       const res = await axios.get("/company/stats");
@@ -176,7 +167,6 @@ function Dashboard() {
 
   useEffect(() => {
     getData();
-    getJobs();
     getDetails();
   }, []);
 

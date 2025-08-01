@@ -98,9 +98,36 @@ const AdminJobDetails = () => {
     }
   };
   const handleSubmit = () => {
+     if (!Array.isArray(formData) || formData.length === 0) {
+          toast.error("Please fill in at least one post option.");
+          return;
+        }
+        let hasAtLeastOneValidRow = false;
+    
+        for (let i = 0; i < formData.length; i++) {
+          const { postDate, expiryDate, postOption } = formData[i];
+    
+          const isAnyFilled = postDate || expiryDate || postOption;
+    
+          if (isAnyFilled) {
+            if (!postDate || !expiryDate || !postOption) {
+              toast.error(`Please complete all fields for row ${i + 1}`);
+              return;
+            }
+            hasAtLeastOneValidRow = true;
+          }
+        }
+        if (!hasAtLeastOneValidRow) {
+          toast.error("Please complete at least one option to post.");
+          return;
+        }
+        // Submit only fully filled rows
+        const filteredFormData = formData.filter(
+          (f) => f.postDate && f.expiryDate && f.postOption
+        );
     const jobVisibilityData = {
       jobId: selectedJobId,
-      formData,
+      formData:filteredFormData,
     };
     axios
       .post(`/job/visibility/${id}`, jobVisibilityData)
@@ -347,11 +374,21 @@ const AdminJobDetails = () => {
                         }
                       >
                         <option value="">Select Option</option>
-                        {options.map((opt) => (
-                          <option key={opt.id} value={opt.Name}>
-                            {opt.Name}
-                          </option>
-                        ))}
+                         {options.map((opt) => {
+                          const isUsedElsewhere = formData.some(
+                            (item, i) =>
+                              i !== index && item.postOption === opt.Name
+                          );
+                          return (
+                            <option
+                              key={opt.id}
+                              value={opt.Name}
+                              disabled={isUsedElsewhere}
+                            >
+                              {opt.Name}
+                            </option>
+                          );
+                        })}
                       </select>
                     </label>
                   </div>

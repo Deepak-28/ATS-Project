@@ -9,7 +9,7 @@ import {
   FaBuilding,
   FaClipboardList,
   FaChevronDown,
-   FaChevronUp 
+  FaChevronUp,
 } from "react-icons/fa";
 import { BiLogOutCircle } from "react-icons/bi";
 import { GoWorkflow } from "react-icons/go";
@@ -52,9 +52,14 @@ const SidebarMenu = ({ isOpen }) => {
 
         {/* Jobs Dropdown */}
         <li onClick={() => toggleDropdown("jobs")}>
-          <span className="dropdown-toggle">
-            <FaBriefcase /> Jobs {openDropdown === "jobs" ? <FaChevronUp/> : <FaChevronDown/>}
-          </span>
+          <div className="dropdown-toggle ">
+            <div>
+              <FaBriefcase /> Jobs{" "}
+            </div>
+            <div>
+              {openDropdown === "jobs" ? <FaChevronUp /> : <FaChevronDown />}
+            </div>
+          </div>
         </li>
         {openDropdown === "jobs" && (
           <ul className="submenu">
@@ -82,10 +87,18 @@ const SidebarMenu = ({ isOpen }) => {
         )}
         {role === "SuperAdmin" && (
           <li onClick={() => toggleDropdown("candidates")}>
-            <span className="dropdown-toggle">
-              <CgUserList /> Candidates{" "}
-              {openDropdown === "candidates" ? <FaChevronUp/> : <FaChevronDown/>}
-            </span>
+            <div className="dropdown-toggle">
+              <div>
+                <CgUserList /> Candidates{" "}
+              </div>
+              <div>
+                {openDropdown === "candidates" ? (
+                  <FaChevronUp />
+                ) : (
+                  <FaChevronDown />
+                )}
+              </div>
+            </div>
             {openDropdown === "candidates" && (
               <ul className="submenu">
                 <li>
@@ -129,10 +142,19 @@ const SidebarMenu = ({ isOpen }) => {
         {/* Settings Dropdown */}
         {role === "SuperAdmin" && (
           <li onClick={() => toggleDropdown("settings")}>
-            <span className="dropdown-toggle">
-              <IoSettingsSharp />
-              Settings {openDropdown === "settings" ? <FaChevronUp/> : <FaChevronDown/>}
-            </span>
+            <div className="dropdown-toggle">
+              <div>
+                <IoSettingsSharp />
+                Settings{" "}
+              </div>
+              <div>
+                {openDropdown === "settings" ? (
+                  <FaChevronUp />
+                ) : (
+                  <FaChevronDown />
+                )}
+              </div>
+            </div>
           </li>
         )}
         {openDropdown === "settings" && (

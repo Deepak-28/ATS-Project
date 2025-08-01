@@ -78,6 +78,39 @@ Router.get("/:id", async (req, res) => {
     res.send("Server Error");
   }
 });
+Router.get("/details/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const jobs = await job.findAll({
+      where: { companyId: id },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    const jobIds = jobs.map((j) => j.id);
+    const applicationCount = await application.count({
+      where: {
+        jobId: jobIds,
+      },
+    });
+
+    const usersCount = await login.count({
+      where: { cid: id },
+    });
+    const activeJobsCount = await postOption.count({
+      where: {
+        jobId: jobIds,
+        jobStatus: 'active',
+      },
+    });
+    const payload ={usersCount, applicationCount, activeJobsCount,jobCount: jobIds.length};
+    res.send(payload);
+  } catch (err) {
+    console.error("Error fetching company details:", err);
+    res.status(500).send("Server error");
+  }
+});
 
 Router.put("/update/:id", async (req, res) => {
   const { id } = req.params;

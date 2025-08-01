@@ -59,12 +59,13 @@ margin-top: 10px;
 .auth-card{
   position: relative;
   width: 40vw;
-  height: 95vh;
+  height: 93vh;
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); */
+  /* background-color: #fff; */
 }
 .jd-close-btn {
   height: 4vh;

@@ -69,6 +69,40 @@ Router.post("/visibility/:id", async (req, res) => {
     res.status(500).send("Failed to post job");
   }
 });
+Router.post("/post/single", async (req, res) => {
+  const { jobId, postOption, postDate, expiryDate, status } = req.body;
+
+  try {
+    const [record, created] = await PostOption.findOrCreate({
+      where: { jobId, postOption },
+      defaults: {
+        postDate,
+        expiryDate,
+        jobStatus : status,
+      },
+    });
+
+    if (!created) {
+      // Update if already exists
+      await record.update({ postDate, expiryDate, status });
+    }
+
+    // Optionally update job visibility
+    const anyActive = await PostOption.findOne({
+      where: { jobId, jobStatus: "posted" },
+    });
+
+    await job.update(
+      { visibility: anyActive ? "scheduled" : "draft" },
+      { where: { id: jobId } }
+    );
+
+    res.status(200).send("Post option updated");
+  } catch (err) {
+    console.error("Error in per-option post/unpost:", err);
+    res.status(500).send("Failed to update post option");
+  }
+});
 Router.post("/manualFieldSubmit", async (req, res) => {
   const { jobId, Fields } = req.body;
   if (!jobId || !Array.isArray(Fields)) {
@@ -111,9 +145,15 @@ Router.post("/manualFieldSubmit", async (req, res) => {
 Router.get("/", async (req, res) => {
   try {
     const getjobs = await job.findAll();
-    const dynamicFields = await fieldData.findAll();
+    const dynamicFields = await fieldData.findAll({raw:true});
     const fields = await field.findAll();
-    const payload = { getjobs, dynamicFields, fields };
+    const location = await locationData.findAll({
+      where: { candidateId: null },
+      raw: true,
+    });
+    console.log(dynamicFields);
+    
+    const payload = { getjobs, dynamicFields, fields, locationData:location};
     res.send(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -192,14 +232,6 @@ Router.get("/applicants/all", async (req, res) => {
   } catch (err) {
     console.error("Error fetching applicants:", err);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-Router.get("/all", async (req, res) => {
-  try {
-    const getjobs = await job.findAll();
-    res.send(getjobs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 Router.get("/data", async (req, res) => {

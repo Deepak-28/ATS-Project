@@ -18,17 +18,14 @@ function ApplicantsByJob() {
     return stored ? JSON.parse(stored) : [];
   });
   const [dynamicData, setDynamicData] = useState([]);
-  const [locationData, setLocationData] = useState([]);
-
   const navigate = useNavigate();
 
   const fetchApplicants = async () => {
     try {
       const res = await axios.get(`/application/job/${jobId}`);
-      const [{ dynamicData, locationData }] = res.data;
-      setApplicants(res.data);
+      const { dynamicData,  applicants } = res.data;
+      setApplicants(applicants);
       setDynamicData(dynamicData);
-      setLocationData(locationData || []);
     } catch (err) {
       console.error("Failed to fetch applicants:", err);
     }
@@ -46,8 +43,7 @@ function ApplicantsByJob() {
   const fetchFields = async () => {
     try {
       const res = await axios.get(`/fields/all/`);
-      console.log(res.data);
-
+      // console.log(res.data);
       setFields(res.data || []);
     } catch (err) {
       console.error("Failed to Fetch Fields", err);
@@ -98,27 +94,15 @@ function ApplicantsByJob() {
       setSelectedHeaders(newSelected);
     }
   };
-  const dynamicLookup = {};
-  (dynamicData || []).forEach((entry) => {
-    const key = `${entry.candidateId}-${entry.fieldId}`;
-    dynamicLookup[key] = entry.value;
-  });
-  const locationLookup = {};
-  (locationData || []).forEach((loc) => {
-    if (loc.fieldDataId) {
-      locationLookup[loc.fieldDataId] = loc;
-    }
-  });
-
   const jobTitle = getDynamicField(formValues, [
     "title",
     "job title",
     "position",
   ]);
-  const handleSaveField = ()=>{
+  const handleSaveField = () => {
     localStorage.setItem("selectedHeaders", JSON.stringify(selectedHeaders));
     setPopup(false);
-  }
+  };
   useEffect(() => {
     fetchApplicants();
     fetchJob();
@@ -157,68 +141,65 @@ function ApplicantsByJob() {
             onClick={() => setPopup(true)}
           />
         </nav>
-       <div className="data-table">
-         <table className="job-table">
-          <thead>
-            <tr>
-              <th>S.No</th>
-              <th>Applicant ID</th>
-              <th>User Name</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Applied On</th>
-              {selectedHeaders.map((id) => {
-                const field = fields.find((f) => f.id === id);
-                return <th key={id}>{field?.fieldLabel || id}</th>;
-              })}
-              {/* <th>Action</th> */}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredApplicants.length > 0 ? (
-              filteredApplicants.map((app, index) => (
-                <tr
-                  key={app.id}
-                  onClick={(e) => handleRowClick(e, app.candidateId)}
-                  className="cursor-pointer hover"
-                >
-                  <td>{index + 1}</td>
-                  <td>{app.user.user_id}</td>
-                  <td>
-                    {app.user.firstname} {app.user.lastname}
-                  </td>
-                  <td>{app.user.email}</td>
-                  <td>{app.status}</td>
-                  <td>
-                    {app.createdAt
-                      ? new Date(app.createdAt).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-                  {selectedHeaders.map((id) => {
-                    const key = `${app.candidateId}-${id}`;
-                    const value = dynamicLookup[key];
-                    const field = dynamicData.find(
-                      (d) =>
-                        d.candidateId === app.candidateId && d.fieldId === id
-                    );
+        <div className="data-table">
+          <table className="job-table">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Applicant ID</th>
+                <th>User Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Applied On</th>
+                {selectedHeaders.map((id) => {
+                  const field = fields.find((f) => f.id === id);
+                  return <th key={id}>{field?.fieldLabel || id}</th>;
+                })}
+                {/* <th>Action</th> */}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredApplicants.length > 0 ? (
+                filteredApplicants.map((app, index) => (
+                  <tr
+                    key={app.id}
+                    onClick={(e) => handleRowClick(e, app.candidateId)}
+                    className="cursor-pointer hover"
+                  >
+                    <td>{index + 1}</td>
+                    <td>{app.user.user_id}</td>
+                    <td>
+                      {app.user.firstname} {app.user.lastname}
+                    </td>
+                    <td>{app.user.email}</td>
+                    <td>{app.status}</td>
+                    <td>
+                      {app.createdAt
+                        ? new Date(app.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    {selectedHeaders.map((id) => {
+                      const numericFieldId = parseInt(id); // Ensure proper comparison
+                      const field = dynamicData.find(
+                        (d) =>
+                          d.candidateId === app.candidateId &&
+                          d.fieldId === numericFieldId
+                      );
 
-                    let displayValue = value || "Not provided";
+                      let displayValue = field?.value || "Not provided";
 
-                    if (field && locationLookup[field.id]) {
-                      const loc = locationLookup[field.id];
-                      displayValue = [
-                        loc.countryName,
-                        loc.stateName,
-                        loc.cityName,
-                      ]
-                        .filter(Boolean)
-                        .join(", ");
-                    }
+                      if (field && field.location) {
+                        const { countryName, stateName, cityName } =
+                          field.location || {};
+                        displayValue = [countryName, stateName, cityName]
+                          .filter((x) => !!x)
+                          .join(", ");
+                      }
 
-                    return <td key={id}>{displayValue}</td>;
-                  })}
+                      return <td key={id}>{displayValue}</td>;
+                    })}
 
-                  {/* <td data-no-nav>
+                    {/* <td data-no-nav>
                     <Link
                       to={`/applicants/${jobId}/${app.candidateId}`}
                       state={{ from: "job", jobId }}
@@ -226,18 +207,18 @@ function ApplicantsByJob() {
                       View
                     </Link>
                   </td> */}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7 + selectedHeaders.length}>
+                    No applicants found.
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7 + selectedHeaders.length}>
-                  No applicants found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-       </div>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       {popup && (
         <div className="test df al jc">

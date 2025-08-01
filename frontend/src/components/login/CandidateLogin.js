@@ -144,8 +144,14 @@ function CandidateLogin() {
   };
   const getOtp = async () => {
     try {
-      await axios.post("/login/auth/send-otp", { email: mail });
-      toast.success("OTP sent");
+      const data = await toast.promise(
+        axios.post("/login/auth/send-otp", { email: mail }),
+        {
+          loading: "Sending OTP...",
+          success: "OTP sent successfully!",
+          error: "Failed to send OTP.",
+        }
+      );
       setStep(3);
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed");
@@ -251,9 +257,18 @@ function CandidateLogin() {
                     />
                   </div>
 
-                  <button className="b s-btn" onClick={getOtp}>
-                    Send OTP
-                  </button>
+                  <div className="df g10">
+                    <button
+                      type="button"
+                      className="gray s-btn"
+                      onClick={() => setStep(1)}
+                    >
+                      Back
+                    </button>
+                    <button type="button" className="b s-btn" onClick={getOtp}>
+                      Send OTP
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -275,9 +290,22 @@ function CandidateLogin() {
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
-                <button className="b s-btn" onClick={resetPassword}>
-                  Submit
-                </button>
+                <div className="df g10">
+                  <button
+                    type="button"
+                    className="gray s-btn"
+                    onClick={() => setStep(2)}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className="b s-btn"
+                    onClick={resetPassword}
+                  >
+                    Submit
+                  </button>
+                </div>
               </div>
             )}
           </div>

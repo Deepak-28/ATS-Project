@@ -101,7 +101,6 @@ Router.post("/auth/verify-otp", async (req, res) => {
 
   res.json({ message: "Password reset successfully" });
 });
-
 Router.get("/user", async (req, res) => {
   try {
     const data = await login.findAll();

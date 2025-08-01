@@ -47,6 +47,8 @@ function Applicants() {
     try {
       const res = await axios.get("/fields/candidate");
       const { fields, dynamicData, location } = res.data;
+      // console.log(res.data);
+      
       setFields(fields || []);
       setDynamicData(dynamicData || []);
       setLocationData(location || []);

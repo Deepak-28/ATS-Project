@@ -21,6 +21,7 @@ const AllJobs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchText, setSearchText] = useState("");
   const [dynamicData, setDynamicData] = useState([]);
+  const [locationData, setLocationData] = useState([]);
   const [isVisibility, setIsVisibilty] = useState(false);
   const [selectedHeaders, setSelectedHeaders] = useState(() => {
     const stored = localStorage.getItem("JobselectedHeaders");
@@ -31,14 +32,15 @@ const AllJobs = () => {
   const navigate = useNavigate();
   const cid = localStorage.getItem("cid");
   const today = new Date().toISOString().split("T")[0];
-  const role = localStorage.getItem("role")
+  const role = localStorage.getItem("role");
 
-  
   const fetchAllJobs = async () => {
     try {
       if (companyId) {
         const res = await axios.get(`/job/company/${companyId}`);
         const { jobs, dynamicFields } = res.data;
+        // console.log(res.data);
+
         setJobs(jobs);
         setDynamicData(dynamicFields);
       } else if (cid) {
@@ -48,7 +50,9 @@ const AllJobs = () => {
         setDynamicData(dynamicFields);
       } else {
         const res = await axios.get("/job");
-        const { getjobs, dynamicFields } = res.data;
+        const { getjobs, dynamicFields, locationData } = res.data;
+        // console.log(res.data);
+        setLocationData(locationData || []);
         setJobs(getjobs);
         setDynamicData(dynamicFields);
       }
@@ -110,11 +114,12 @@ const AllJobs = () => {
     try {
       const res = await axios.get(`/postOption/${id}`);
 
-      // Ensure postDate and expiryDate are string format (YYYY-MM-DD)
       const formatted = res.data.map((item) => ({
         ...item,
         postDate: item.postDate?.slice(0, 10) || "",
         expiryDate: item.expiryDate?.slice(0, 10) || "",
+        postOption: item.postOption || "",
+        status: item.status || "unposted", // important
       }));
 
       setFormData(formatted);
@@ -127,17 +132,75 @@ const AllJobs = () => {
     updatedForm[index][field] = value;
     setFormData(updatedForm);
   };
+  const handleRowPostToggle = async (index) => {
+    const row = formData[index];
+
+    if (!row.postDate || !row.expiryDate || !row.postOption) {
+      toast.error("Please complete all fields before posting.");
+      return;
+    }
+
+    const updatedForm = [...formData];
+    const newStatus = row.status === "posted" ? "unposted" : "posted";
+
+    try {
+      await axios.post(`/job/post/single`, {
+        jobId: selectedJobId,
+        postOption: row.postOption,
+        postDate: row.postDate,
+        expiryDate: row.expiryDate,
+        status: newStatus,
+      });
+
+      updatedForm[index].status = newStatus;
+      setFormData(updatedForm);
+
+      toast.success(
+        `${newStatus === "posted" ? "Posted" : "Unposted"}: ${row.postOption}`
+      );
+    } catch (err) {
+      console.error("Failed to toggle post status:", err);
+      toast.error("Failed to update post status.");
+    }
+  };
   const handleSubmit = () => {
+    if (!Array.isArray(formData) || formData.length === 0) {
+      toast.error("Please fill in at least one post option.");
+      return;
+    }
+    let hasAtLeastOneValidRow = false;
+
+    for (let i = 0; i < formData.length; i++) {
+      const { postDate, expiryDate, postOption } = formData[i];
+
+      const isAnyFilled = postDate || expiryDate || postOption;
+
+      if (isAnyFilled) {
+        if (!postDate || !expiryDate || !postOption) {
+          toast.error(`Please complete all fields for row ${i + 1}`);
+          return;
+        }
+        hasAtLeastOneValidRow = true;
+      }
+    }
+    if (!hasAtLeastOneValidRow) {
+      toast.error("Please complete at least one option to post.");
+      return;
+    }
+    // Submit only fully filled rows
+    const filteredFormData = formData.filter(
+      (f) => f.postDate && f.expiryDate && f.postOption
+    );
     const jobVisibilityData = {
       jobId: selectedJobId,
-      formData,
+      formData: filteredFormData,
     };
     axios
-      .post(`/job/visibility/${JobId}`, jobVisibilityData)
+      .post(`/job/visibility/${selectedJobId}`, jobVisibilityData)
       .then((res) => {
         toast.success("Job posted successfully!");
         setIsPosted(true);
-        getPostOption(JobId);
+        getPostOption(selectedJobId);
         clearFunction();
       })
       .catch((err) => {
@@ -155,7 +218,6 @@ const AllJobs = () => {
     }
   };
   const handlePopup = async (jobId) => {
-    // console.log("Opening popup for jobId:", jobId);
     setSelectedJobId(jobId);
 
     await fetchJob(jobId);
@@ -164,27 +226,23 @@ const AllJobs = () => {
     const portals = portalRes.data;
 
     const postOptionRes = await axios.get(`/postOption/${jobId}`);
-    const options = postOptionRes.data;
+    const postedOptions = postOptionRes.data;
 
-    let formatted = [];
+    const formatted = portals.map((p) => {
+      const existing = postedOptions.find((o) => o.postOption === p.Name);
 
-    if (options.length > 0) {
-      formatted = options.map((item) => ({
-        ...item,
-        postDate: item.postDate?.slice(0, 10) || "",
-        expiryDate: item.expiryDate?.slice(0, 10) || "",
-      }));
-    } else {
-      formatted = portals.map((p) => ({
+      return {
         id: p.id,
         name: p.Name,
-        postDate: "",
-        expiryDate: "",
-        postOption: "",
-      }));
-    }
-    setOptions(portals);
-    setFormData(formatted);
+        postOption: existing?.postOption || "",
+        postDate: existing?.postDate?.slice(0, 10) || "",
+        expiryDate: existing?.expiryDate?.slice(0, 10) || "",
+        status: existing?.status || "unposted",
+      };
+    });
+
+    setOptions(portals); // always use full list
+    setFormData(formatted); // mix of posted and unposted
     setIsVisibilty(true);
   };
   const dynamicLookup = {};
@@ -192,6 +250,13 @@ const AllJobs = () => {
     const key = `${entry.jobId}-${entry.fieldId}`;
     dynamicLookup[key] = entry.value;
   });
+  const locationLookup = {};
+  locationData.forEach((loc) => {
+    if (loc.fieldDataId) {
+      locationLookup[loc.fieldDataId] = loc;
+    }
+  });
+
   const filteredJobs = jobs.filter((job) => {
     const jobIdStr = String(job.id);
     const customId = `2X${jobIdStr.padStart(5, "0")}`;
@@ -323,26 +388,57 @@ const AllJobs = () => {
                     <td>{index + 1}</td>
                     <td>2X0{job.id}</td>
                     {selectedHeaders.map((fieldId) => {
-                      let value;
+                      let value = "N/A";
+
                       if (fieldId === "companyName") {
                         value = job.companyName || "N/A";
                       } else {
-                        const key = `${job.id}-${fieldId}`;
-                        value = dynamicLookup[key] ?? "N/A";
+                        // Find the first fieldData entry for this fieldId + jobId
+                        const fieldDataEntries = dynamicData.filter(
+                          (entry) =>
+                            entry.jobId === job.id && entry.fieldId === fieldId
+                        );
+
+                        // Pick the one that has a matching locationData entry
+                        let matchedFieldData = null;
+                        for (const entry of fieldDataEntries) {
+                          if (locationLookup[entry.id]) {
+                            matchedFieldData = entry;
+                            break;
+                          }
+                        }
+
+                        if (matchedFieldData) {
+                          const location = locationLookup[matchedFieldData.id];
+                          value = [
+                            location.countryName,
+                            location.stateName,
+                            location.cityName,
+                          ]
+                            .filter(Boolean)
+                            .join(", ");
+                        } else {
+                          // Fall back to the first matching value if no location attached
+                          const fallback = fieldDataEntries[0];
+                          value = fallback?.value || "N/A";
+                        }
                       }
+
                       const shouldTruncate =
                         typeof value === "string" && value.length > 50;
+
                       return (
                         <td key={fieldId}>
                           <div
                             className={shouldTruncate ? "truncate-cell" : ""}
-                            title={value}
+                            title={typeof value === "string" ? value : ""}
                           >
                             {value}
                           </div>
                         </td>
                       );
                     })}
+
                     <td>{job.status || "N/A"}</td>
                     <td className="f14" data-no-nav>
                       <div className="job-actions">
@@ -350,15 +446,21 @@ const AllJobs = () => {
                           color="blue"
                           onClick={() => navigate(`/applicants/job/${job.id}`)}
                         />
-                        <TbWorldUpload color="#6610f2" onClick={() => handlePopup(job.id)} />
+                        <TbWorldUpload
+                          color="#6610f2"
+                          onClick={() => handlePopup(job.id)}
+                        />
 
-                        <FaEdit color="blue" onClick={() => navigate(`/Job/${job.id}`)} />
+                        <FaEdit
+                          color="blue"
+                          onClick={() => navigate(`/Job/${job.id}`)}
+                        />
                         {role !== "recruiter" && (
                           <MdDeleteForever
-                          className="applied-link"
-                          color="red"
-                          onClick={() => deleteJob(job.id)}
-                        />
+                            className="applied-link"
+                            color="red"
+                            onClick={() => deleteJob(job.id)}
+                          />
                         )}
                       </div>
                     </td>
@@ -450,8 +552,9 @@ const AllJobs = () => {
       {isVisibility && (
         <div className="test df al jc">
           <div className="post-box df jcsb al fdc">
-            <div className="w90 df fdc mt20 g10">
+            <div className="w90 df fdc  mt20 g10">
               {postOption ? <h3>Job Unpost</h3> : <h3>Job Post</h3>}
+
               <div className="df fdc w100 g10">
                 {" "}
                 {formData.map((entry, index) => (
@@ -462,7 +565,7 @@ const AllJobs = () => {
                       <input
                         type="date"
                         value={entry.postDate}
-                         min={today}
+                        min={today}
                         onChange={(e) =>
                           handleFormChange(index, "postDate", e.target.value)
                         }
@@ -473,7 +576,7 @@ const AllJobs = () => {
                       <input
                         type="date"
                         value={entry.expiryDate}
-                        min={new Date().toISOString().split("T")[0]}
+                        min={today}
                         onChange={(e) =>
                           handleFormChange(index, "expiryDate", e.target.value)
                         }
@@ -488,18 +591,29 @@ const AllJobs = () => {
                         }
                       >
                         <option value="">Select Option</option>
-                        {options.map((opt) => (
-                          <option key={opt.id} value={opt.Name}>
-                            {opt.Name}
-                          </option>
-                        ))}
+                        {options.map((opt) => {
+                          const isUsedElsewhere = formData.some(
+                            (item, i) =>
+                              i !== index && item.postOption === opt.Name
+                          );
+                          return (
+                            <option
+                              key={opt.id}
+                              value={opt.Name}
+                              disabled={isUsedElsewhere}
+                            >
+                              {opt.Name}
+                            </option>
+                          );
+                        })}
                       </select>
                     </label>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="box-border w100 df jce ae g10 mt10 mb20">
+
+            <div className="box-border w100 df jce ae g10 mb20">
               <button
                 type="button"
                 className="gray s-btn mr10"
@@ -509,11 +623,10 @@ const AllJobs = () => {
               </button>
               {isPosted ? (
                 <>
-                  {/* <span className="status-posted">Posted</span> */}
                   <button
                     type="button"
-                    onClick={handleUnpost}
-                    className="b s-btn orange mr30"
+                    onClick={() => handleUnpost()}
+                    className="orange s-btn mr30"
                   >
                     Unpost
                   </button>
